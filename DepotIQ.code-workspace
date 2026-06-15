@@ -1,0 +1,24 @@
+{
+  "folders": [
+    {
+      "name": "DepotIQ",
+      "path": "."
+    },
+    {
+      "name": "backend",
+      "path": "backend"
+    },
+    {
+      "name": "frontend",
+      "path": "frontend"
+    },
+    {
+      "name": "ml-service",
+      "path": "ml-service"
+    }
+  ],
+  "settings": {
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "editor.formatOnSave": true
+  }
+}

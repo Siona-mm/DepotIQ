@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Run Spring Boot Backend",
+      "request": "launch",
+      "mainClass": "com.depotiq.DepotIqApplication",
+      "projectName": "backend",
+      "cwd": "${workspaceFolder}/backend",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "dev"
+      }
+    },
+    {
+      "name": "Run ML Service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "main:app",
+        "--reload",
+        "--port",
+        "8000"
+      ],
+      "cwd": "${workspaceFolder}/ml-service",
+      "console": "integratedTerminal",
+      "python": "${workspaceFolder}/ml-service/.venv/Scripts/python.exe",
+      "linux": {
+        "python": "${workspaceFolder}/ml-service/.venv/bin/python"
+      }
+    }
+  ]
+}

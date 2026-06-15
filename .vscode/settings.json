@@ -1,0 +1,25 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.import.gradle.enabled": false,
+  "java.format.settings.url": "",
+  "spring-boot.ls.problem.application-properties.enabled": true,
+  "python.defaultInterpreterPath": "${workspaceFolder}/ml-service/.venv/bin/python",
+  "python.analysis.typeCheckingMode": "basic",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/target": true,
+    "**/__pycache__": true,
+    "**/.pytest_cache": true
+  },
+  "eslint.workingDirectories": [
+    {
+      "directory": "frontend",
+      "changeProcessCWD": true
+    }
+  ]
+}

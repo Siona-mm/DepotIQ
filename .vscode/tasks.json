@@ -1,0 +1,81 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "postgres: start",
+      "type": "shell",
+      "command": "docker compose up -d postgres",
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "backend: run",
+      "type": "shell",
+      "command": "./mvnw spring-boot:run",
+      "windows": {
+        "command": "mvn spring-boot:run"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/backend"
+      },
+      "problemMatcher": "$javac",
+      "group": "build"
+    },
+    {
+      "label": "frontend: install",
+      "type": "shell",
+      "command": "npm install",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "frontend: dev",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": {
+        "cwd": "${workspaceFolder}/frontend"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "ml-service: venv",
+      "type": "shell",
+      "command": "python -m venv .venv",
+      "options": {
+        "cwd": "${workspaceFolder}/ml-service"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "ml-service: install",
+      "type": "shell",
+      "command": ".venv\\Scripts\\python -m pip install -r requirements.txt",
+      "linux": {
+        "command": ".venv/bin/python -m pip install -r requirements.txt"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/ml-service"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "ml-service: run",
+      "type": "shell",
+      "command": ".venv\\Scripts\\python -m uvicorn main:app --reload --port 8000",
+      "linux": {
+        "command": ".venv/bin/python -m uvicorn main:app --reload --port 8000"
+      },
+      "options": {
+        "cwd": "${workspaceFolder}/ml-service"
+      },
+      "problemMatcher": [],
+      "group": "build"
+    }
+  ]
+}
