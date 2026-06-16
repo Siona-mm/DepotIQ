@@ -21,6 +21,47 @@ It helps a central depot predict store-level product demand, track depot invento
 - `docs/`: project and API documentation
 - `reports/`: market research and presentation material
 
+## Dataset
+
+DepotIQ uses the **Retail Store Inventory Forecasting Dataset** from Kaggle.
+
+- **Dataset name:** Retail Store Inventory Forecasting Dataset
+- **Source:** Kaggle
+- **License:** CC0 Public Domain
+- **URL:** https://www.kaggle.com/datasets/anirudhchauhan/retail-store-inventory-forecasting-dataset/data
+
+The dataset is used for demand forecasting and inventory/shipment recommendation modeling.
+
+Raw dataset files are **not committed to GitHub** because data files can be large and should stay local. The repo only keeps the folder structure with `.gitkeep` files.
+
+Download the dataset from Kaggle, then place the CSV here:
+
+```text
+data/raw/retail_store_inventory.csv
+```
+
+If the file downloads to your Windows Downloads folder, copy it into WSL like this:
+
+```bash
+cp /mnt/c/Users/User/Downloads/archive.zip ~/DepotIQ/data/raw/
+cd ~/DepotIQ/data/raw
+unzip archive.zip
+```
+
+After unzipping, confirm the CSV exists:
+
+```bash
+ls -la ~/DepotIQ/data/raw
+```
+
+Expected file:
+
+```text
+retail_store_inventory.csv
+```
+
+Do not commit the downloaded `.zip` or `.csv` files. They are ignored by `.gitignore`.
+
 ## Prerequisites
 
 Install these before running the project:
