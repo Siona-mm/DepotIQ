@@ -77,3 +77,40 @@ def add_features(df):
             "SalesRolling30",
         ]
     )
+
+def evaluate_model(name, model, X_train, X_test, y_train, y_test):
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("categorical", OneHotEncoder(handle_unknown="ignore"), CATEGORICAL_FEATURES),
+            ("numeric", "passthrough", NUMERIC_FEATURES),
+        ]
+    )
+
+    pipeline = Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            ("model", model),
+        ]
+    )
+
+    print(f"\nTraining {name}...")
+    pipeline.fit(X_train, y_train)
+
+    predictions = pipeline.predict(X_test)
+
+    mae = mean_absolute_error(y_test, predictions)
+    rmse = mean_squared_error(y_test, predictions) ** 0.5
+    r2 = r2_score(y_test, predictions)
+
+    print(f"{name} results:")
+    print(f"MAE: {mae:.2f}")
+    print(f"RMSE: {rmse:.2f}")
+    print(f"R2 Score: {r2:.3f}")
+
+    return {
+        "name": name,
+        "pipeline": pipeline,
+        "mae": mae,
+        "rmse": rmse,
+        "r2": r2,
+    }
