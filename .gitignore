@@ -47,8 +47,10 @@ ml-service/.pytest_cache/
 # Data and model artifacts
 data/raw/*
 data/processed/*
+data/synthetic/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+!data/synthetic/README.md
 ml-service/models/*
 !ml-service/models/.gitkeep
 
