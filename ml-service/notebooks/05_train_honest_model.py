@@ -114,3 +114,79 @@ def evaluate_model(name, model, X_train, X_test, y_train, y_test):
         "rmse": rmse,
         "r2": r2,
     }
+
+
+
+def main():
+    if not DATA_PATH.exists():
+        raise FileNotFoundError(
+            f"Dataset not found at {DATA_PATH}. "
+            "Download it from Kaggle and place it in data/raw/retail_store_inventory.csv"
+        )
+
+    df = pd.read_csv(DATA_PATH)
+
+    forbidden_features = {"Units Ordered", "Demand Forecast"}
+    used_forbidden_features = forbidden_features.intersection(FEATURES)
+
+    if used_forbidden_features:
+        raise ValueError(f"Honest model is using forbidden features: {used_forbidden_features}")
+
+    df = add_features(df)
+
+    train_cutoff = pd.Timestamp("2023-10-01")
+    train_df = df[df["Date"] < train_cutoff]
+    test_df = df[df["Date"] >= train_cutoff]
+
+    X_train = train_df[FEATURES]
+    y_train = train_df[TARGET]
+    X_test = test_df[FEATURES]
+    y_test = test_df[TARGET]
+
+    print("Honest demand model")
+    print("Excluded features: Units Ordered, Demand Forecast")
+    print(f"Training rows: {len(train_df)}")
+    print(f"Testing rows: {len(test_df)}")
+    print(f"Test period: {test_df['Date'].min().date()} to {test_df['Date'].max().date()}")
+
+    candidates = [
+        (
+            "Random Forest",
+            RandomForestRegressor(
+                n_estimators=200,
+                min_samples_leaf=2,
+                random_state=42,
+                n_jobs=-1,
+            ),
+        ),
+        (
+            "Hist Gradient Boosting",
+            HistGradientBoostingRegressor(
+                max_iter=300,
+                learning_rate=0.05,
+                max_leaf_nodes=31,
+                random_state=42,
+            ),
+        ),
+    ]
+
+    results = [
+        evaluate_model(name, model, X_train, X_test, y_train, y_test)
+        for name, model in candidates
+    ]
+
+    best = min(results, key=lambda result: result["mae"])
+
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(best["pipeline"], MODEL_PATH)
+
+    print("\nBest honest model:")
+    print(best["name"])
+    print(f"MAE: {best['mae']:.2f}")
+    print(f"RMSE: {best['rmse']:.2f}")
+    print(f"R2 Score: {best['r2']:.3f}")
+    print(f"Model saved to: {MODEL_PATH}")
+
+
+if __name__ == "__main__":
+    main()
