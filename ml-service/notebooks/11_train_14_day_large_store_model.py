@@ -3,6 +3,7 @@
 from pathlib import Path
 from time import perf_counter
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.compose import ColumnTransformer
@@ -17,6 +18,21 @@ DATA_PATH = (
     / "data"
     / "processed"
     / "depotiq_multiday_targets.csv"
+)
+MODEL_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "models"
+    / "large_store_14_day_demand_model.joblib"
+)
+METRICS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "models"
+    / "large_store_14_day_metrics.csv"
+)
+ERRORS_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "models"
+    / "large_store_14_day_prediction_errors.csv"
 )
 TARGET = "DemandNext14Days"
 HORIZON_DAYS = 14
@@ -274,6 +290,48 @@ def analyze_prediction_errors(
 
     return errors
 
+
+def save_outputs(
+    pipeline: Pipeline,
+    errors: pd.DataFrame,
+    model_metrics: dict[str, float],
+    baseline_metrics: dict[str, float],
+    test_start: pd.Timestamp,
+    train_cutoff: pd.Timestamp,
+) -> None:
+    MODEL_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    joblib.dump(
+        {
+            "pipeline": pipeline,
+            "features": FEATURES,
+            "categorical_features": CATEGORICAL_FEATURES,
+            "numeric_features": NUMERIC_FEATURES,
+            "target": TARGET,
+            "horizon_days": HORIZON_DAYS,
+            "test_days": TEST_DAYS,
+            "eligible_store_types": ELIGIBLE_STORE_TYPES,
+            "test_start": str(test_start.date()),
+            "train_cutoff": str(train_cutoff.date()),
+            "model_metrics": model_metrics,
+            "baseline_metrics": baseline_metrics,
+            "data_label": "synthetic",
+        },
+        MODEL_PATH,
+    )
+
+    metrics_rows = [
+        {"model": "store_product_baseline", **baseline_metrics},
+        {"model": "hist_gradient_boosting", **model_metrics},
+    ]
+    pd.DataFrame(metrics_rows).to_csv(METRICS_PATH, index=False)
+    errors.to_csv(ERRORS_PATH, index=False)
+
+    print("\nSaved outputs")
+    print(f"Model saved to: {MODEL_PATH}")
+    print(f"Metrics saved to: {METRICS_PATH}")
+    print(f"Prediction errors saved to: {ERRORS_PATH}")
+
     return Pipeline(
         steps=[
             ("preprocessor", preprocessor),
@@ -349,7 +407,15 @@ def main() -> None:
     print(f"MAE improvement over baseline: {improvement:.1f}%")
     print(f"Training time: {training_seconds:.1f} seconds")
 
-    analyze_prediction_errors(test, baseline_predictions, model_predictions)
+    errors = analyze_prediction_errors(test, baseline_predictions, model_predictions)
+    save_outputs(
+        pipeline,
+        errors,
+        model_metrics,
+        baseline_metrics,
+        test_start,
+        train_cutoff,
+    )
 
 
 if __name__ == "__main__":
