@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
 DATA_PATH = (
@@ -14,6 +15,7 @@ DATA_PATH = (
 )
 TARGET = "DemandNext14Days"
 HORIZON_DAYS = 14
+TEST_DAYS = 60
 ELIGIBLE_STORE_TYPES = ["Large", "Warehouse Store"]
 GROUP_COLUMNS = ["Store ID", "Product ID"]
 
@@ -139,11 +141,52 @@ def validate_feature_columns(df: pd.DataFrame) -> None:
         raise ValueError(f"Leakage columns included as features: {', '.join(leaked)}")
 
 
+def split_future_dates(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Timestamp, pd.Timestamp]:
+    test_start = df["Date"].max() - pd.Timedelta(days=TEST_DAYS - 1)
+    train_cutoff = test_start - pd.Timedelta(days=HORIZON_DAYS)
+    train = df[df["Date"] < train_cutoff].copy()
+    test = df[df["Date"] >= test_start].copy()
+
+    if train.empty or test.empty:
+        raise ValueError("Future-date split produced an empty train or test set.")
+
+    return train, test, test_start, train_cutoff
+
+
+def evaluate(name: str, actual: pd.Series, predicted: np.ndarray) -> dict[str, float]:
+    mae = mean_absolute_error(actual, predicted)
+    metrics = {
+        "mae": float(mae),
+        "rmse": float(np.sqrt(mean_squared_error(actual, predicted))),
+        "r2": float(r2_score(actual, predicted)),
+        "normalized_mae_percent": float(mae / actual.mean() * 100),
+    }
+
+    print(f"\n{name}")
+    print(f"MAE: {metrics['mae']:.2f}")
+    print(f"RMSE: {metrics['rmse']:.2f}")
+    print(f"R2: {metrics['r2']:.3f}")
+    print(f"Normalized MAE: {metrics['normalized_mae_percent']:.2f}%")
+    return metrics
+
+
+def predict_store_product_baseline(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
+    global_mean = train[TARGET].mean()
+    series_means = train.groupby(GROUP_COLUMNS)[TARGET].mean()
+    return np.array(
+        [
+            series_means.get((store, product), global_mean)
+            for store, product in zip(test["Store ID"], test["Product ID"])
+        ]
+    )
+
+
 def main() -> None:
     df = load_target_data()
     eligible = filter_large_stockroom_stores(df)
     featured = add_historical_features(eligible)
     validate_feature_columns(featured)
+    train, test, test_start, train_cutoff = split_future_dates(featured)
 
     print("14-day large-store demand model")
     print(f"Dataset path: {DATA_PATH}")
@@ -161,7 +204,14 @@ def main() -> None:
         f"{eligible['Date'].min().date()} to {eligible['Date'].max().date()}"
     )
     print(f"Rows after historical features: {len(featured):,}")
+    print(f"Training rows: {len(train):,}")
+    print(f"Testing rows: {len(test):,}")
+    print(f"Training ends before: {train_cutoff.date()}")
+    print(f"Test period: {test_start.date()} to {test['Date'].max().date()}")
     print("Excluded features:", ", ".join(EXCLUDED_FEATURES))
+
+    baseline_predictions = predict_store_product_baseline(train, test)
+    evaluate("Store-product 14-day baseline", test[TARGET], baseline_predictions)
 
 
 if __name__ == "__main__":
