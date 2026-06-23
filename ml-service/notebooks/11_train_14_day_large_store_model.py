@@ -214,6 +214,23 @@ def build_model_pipeline() -> Pipeline:
         ]
     )
 
+    return Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            (
+                "model",
+                HistGradientBoostingRegressor(
+                    learning_rate=0.06,
+                    max_iter=300,
+                    max_leaf_nodes=31,
+                    min_samples_leaf=30,
+                    l2_regularization=1.0,
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+
 
 def analyze_prediction_errors(
     test: pd.DataFrame,
@@ -331,23 +348,6 @@ def save_outputs(
     print(f"Model saved to: {MODEL_PATH}")
     print(f"Metrics saved to: {METRICS_PATH}")
     print(f"Prediction errors saved to: {ERRORS_PATH}")
-
-    return Pipeline(
-        steps=[
-            ("preprocessor", preprocessor),
-            (
-                "model",
-                HistGradientBoostingRegressor(
-                    learning_rate=0.06,
-                    max_iter=300,
-                    max_leaf_nodes=31,
-                    min_samples_leaf=30,
-                    l2_regularization=1.0,
-                    random_state=42,
-                ),
-            ),
-        ]
-    )
 
 
 def main() -> None:
