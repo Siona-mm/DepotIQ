@@ -13,6 +13,7 @@ DATA_PATH = (
 )
 TARGET = "DemandNext14Days"
 HORIZON_DAYS = 14
+ELIGIBLE_STORE_TYPES = ["Large", "Warehouse Store"]
 
 
 def load_target_data() -> pd.DataFrame:
@@ -34,8 +35,27 @@ def load_target_data() -> pd.DataFrame:
     return complete
 
 
+def filter_large_stockroom_stores(df: pd.DataFrame) -> pd.DataFrame:
+    required_columns = ["Store Type", "Has Warehouse", "Preferred Horizon Days"]
+    missing = [column for column in required_columns if column not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required store columns: {', '.join(missing)}")
+
+    eligible = df[
+        (df["Store Type"].isin(ELIGIBLE_STORE_TYPES))
+        & (df["Has Warehouse"] == 1)
+        & (df["Preferred Horizon Days"] >= HORIZON_DAYS)
+    ].copy()
+
+    if eligible.empty:
+        raise ValueError("No eligible large stores with stockrooms were found.")
+
+    return eligible.reset_index(drop=True)
+
+
 def main() -> None:
     df = load_target_data()
+    eligible = filter_large_stockroom_stores(df)
 
     print("14-day large-store demand model")
     print(f"Dataset path: {DATA_PATH}")
@@ -43,6 +63,15 @@ def main() -> None:
     print(f"Date range: {df['Date'].min().date()} to {df['Date'].max().date()}")
     print(f"Target: {TARGET}")
     print(f"Horizon days: {HORIZON_DAYS}")
+    print("\nEligible large stores with stockrooms")
+    print(f"Rows: {len(eligible):,}")
+    print(f"Stores: {eligible['Store ID'].nunique():,}")
+    print(f"Products: {eligible['Product ID'].nunique():,}")
+    print(f"Store types: {', '.join(sorted(eligible['Store Type'].unique()))}")
+    print(
+        "Date range: "
+        f"{eligible['Date'].min().date()} to {eligible['Date'].max().date()}"
+    )
 
 
 if __name__ == "__main__":
