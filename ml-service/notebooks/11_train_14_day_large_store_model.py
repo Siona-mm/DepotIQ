@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 
 
@@ -14,6 +15,60 @@ DATA_PATH = (
 TARGET = "DemandNext14Days"
 HORIZON_DAYS = 14
 ELIGIBLE_STORE_TYPES = ["Large", "Warehouse Store"]
+GROUP_COLUMNS = ["Store ID", "Product ID"]
+
+CATEGORICAL_FEATURES = [
+    "Store ID",
+    "Product ID",
+    "Category",
+    "Region",
+    "Store Type",
+    "Brand",
+    "Supplier ID",
+    "Weather Condition",
+    "Seasonality",
+]
+NUMERIC_FEATURES = [
+    "Has Warehouse",
+    "Storage Capacity",
+    "Delivery Lead Time",
+    "Preferred Horizon Days",
+    "Inventory Level",
+    "Price",
+    "Unit Cost",
+    "Weight Kg",
+    "Shelf Life Days",
+    "Perishable",
+    "Discount",
+    "Temperature",
+    "Holiday/Promotion",
+    "Promotion",
+    "Competitor Pricing",
+    "SalesLag1",
+    "SalesLag7",
+    "SalesLag14",
+    "SalesLag30",
+    "SalesRolling7",
+    "SalesRolling14",
+    "SalesRolling30",
+    "DayOfWeek",
+    "Month",
+    "DayOfYearSin",
+    "DayOfYearCos",
+    "IsWeekend",
+]
+FEATURES = CATEGORICAL_FEATURES + NUMERIC_FEATURES
+EXCLUDED_FEATURES = [
+    "Demand Forecast",
+    "Units Ordered",
+    "Incoming Units",
+    "True Demand",
+    "Stockout Units",
+    "DemandNext3Days",
+    "DemandNext7Days",
+    "DemandNext14Days",
+    "DemandNext30Days",
+]
 
 
 def load_target_data() -> pd.DataFrame:
@@ -53,9 +108,42 @@ def filter_large_stockroom_stores(df: pd.DataFrame) -> pd.DataFrame:
     return eligible.reset_index(drop=True)
 
 
+def add_historical_features(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.sort_values([*GROUP_COLUMNS, "Date"]).copy()
+    sales = df.groupby(GROUP_COLUMNS, sort=False)["Units Sold"]
+
+    for lag in (1, 7, 14, 30):
+        df[f"SalesLag{lag}"] = sales.shift(lag)
+
+    for window in (7, 14, 30):
+        df[f"SalesRolling{window}"] = sales.transform(
+            lambda values: values.shift(1).rolling(window).mean()
+        )
+
+    df["DayOfWeek"] = df["Date"].dt.dayofweek
+    df["Month"] = df["Date"].dt.month
+    df["DayOfYearSin"] = np.sin(2 * np.pi * df["Date"].dt.dayofyear / 365.25)
+    df["DayOfYearCos"] = np.cos(2 * np.pi * df["Date"].dt.dayofyear / 365.25)
+    df["IsWeekend"] = (df["DayOfWeek"] >= 5).astype(int)
+
+    return df.dropna(subset=FEATURES + [TARGET]).reset_index(drop=True)
+
+
+def validate_feature_columns(df: pd.DataFrame) -> None:
+    missing = [column for column in FEATURES if column not in df.columns]
+    if missing:
+        raise ValueError(f"Missing feature columns: {', '.join(missing)}")
+
+    leaked = [column for column in EXCLUDED_FEATURES if column in FEATURES]
+    if leaked:
+        raise ValueError(f"Leakage columns included as features: {', '.join(leaked)}")
+
+
 def main() -> None:
     df = load_target_data()
     eligible = filter_large_stockroom_stores(df)
+    featured = add_historical_features(eligible)
+    validate_feature_columns(featured)
 
     print("14-day large-store demand model")
     print(f"Dataset path: {DATA_PATH}")
@@ -72,6 +160,8 @@ def main() -> None:
         "Date range: "
         f"{eligible['Date'].min().date()} to {eligible['Date'].max().date()}"
     )
+    print(f"Rows after historical features: {len(featured):,}")
+    print("Excluded features:", ", ".join(EXCLUDED_FEATURES))
 
 
 if __name__ == "__main__":
