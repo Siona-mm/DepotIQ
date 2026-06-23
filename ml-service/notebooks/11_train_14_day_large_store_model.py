@@ -198,6 +198,82 @@ def build_model_pipeline() -> Pipeline:
         ]
     )
 
+
+def analyze_prediction_errors(
+    test: pd.DataFrame,
+    baseline_predictions: np.ndarray,
+    model_predictions: np.ndarray,
+) -> pd.DataFrame:
+    errors = test[
+        [
+            "Date",
+            "Store ID",
+            "Product ID",
+            "Product Name",
+            "Category",
+            "Store Type",
+            TARGET,
+        ]
+    ].copy()
+    errors["BaselinePrediction"] = baseline_predictions
+    errors["ModelPrediction"] = model_predictions
+    errors["ModelError"] = errors["ModelPrediction"] - errors[TARGET]
+    errors["ModelAbsoluteError"] = errors["ModelError"].abs()
+
+    print("\nCommon prediction errors")
+    print("Largest under-predictions:")
+    under = errors.sort_values("ModelError").head(5)
+    print(
+        under[
+            [
+                "Date",
+                "Store ID",
+                "Product ID",
+                "Category",
+                TARGET,
+                "ModelPrediction",
+                "ModelError",
+            ]
+        ].to_string(index=False)
+    )
+
+    print("\nLargest over-predictions:")
+    over = errors.sort_values("ModelError", ascending=False).head(5)
+    print(
+        over[
+            [
+                "Date",
+                "Store ID",
+                "Product ID",
+                "Category",
+                TARGET,
+                "ModelPrediction",
+                "ModelError",
+            ]
+        ].to_string(index=False)
+    )
+
+    print("\nMean absolute error by category:")
+    print(
+        errors.groupby("Category")["ModelAbsoluteError"]
+        .mean()
+        .sort_values(ascending=False)
+        .head(10)
+        .round(2)
+        .to_string()
+    )
+
+    print("\nMean absolute error by store type:")
+    print(
+        errors.groupby("Store Type")["ModelAbsoluteError"]
+        .mean()
+        .sort_values(ascending=False)
+        .round(2)
+        .to_string()
+    )
+
+    return errors
+
     return Pipeline(
         steps=[
             ("preprocessor", preprocessor),
@@ -272,6 +348,8 @@ def main() -> None:
 
     print(f"MAE improvement over baseline: {improvement:.1f}%")
     print(f"Training time: {training_seconds:.1f} seconds")
+
+    analyze_prediction_errors(test, baseline_predictions, model_predictions)
 
 
 if __name__ == "__main__":
