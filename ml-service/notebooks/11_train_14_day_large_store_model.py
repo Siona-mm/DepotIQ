@@ -1,10 +1,15 @@
 """Train a leakage-safe 14-day demand model for large stores with stockrooms."""
 
 from pathlib import Path
+from time import perf_counter
 
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder
 
 
 DATA_PATH = (
@@ -181,6 +186,36 @@ def predict_store_product_baseline(train: pd.DataFrame, test: pd.DataFrame) -> n
     )
 
 
+def build_model_pipeline() -> Pipeline:
+    preprocessor = ColumnTransformer(
+        transformers=[
+            (
+                "categories",
+                OneHotEncoder(handle_unknown="ignore", sparse_output=False),
+                CATEGORICAL_FEATURES,
+            ),
+            ("numbers", "passthrough", NUMERIC_FEATURES),
+        ]
+    )
+
+    return Pipeline(
+        steps=[
+            ("preprocessor", preprocessor),
+            (
+                "model",
+                HistGradientBoostingRegressor(
+                    learning_rate=0.06,
+                    max_iter=300,
+                    max_leaf_nodes=31,
+                    min_samples_leaf=30,
+                    l2_regularization=1.0,
+                    random_state=42,
+                ),
+            ),
+        ]
+    )
+
+
 def main() -> None:
     df = load_target_data()
     eligible = filter_large_stockroom_stores(df)
@@ -211,7 +246,32 @@ def main() -> None:
     print("Excluded features:", ", ".join(EXCLUDED_FEATURES))
 
     baseline_predictions = predict_store_product_baseline(train, test)
-    evaluate("Store-product 14-day baseline", test[TARGET], baseline_predictions)
+    baseline_metrics = evaluate(
+        "Store-product 14-day baseline",
+        test[TARGET],
+        baseline_predictions,
+    )
+
+    pipeline = build_model_pipeline()
+    print("\nTraining 14-day large-store demand model...")
+    started = perf_counter()
+    pipeline.fit(train[FEATURES], train[TARGET])
+    training_seconds = perf_counter() - started
+
+    model_predictions = np.maximum(0, pipeline.predict(test[FEATURES]))
+    model_metrics = evaluate(
+        "Hist Gradient Boosting 14-day model",
+        test[TARGET],
+        model_predictions,
+    )
+    improvement = (
+        (baseline_metrics["mae"] - model_metrics["mae"])
+        / baseline_metrics["mae"]
+        * 100
+    )
+
+    print(f"MAE improvement over baseline: {improvement:.1f}%")
+    print(f"Training time: {training_seconds:.1f} seconds")
 
 
 if __name__ == "__main__":
