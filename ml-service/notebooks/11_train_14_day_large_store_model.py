@@ -2,10 +2,10 @@
 
 from pathlib import Path
 from time import perf_counter
-
 import joblib
 import numpy as np
 import pandas as pd
+from pandas import DataFrame, Series
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
@@ -94,7 +94,7 @@ EXCLUDED_FEATURES = [
 ]
 
 
-def load_target_data() -> pd.DataFrame:
+def load_target_data() -> DataFrame:
     if not DATA_PATH.exists():
         raise FileNotFoundError(
             f"Missing processed dataset at {DATA_PATH}. "
@@ -113,7 +113,7 @@ def load_target_data() -> pd.DataFrame:
     return complete
 
 
-def filter_large_stockroom_stores(df: pd.DataFrame) -> pd.DataFrame:
+def filter_large_stockroom_stores(df: DataFrame) -> DataFrame:
     required_columns = ["Store Type", "Has Warehouse", "Preferred Horizon Days"]
     missing = [column for column in required_columns if column not in df.columns]
     if missing:
@@ -128,10 +128,10 @@ def filter_large_stockroom_stores(df: pd.DataFrame) -> pd.DataFrame:
     if eligible.empty:
         raise ValueError("No eligible large stores with stockrooms were found.")
 
-    return eligible.reset_index(drop=True)
+    return DataFrame(eligible.reset_index(drop=True))
 
 
-def add_historical_features(df: pd.DataFrame) -> pd.DataFrame:
+def add_historical_features(df: DataFrame) -> DataFrame:
     df = df.sort_values([*GROUP_COLUMNS, "Date"]).copy()
     sales = df.groupby(GROUP_COLUMNS, sort=False)["Units Sold"]
 
@@ -149,10 +149,10 @@ def add_historical_features(df: pd.DataFrame) -> pd.DataFrame:
     df["DayOfYearCos"] = np.cos(2 * np.pi * df["Date"].dt.dayofyear / 365.25)
     df["IsWeekend"] = (df["DayOfWeek"] >= 5).astype(int)
 
-    return df.dropna(subset=FEATURES + [TARGET]).reset_index(drop=True)
+    return DataFrame(df.dropna(subset=FEATURES + [TARGET]).reset_index(drop=True))
 
 
-def validate_feature_columns(df: pd.DataFrame) -> None:
+def validate_feature_columns(df: DataFrame) -> None:
     missing = [column for column in FEATURES if column not in df.columns]
     if missing:
         raise ValueError(f"Missing feature columns: {', '.join(missing)}")
@@ -162,7 +162,7 @@ def validate_feature_columns(df: pd.DataFrame) -> None:
         raise ValueError(f"Leakage columns included as features: {', '.join(leaked)}")
 
 
-def split_future_dates(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd.Timestamp, pd.Timestamp]:
+def split_future_dates(df: DataFrame) -> tuple[DataFrame, DataFrame, pd.Timestamp, pd.Timestamp]:
     test_start = df["Date"].max() - pd.Timedelta(days=TEST_DAYS - 1)
     train_cutoff = test_start - pd.Timedelta(days=HORIZON_DAYS)
     train = df[df["Date"] < train_cutoff].copy()
@@ -174,7 +174,7 @@ def split_future_dates(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame, pd
     return train, test, test_start, train_cutoff
 
 
-def evaluate(name: str, actual: pd.Series, predicted: np.ndarray) -> dict[str, float]:
+def evaluate(name: str, actual: Series, predicted: np.ndarray) -> dict[str, float]:
     mae = mean_absolute_error(actual, predicted)
     metrics = {
         "mae": float(mae),
@@ -191,7 +191,7 @@ def evaluate(name: str, actual: pd.Series, predicted: np.ndarray) -> dict[str, f
     return metrics
 
 
-def predict_store_product_baseline(train: pd.DataFrame, test: pd.DataFrame) -> np.ndarray:
+def predict_store_product_baseline(train: DataFrame, test: DataFrame) -> np.ndarray:
     global_mean = train[TARGET].mean()
     series_means = train.groupby(GROUP_COLUMNS)[TARGET].mean()
     return np.array(
@@ -233,10 +233,10 @@ def build_model_pipeline() -> Pipeline:
 
 
 def analyze_prediction_errors(
-    test: pd.DataFrame,
+    test: DataFrame,
     baseline_predictions: np.ndarray,
     model_predictions: np.ndarray,
-) -> pd.DataFrame:
+) -> DataFrame:
     errors = test[
         [
             "Date",
@@ -255,7 +255,7 @@ def analyze_prediction_errors(
 
     print("\nCommon prediction errors")
     print("Largest under-predictions:")
-    under = errors.sort_values("ModelError").head(5)
+    under = errors.sort_values(by="ModelError").head(5)
     print(
         under[
             [
@@ -271,7 +271,7 @@ def analyze_prediction_errors(
     )
 
     print("\nLargest over-predictions:")
-    over = errors.sort_values("ModelError", ascending=False).head(5)
+    over = errors.sort_values(by="ModelError", ascending=False).head(5)
     print(
         over[
             [
@@ -305,12 +305,12 @@ def analyze_prediction_errors(
         .to_string()
     )
 
-    return errors
+    return DataFrame(errors)
 
 
 def save_outputs(
     pipeline: Pipeline,
-    errors: pd.DataFrame,
+    errors: DataFrame,
     model_metrics: dict[str, float],
     baseline_metrics: dict[str, float],
     test_start: pd.Timestamp,
