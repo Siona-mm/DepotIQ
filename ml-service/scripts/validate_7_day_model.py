@@ -1,6 +1,7 @@
 """Validate the saved 7-day demand model artifact."""
 
 from pathlib import Path
+import sys
 import warnings
 
 import joblib
@@ -25,7 +26,7 @@ LEAKAGE_FEATURES = {
 }
 
 
-def main() -> None:
+def load_model_artifact() -> dict:
     if not MODEL_PATH.exists():
         raise FileNotFoundError(
             f"Missing model artifact at {MODEL_PATH}. "
@@ -35,7 +36,7 @@ def main() -> None:
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings("error", category=InconsistentVersionWarning)
-            artifact = joblib.load(MODEL_PATH)
+            return joblib.load(MODEL_PATH)
     except InconsistentVersionWarning as exc:
         raise RuntimeError(
             "The saved model was created with a different scikit-learn version. "
@@ -48,6 +49,15 @@ def main() -> None:
             "Retrain it with ml-service/notebooks/12_train_7_day_demand_model.py "
             "using this virtualenv, then run this validator again."
         ) from exc
+
+
+def main() -> int:
+    try:
+        artifact = load_model_artifact()
+    except (FileNotFoundError, RuntimeError) as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        return 1
+
     leakage_features = sorted(set(artifact["features"]) & LEAKAGE_FEATURES)
 
     print("model path:", MODEL_PATH)
@@ -56,7 +66,8 @@ def main() -> None:
     print("model MAE:", round(artifact["model_metrics"]["mae"], 2))
     print("baseline MAE:", round(artifact["baseline_metrics"]["mae"], 2))
     print("leakage features:", leakage_features)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

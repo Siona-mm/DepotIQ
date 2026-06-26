@@ -56,9 +56,15 @@ echo "Unzipping $(basename "$ZIP_PATH") into data/raw/"
 unzip -o "$ZIP_PATH" -d "$RAW_DIR"
 
 if [[ ! -f "$EXPECTED_CSV" ]]; then
-  mapfile -t csv_files < <(find "$RAW_DIR" -maxdepth 1 -type f -name "*.csv")
-  if [[ "${#csv_files[@]}" -eq 1 ]]; then
-    mv "${csv_files[0]}" "$EXPECTED_CSV"
+  csv_count=0
+  csv_candidate=""
+  while IFS= read -r csv_file; do
+    csv_count=$((csv_count + 1))
+    csv_candidate="$csv_file"
+  done < <(find "$RAW_DIR" -maxdepth 1 -type f -name "*.csv")
+
+  if [[ "$csv_count" -eq 1 ]]; then
+    mv "$csv_candidate" "$EXPECTED_CSV"
   fi
 fi
 
