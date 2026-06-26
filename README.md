@@ -21,18 +21,103 @@ It helps a central depot predict store-level product demand, track depot invento
 - `docs/`: project and API documentation
 - `reports/`: market research and presentation material
 
-## Dataset
+## Datasets
 
-DepotIQ uses the **Retail Store Inventory Forecasting Dataset** from Kaggle.
+DepotIQ keeps two dataset paths:
+
+- The original Kaggle dataset in `data/raw/` for research and leakage investigation.
+- The generated synthetic dataset in `data/synthetic/` for the final forecasting models.
+
+The original Kaggle experiment is documented because it helped reveal data
+leakage and weak time-series signal in the source data. The current leakage-safe
+models, including the 7-day demand model, use the reproducible synthetic dataset.
+
+Generated datasets and trained model artifacts are **not committed to GitHub**
+because they can be recreated locally. The repo only keeps the folder structure
+with `.gitkeep` files.
+
+### Synthetic Dataset For Model Training
+
+The synthetic dataset contains 100,000 rows, 10 stores, 25 products, and 400
+days. It includes prices, promotions, weather, seasonality, inventory,
+warehouses, delivery times, and stockouts.
+
+Generate it locally from the repo root:
+
+```bash
+cd ml-service
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python scripts/generate_synthetic_retail_data.py
+```
+
+Then create the leakage-safe multi-day targets:
+
+```bash
+python notebooks/08_create_multiday_targets.py
+```
+
+Train the 7-day demand model from the same `ml-service` directory:
+
+```bash
+python notebooks/12_train_7_day_demand_model.py
+```
+
+This saves the local model artifact here:
+
+```text
+ml-service/models/demand_model_7_day.joblib
+```
+
+### Original Kaggle Dataset For Research
 
 - **Dataset name:** Retail Store Inventory Forecasting Dataset
 - **Source:** Kaggle
 - **License:** CC0 Public Domain
 - **URL:** https://www.kaggle.com/datasets/anirudhchauhan/retail-store-inventory-forecasting-dataset/data
 
-The dataset is used for demand forecasting and inventory/shipment recommendation modeling.
+This dataset is kept for the original exploration and leakage investigation. It
+is not used for the final leakage-safe forecasting models.
 
-Raw dataset files are **not committed to GitHub** because data files can be large and should stay local. The repo only keeps the folder structure with `.gitkeep` files.
+#### Option 1: Download With The Helper Script
+
+If you have a Kaggle account, you can use the Kaggle CLI and the local helper
+script to download and unzip the dataset automatically.
+
+Install the Kaggle CLI:
+
+```bash
+python -m pip install kaggle
+```
+
+Authenticate with Kaggle by setting environment variables:
+
+```bash
+export KAGGLE_USERNAME="your_kaggle_username"
+export KAGGLE_KEY="your_kaggle_api_key"
+```
+
+You can place those same variables in a local `.env` file at the repo root if
+you prefer. The `.env` file is ignored by Git.
+
+Then run the downloader from the repo root:
+
+```bash
+./ml-service/scripts/download_retail_dataset.sh
+```
+
+The script downloads the dataset into `data/raw/`, unzips it, and checks that
+this file exists:
+
+```text
+data/raw/retail_store_inventory.csv
+```
+
+You can also authenticate with Kaggle by placing `kaggle.json` at
+`~/.kaggle/kaggle.json` instead of setting environment variables.
+
+#### Option 2: Download Manually
 
 Download the dataset from Kaggle, then place the CSV here:
 
