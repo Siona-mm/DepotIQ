@@ -107,3 +107,57 @@ ml-service/models/demand_model_7_day.joblib
 ml-service/models/demand_model_7_day_metrics.csv
 ml-service/models/demand_model_7_day_prediction_errors.csv
 ```
+
+## Notebook 13: 30-Day Large-Store Demand Model
+
+`13_train_30_day_demand_model.py` trains a leakage-safe monthly model for large
+stores with stockrooms, extending the 14-day approach to a longer planning
+horizon.
+
+The model uses:
+
+- Target: `DemandNext30Days`
+- Store scope: `Large` and `Warehouse Store`
+- Stockroom requirement: `Has Warehouse = 1`
+- Planning requirement: `Preferred Horizon Days >= 30`
+- Test method: unseen future dates
+- Baseline: average `DemandNext30Days` by store-product pair
+
+The script excludes leakage-prone operational and target columns:
+
+- `Demand Forecast`
+- `Units Ordered`
+- `Incoming Units`
+- `True Demand`
+- `Stockout Units`
+- `DemandNext3Days`
+- `DemandNext7Days`
+- `DemandNext14Days`
+- `DemandNext30Days`
+
+The model features include store/product/category fields, warehouse capacity,
+lead time, price, cost, promotion, weather, seasonality, date features, lagged
+sales, and rolling sales averages.
+
+The training split reserves the latest 60 days for testing. The training cutoff
+is purged by 30 days before the test period so that no training label includes
+sales from the unseen future test dates.
+
+The latest recorded run produced:
+
+- store-product 30-day baseline MAE: 149.93
+- model MAE: 105.73
+- MAE improvement over baseline: 29.5%
+- training time: 5.18 seconds
+
+Only two stores (`S004`, `S008`) and 25 products qualify for this horizon in
+the synthetic dataset, so results are concentrated on a small number of
+high-volume store-product pairs.
+
+Outputs are saved to:
+
+```text
+ml-service/models/demand_model_30_day.joblib
+ml-service/models/demand_model_30_day_metrics.csv
+ml-service/models/demand_model_30_day_prediction_errors.csv
+```
