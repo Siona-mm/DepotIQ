@@ -1,0 +1,251 @@
+Date,Store ID,Store Type,Product ID,Product Name,Category,Horizon Days,Inventory Level,Incoming Units,Storage Capacity,Delivery Lead Time,Predicted Demand,Safety Stock,Required Stock,Available Stock,Remaining Store Capacity,Recommended Shipment,Priority
+2024-01-05,S008,Warehouse Store,P0011,Mosaic Frozen Meal 11,Groceries,30,107,107,15500,6,2533,380,2913,214,15286,2699,Urgent
+2024-01-05,S004,Warehouse Store,P0011,Mosaic Frozen Meal 11,Groceries,30,218,84,15500,6,2577,387,2964,302,15198,2662,Urgent
+2024-01-05,S004,Warehouse Store,P0002,Everline Tea 2,Beverages,30,176,109,15500,6,2182,327,2509,285,15215,2224,Urgent
+2024-01-05,S008,Warehouse Store,P0002,Everline Tea 2,Beverages,30,137,69,15500,6,2015,302,2317,206,15294,2111,Urgent
+2024-01-05,S004,Warehouse Store,P0001,Oak & Co Bread 1,Groceries,30,249,18,15500,6,1728,259,1987,267,15233,1720,Urgent
+2024-01-05,S008,Warehouse Store,P0021,Northfield Frozen Meal 21,Groceries,30,336,41,15500,6,1752,263,2015,377,15123,1638,Urgent
+2024-01-05,S008,Warehouse Store,P0012,Creston Energy Drink 12,Beverages,30,286,41,15500,6,1654,248,1902,327,15173,1575,Urgent
+2024-01-05,S008,Warehouse Store,P0017,Mosaic Shampoo 17,Personal Care,30,271,25,15500,6,1509,226,1735,296,15204,1439,Urgent
+2024-01-05,S003,Large,P0011,Mosaic Frozen Meal 11,Groceries,14,72,72,9000,4,954,143,1097,144,8856,953,Urgent
+2024-01-05,S007,Large,P0011,Mosaic Frozen Meal 11,Groceries,14,76,76,9000,4,957,144,1101,152,8848,949,Urgent
+2024-01-05,S007,Large,P0002,Everline Tea 2,Beverages,14,93,73,9000,4,923,138,1061,166,8834,895,Urgent
+2024-01-05,S003,Large,P0002,Everline Tea 2,Beverages,14,66,66,9000,4,883,132,1015,132,8868,883,Urgent
+2024-01-05,S003,Large,P0001,Oak & Co Bread 1,Groceries,14,185,61,9000,4,657,99,756,246,8754,510,Urgent
+2024-01-05,S007,Large,P0001,Oak & Co Bread 1,Groceries,14,181,59,9000,4,650,98,748,240,8760,508,Urgent
+2024-01-05,S003,Large,P0021,Northfield Frozen Meal 21,Groceries,14,149,38,9000,4,524,79,603,187,8813,416,Urgent
+2024-01-05,S002,Medium,P0011,Mosaic Frozen Meal 11,Groceries,7,100,38,5250,2,396,59,455,138,5112,317,Urgent
+2024-01-05,S010,Medium,P0011,Mosaic Frozen Meal 11,Groceries,7,78,55,5250,2,376,56,432,133,5117,299,Urgent
+2024-01-05,S009,Small,P0011,Mosaic Frozen Meal 11,Groceries,3,46,28,3250,1,138,21,159,74,3176,85,Urgent
+2024-01-05,S005,Small,P0023,DailyChoice T-Shirt 23,Clothing,3,7,4,3250,1,33,5,38,11,3239,27,Urgent
+2024-01-05,S005,Small,P0005,Summit Bookshelf 5,Furniture,3,0,0,3250,1,6,1,7,0,3250,7,Urgent
+2024-01-05,S001,Small,P0005,Summit Bookshelf 5,Furniture,3,1,1,3250,1,6,1,7,2,3248,5,Urgent
+2024-01-05,S008,Warehouse Store,P0001,Oak & Co Bread 1,Groceries,30,320,59,15500,6,1481,222,1703,379,15121,1324,High
+2024-01-05,S004,Warehouse Store,P0017,Mosaic Shampoo 17,Personal Care,30,358,101,15500,6,1441,216,1657,459,15041,1198,High
+2024-01-05,S004,Warehouse Store,P0012,Creston Energy Drink 12,Beverages,30,398,45,15500,6,1474,221,1695,443,15057,1252,Normal
+2024-01-05,S004,Warehouse Store,P0021,Northfield Frozen Meal 21,Groceries,30,326,37,15500,6,1159,174,1333,363,15137,970,Normal
+2024-01-05,S008,Warehouse Store,P0018,Everline Detergent 18,Household,30,389,44,15500,6,1166,175,1341,433,15067,908,Normal
+2024-01-05,S004,Warehouse Store,P0018,Everline Detergent 18,Household,30,411,22,15500,6,1148,172,1320,433,15067,887,Normal
+2024-01-05,S008,Warehouse Store,P0008,Northfield Storage Box 8,Household,30,371,32,15500,6,1041,156,1197,403,15097,794,Normal
+2024-01-05,S004,Warehouse Store,P0008,Northfield Storage Box 8,Household,30,378,52,15500,6,1038,156,1194,430,15070,764,Normal
+2024-01-05,S008,Warehouse Store,P0020,Everline Marker Set 20,Office Supplies,30,437,33,15500,6,925,139,1064,470,15030,594,Normal
+2024-01-05,S008,Warehouse Store,P0022,Everline Orange Juice 22,Beverages,30,489,17,15500,6,896,134,1030,506,14994,524,Normal
+2024-01-05,S004,Warehouse Store,P0020,Everline Marker Set 20,Office Supplies,30,442,23,15500,6,859,129,988,465,15035,523,Normal
+2024-01-05,S004,Warehouse Store,P0014,Nova Headphones 14,Electronics,30,422,25,15500,6,811,122,933,447,15053,486,Normal
+2024-01-05,S003,Large,P0012,Creston Energy Drink 12,Beverages,14,198,46,9000,4,606,91,697,244,8756,453,Normal
+2024-01-05,S008,Warehouse Store,P0014,Nova Headphones 14,Electronics,30,486,21,15500,6,813,122,935,507,14993,428,Normal
+2024-01-05,S004,Warehouse Store,P0022,Everline Orange Juice 22,Beverages,30,480,9,15500,6,783,117,900,489,15011,411,Normal
+2024-01-05,S008,Warehouse Store,P0009,Creston Resistance Band 9,Sports,30,486,8,15500,6,786,118,904,494,15006,410,Normal
+2024-01-05,S004,Warehouse Store,P0009,Creston Resistance Band 9,Sports,30,469,24,15500,6,772,116,888,493,15007,395,Normal
+2024-01-05,S007,Large,P0021,Northfield Frozen Meal 21,Groceries,14,174,52,9000,4,536,80,616,226,8774,390,Normal
+2024-01-05,S007,Large,P0012,Creston Energy Drink 12,Beverages,14,267,42,9000,4,600,90,690,309,8691,381,Normal
+2024-01-05,S007,Large,P0017,Mosaic Shampoo 17,Personal Care,14,213,42,9000,4,551,83,634,255,8745,379,Normal
+2024-01-05,S003,Large,P0017,Mosaic Shampoo 17,Personal Care,14,238,37,9000,4,555,83,638,275,8725,363,Normal
+2024-01-05,S006,Medium,P0011,Mosaic Frozen Meal 11,Groceries,7,130,34,5250,2,423,63,486,164,5086,322,Normal
+2024-01-05,S008,Warehouse Store,P0003,Oak & Co T-Shirt 3,Clothing,30,467,14,15500,6,662,99,761,481,15019,280,Normal
+2024-01-05,S006,Medium,P0002,Everline Tea 2,Beverages,7,109,61,5250,2,363,54,417,170,5080,247,Normal
+2024-01-05,S003,Large,P0018,Everline Detergent 18,Household,14,227,54,9000,4,456,68,524,281,8719,243,Normal
+2024-01-05,S003,Large,P0008,Northfield Storage Box 8,Household,14,215,17,9000,4,404,61,465,232,8768,233,Normal
+2024-01-05,S004,Warehouse Store,P0003,Oak & Co T-Shirt 3,Clothing,30,484,48,15500,6,651,98,749,532,14968,217,Normal
+2024-01-05,S007,Large,P0018,Everline Detergent 18,Household,14,243,37,9000,4,429,64,493,280,8720,213,Normal
+2024-01-05,S004,Warehouse Store,P0010,Creston Stapler 10,Office Supplies,30,498,17,15500,6,624,94,718,515,14985,203,Normal
+2024-01-05,S002,Medium,P0002,Everline Tea 2,Beverages,7,112,45,5250,2,309,46,355,157,5093,198,Normal
+2024-01-05,S004,Warehouse Store,P0004,Nova Smart Speaker 4,Electronics,30,489,4,15500,6,601,90,691,493,15007,198,Normal
+2024-01-05,S008,Warehouse Store,P0004,Nova Smart Speaker 4,Electronics,30,493,0,15500,6,598,90,688,493,15007,195,Normal
+2024-01-05,S010,Medium,P0002,Everline Tea 2,Beverages,7,123,57,5250,2,322,48,370,180,5070,190,Normal
+2024-01-05,S007,Large,P0008,Northfield Storage Box 8,Household,14,253,23,9000,4,404,61,465,276,8724,189,Normal
+2024-01-05,S006,Medium,P0012,Creston Energy Drink 12,Beverages,7,97,38,5250,2,277,42,319,135,5115,184,Normal
+2024-01-05,S003,Large,P0020,Everline Marker Set 20,Office Supplies,14,241,27,9000,4,380,57,437,268,8732,169,Normal
+2024-01-05,S006,Medium,P0021,Northfield Frozen Meal 21,Groceries,7,108,22,5250,2,253,38,291,130,5120,161,Normal
+2024-01-05,S008,Warehouse Store,P0010,Creston Stapler 10,Office Supplies,30,511,23,15500,6,604,91,695,534,14966,161,Normal
+2024-01-05,S007,Large,P0020,Everline Marker Set 20,Office Supplies,14,246,35,9000,4,382,57,439,281,8719,158,Normal
+2024-01-05,S008,Warehouse Store,P0024,Creston Headphones 24,Electronics,30,259,28,15500,6,376,56,432,287,15213,145,Normal
+2024-01-05,S004,Warehouse Store,P0007,Oak & Co Face Cream 7,Personal Care,30,266,12,15500,6,362,54,416,278,15222,138,Normal
+2024-01-05,S002,Medium,P0001,Oak & Co Bread 1,Groceries,7,119,33,5250,2,251,38,289,152,5098,137,Normal
+2024-01-05,S006,Medium,P0001,Oak & Co Bread 1,Groceries,7,148,25,5250,2,255,38,293,173,5077,120,Normal
+2024-01-05,S007,Large,P0014,Nova Headphones 14,Electronics,14,255,35,9000,4,349,52,401,290,8710,111,Normal
+2024-01-05,S002,Medium,P0021,Northfield Frozen Meal 21,Groceries,7,127,24,5250,2,226,34,260,151,5099,109,Normal
+2024-01-05,S010,Medium,P0001,Oak & Co Bread 1,Groceries,7,136,53,5250,2,257,39,296,189,5061,107,Normal
+2024-01-05,S003,Large,P0009,Creston Resistance Band 9,Sports,14,266,23,9000,4,344,52,396,289,8711,107,Normal
+2024-01-05,S007,Large,P0004,Nova Smart Speaker 4,Electronics,14,163,22,9000,4,253,38,291,185,8815,106,Normal
+2024-01-05,S008,Warehouse Store,P0007,Oak & Co Face Cream 7,Personal Care,30,304,21,15500,6,375,56,431,325,15175,106,Normal
+2024-01-05,S008,Warehouse Store,P0023,DailyChoice T-Shirt 23,Clothing,30,460,3,15500,6,495,74,569,463,15037,106,Normal
+2024-01-05,S007,Large,P0009,Creston Resistance Band 9,Sports,14,280,27,9000,4,358,54,412,307,8693,105,Normal
+2024-01-05,S003,Large,P0004,Nova Smart Speaker 4,Electronics,14,152,22,9000,4,240,36,276,174,8826,102,Normal
+2024-01-05,S007,Large,P0023,DailyChoice T-Shirt 23,Clothing,14,177,20,9000,4,250,38,288,197,8803,91,Normal
+2024-01-05,S008,Warehouse Store,P0015,Aster Bedside Table 15,Furniture,30,294,1,15500,6,336,50,386,295,15205,91,Normal
+2024-01-05,S003,Large,P0010,Creston Stapler 10,Office Supplies,14,210,0,9000,4,261,39,300,210,8790,90,Normal
+2024-01-05,S007,Large,P0022,Everline Orange Juice 22,Beverages,14,256,15,9000,4,311,47,358,271,8729,87,Normal
+2024-01-05,S004,Warehouse Store,P0023,DailyChoice T-Shirt 23,Clothing,30,513,15,15500,6,535,80,615,528,14972,87,Normal
+2024-01-05,S008,Warehouse Store,P0019,DailyChoice Football 19,Sports,30,325,7,15500,6,360,54,414,332,15168,82,Normal
+2024-01-05,S003,Large,P0022,Everline Orange Juice 22,Beverages,14,260,30,9000,4,322,48,370,290,8710,80,Normal
+2024-01-05,S006,Medium,P0018,Everline Detergent 18,Household,7,153,19,5250,2,217,33,250,172,5078,78,Normal
+2024-01-05,S004,Warehouse Store,P0013,Nova Jeans 13,Clothing,30,427,27,15500,6,458,69,527,454,15046,73,Normal
+2024-01-05,S007,Large,P0010,Creston Stapler 10,Office Supplies,14,218,16,9000,4,263,39,302,234,8766,68,Normal
+2024-01-05,S003,Large,P0014,Nova Headphones 14,Electronics,14,252,16,9000,4,290,44,334,268,8732,66,Normal
+2024-01-05,S010,Medium,P0021,Northfield Frozen Meal 21,Groceries,7,150,26,5250,2,209,31,240,176,5074,64,Normal
+2024-01-05,S002,Medium,P0012,Creston Energy Drink 12,Beverages,7,153,31,5250,2,215,32,247,184,5066,63,Normal
+2024-01-05,S003,Large,P0024,Creston Headphones 24,Electronics,14,91,4,9000,4,136,20,156,95,8905,61,Normal
+2024-01-05,S004,Warehouse Store,P0015,Aster Bedside Table 15,Furniture,30,224,0,15500,6,246,37,283,224,15276,59,Normal
+2024-01-05,S003,Large,P0019,DailyChoice Football 19,Sports,14,145,5,9000,4,181,27,208,150,8850,58,Normal
+2024-01-05,S010,Medium,P0012,Creston Energy Drink 12,Beverages,7,151,39,5250,2,215,32,247,190,5060,57,Normal
+2024-01-05,S004,Warehouse Store,P0006,Everline Model Car 6,Toys,30,161,0,15500,6,187,28,215,161,15339,54,Normal
+2024-01-05,S007,Large,P0003,Oak & Co T-Shirt 3,Clothing,14,249,30,9000,4,287,43,330,279,8721,51,Normal
+2024-01-05,S006,Medium,P0014,Nova Headphones 14,Electronics,7,90,3,5250,2,122,18,140,93,5157,47,Normal
+2024-01-05,S002,Medium,P0017,Mosaic Shampoo 17,Personal Care,7,153,19,5250,2,189,28,217,172,5078,45,Normal
+2024-01-05,S008,Warehouse Store,P0013,Nova Jeans 13,Clothing,30,463,22,15500,6,461,69,530,485,15015,45,Normal
+2024-01-05,S003,Large,P0015,Aster Bedside Table 15,Furniture,14,75,11,9000,4,113,17,130,86,8914,44,Normal
+2024-01-05,S006,Medium,P0004,Nova Smart Speaker 4,Electronics,7,50,4,5250,2,83,12,95,54,5196,41,Normal
+2024-01-05,S002,Medium,P0018,Everline Detergent 18,Household,7,162,15,5250,2,189,28,217,177,5073,40,Normal
+2024-01-05,S007,Large,P0015,Aster Bedside Table 15,Furniture,14,87,3,9000,4,113,17,130,90,8910,40,Normal
+2024-01-05,S004,Warehouse Store,P0024,Creston Headphones 24,Electronics,30,316,21,15500,6,324,49,373,337,15163,36,Normal
+2024-01-05,S006,Medium,P0008,Northfield Storage Box 8,Household,7,175,26,5250,2,204,31,235,201,5049,34,Normal
+2024-01-05,S010,Medium,P0008,Northfield Storage Box 8,Household,7,134,15,5250,2,159,24,183,149,5101,34,Normal
+2024-01-05,S001,Small,P0011,Mosaic Frozen Meal 11,Groceries,3,76,76,3250,1,160,24,184,152,3098,32,Normal
+2024-01-05,S007,Large,P0019,DailyChoice Football 19,Sports,14,129,15,9000,4,151,23,174,144,8856,30,Normal
+2024-01-05,S008,Warehouse Store,P0006,Everline Model Car 6,Toys,30,183,0,15500,6,185,28,213,183,15317,30,Normal
+2024-01-05,S007,Large,P0007,Oak & Co Face Cream 7,Personal Care,14,134,23,9000,4,162,24,186,157,8843,29,Normal
+2024-01-05,S004,Warehouse Store,P0019,DailyChoice Football 19,Sports,30,375,16,15500,6,364,55,419,391,15109,28,Normal
+2024-01-05,S008,Warehouse Store,P0025,Creston Desk 25,Furniture,30,80,0,15500,6,94,14,108,80,15420,28,Normal
+2024-01-05,S010,Medium,P0009,Creston Resistance Band 9,Sports,7,101,16,5250,2,124,19,143,117,5133,26,Normal
+2024-01-05,S003,Large,P0023,DailyChoice T-Shirt 23,Clothing,14,235,28,9000,4,251,38,289,263,8737,26,Normal
+2024-01-05,S002,Medium,P0019,DailyChoice Football 19,Sports,7,44,1,5250,2,61,9,70,45,5205,25,Normal
+2024-01-05,S006,Medium,P0009,Creston Resistance Band 9,Sports,7,123,21,5250,2,147,22,169,144,5106,25,Normal
+2024-01-05,S010,Medium,P0007,Oak & Co Face Cream 7,Personal Care,7,40,3,5250,2,59,9,68,43,5207,25,Normal
+2024-01-05,S010,Medium,P0003,Oak & Co T-Shirt 3,Clothing,7,81,2,5250,2,93,14,107,83,5167,24,Normal
+2024-01-05,S010,Medium,P0004,Nova Smart Speaker 4,Electronics,7,57,16,5250,2,84,13,97,73,5177,24,Normal
+2024-01-05,S007,Large,P0013,Nova Jeans 13,Clothing,14,158,9,9000,4,165,25,190,167,8833,23,Normal
+2024-01-05,S007,Large,P0024,Creston Headphones 24,Electronics,14,122,24,9000,4,147,22,169,146,8854,23,Normal
+2024-01-05,S004,Warehouse Store,P0016,Summit Puzzle 16,Toys,30,179,0,15500,6,176,26,202,179,15321,23,Normal
+2024-01-05,S010,Medium,P0020,Everline Marker Set 20,Office Supplies,7,131,17,5250,2,148,22,170,148,5102,22,Normal
+2024-01-05,S007,Large,P0016,Summit Puzzle 16,Toys,14,51,7,9000,4,70,10,80,58,8942,22,Normal
+2024-01-05,S009,Small,P0002,Everline Tea 2,Beverages,3,74,24,3250,1,103,15,118,98,3152,20,Normal
+2024-01-05,S002,Medium,P0008,Northfield Storage Box 8,Household,7,161,17,5250,2,172,26,198,178,5072,20,Normal
+2024-01-05,S002,Medium,P0014,Nova Headphones 14,Electronics,7,102,14,5250,2,118,18,136,116,5134,20,Normal
+2024-01-05,S009,Small,P0001,Oak & Co Bread 1,Groceries,3,49,23,3250,1,78,12,90,72,3178,18,Normal
+2024-01-05,S010,Medium,P0024,Creston Headphones 24,Electronics,7,43,8,5250,2,60,9,69,51,5199,18,Normal
+2024-01-05,S003,Large,P0016,Summit Puzzle 16,Toys,14,45,0,9000,4,55,8,63,45,8955,18,Normal
+2024-01-05,S008,Warehouse Store,P0016,Summit Puzzle 16,Toys,30,182,0,15500,6,174,26,200,182,15318,18,Normal
+2024-01-05,S002,Medium,P0009,Creston Resistance Band 9,Sports,7,111,19,5250,2,128,19,147,130,5120,17,Normal
+2024-01-05,S006,Medium,P0010,Creston Stapler 10,Office Supplies,7,106,14,5250,2,119,18,137,120,5130,17,Normal
+2024-01-05,S003,Large,P0006,Everline Model Car 6,Toys,14,51,2,9000,4,61,9,70,53,8947,17,Normal
+2024-01-05,S008,Warehouse Store,P0005,Summit Bookshelf 5,Furniture,30,114,0,15500,6,114,17,131,114,15386,17,Normal
+2024-01-05,S006,Medium,P0020,Everline Marker Set 20,Office Supplies,7,140,35,5250,2,166,25,191,175,5075,16,Normal
+2024-01-05,S010,Medium,P0017,Mosaic Shampoo 17,Personal Care,7,153,56,5250,2,196,29,225,209,5041,16,Normal
+2024-01-05,S007,Large,P0006,Everline Model Car 6,Toys,14,74,9,9000,4,86,13,99,83,8917,16,Normal
+2024-01-05,S005,Small,P0002,Everline Tea 2,Beverages,3,81,34,3250,1,113,17,130,115,3135,15,Normal
+2024-01-05,S007,Large,P0005,Summit Bookshelf 5,Furniture,14,43,0,9000,4,50,8,58,43,8957,15,Normal
+2024-01-05,S006,Medium,P0015,Aster Bedside Table 15,Furniture,7,37,0,5250,2,44,7,51,37,5213,14,Normal
+2024-01-05,S006,Medium,P0023,DailyChoice T-Shirt 23,Clothing,7,79,15,5250,2,94,14,108,94,5156,14,Normal
+2024-01-05,S010,Medium,P0014,Nova Headphones 14,Electronics,7,105,14,5250,2,116,17,133,119,5131,14,Normal
+2024-01-05,S004,Warehouse Store,P0005,Summit Bookshelf 5,Furniture,30,117,0,15500,6,114,17,131,117,15383,14,Normal
+2024-01-05,S006,Medium,P0017,Mosaic Shampoo 17,Personal Care,7,154,62,5250,2,199,30,229,216,5034,13,Normal
+2024-01-05,S003,Large,P0007,Oak & Co Face Cream 7,Personal Care,14,127,28,9000,4,146,22,168,155,8845,13,Normal
+2024-01-05,S010,Medium,P0010,Creston Stapler 10,Office Supplies,7,80,18,5250,2,96,14,110,98,5152,12,Normal
+2024-01-05,S001,Small,P0014,Nova Headphones 14,Electronics,3,34,11,3250,1,49,7,56,45,3205,11,Normal
+2024-01-05,S005,Small,P0009,Creston Resistance Band 9,Sports,3,32,10,3250,1,46,7,53,42,3208,11,Normal
+2024-01-05,S009,Small,P0020,Everline Marker Set 20,Office Supplies,3,20,20,3250,1,44,7,51,40,3210,11,Normal
+2024-01-05,S006,Medium,P0006,Everline Model Car 6,Toys,7,28,6,5250,2,39,6,45,34,5216,11,Normal
+2024-01-05,S010,Medium,P0022,Everline Orange Juice 22,Beverages,7,110,24,5250,2,126,19,145,134,5116,11,Normal
+2024-01-05,S003,Large,P0003,Oak & Co T-Shirt 3,Clothing,14,282,29,9000,4,280,42,322,311,8689,11,Normal
+2024-01-05,S007,Large,P0025,Creston Desk 25,Furniture,14,36,6,9000,4,46,7,53,42,8958,11,Normal
+2024-01-05,S004,Warehouse Store,P0025,Creston Desk 25,Furniture,30,97,12,15500,6,104,16,120,109,15391,11,Normal
+2024-01-05,S005,Small,P0018,Everline Detergent 18,Household,3,35,18,3250,1,55,8,63,53,3197,10,Normal
+2024-01-05,S002,Medium,P0013,Nova Jeans 13,Clothing,7,62,10,5250,2,71,11,82,72,5178,10,Normal
+2024-01-05,S010,Medium,P0023,DailyChoice T-Shirt 23,Clothing,7,79,17,5250,2,92,14,106,96,5154,10,Normal
+2024-01-05,S006,Medium,P0003,Oak & Co T-Shirt 3,Clothing,7,121,22,5250,2,132,20,152,143,5107,9,Normal
+2024-01-05,S002,Medium,P0003,Oak & Co T-Shirt 3,Clothing,7,91,5,5250,2,90,14,104,96,5154,8,Normal
+2024-01-05,S002,Medium,P0015,Aster Bedside Table 15,Furniture,7,30,1,5250,2,34,5,39,31,5219,8,Normal
+2024-01-05,S010,Medium,P0013,Nova Jeans 13,Clothing,7,53,7,5250,2,59,9,68,60,5190,8,Normal
+2024-01-05,S010,Medium,P0016,Summit Puzzle 16,Toys,7,15,2,5250,2,22,3,25,17,5233,8,Normal
+2024-01-05,S010,Medium,P0006,Everline Model Car 6,Toys,7,21,0,5250,2,24,4,28,21,5229,7,Normal
+2024-01-05,S010,Medium,P0019,DailyChoice Football 19,Sports,7,62,3,5250,2,63,9,72,65,5185,7,Normal
+2024-01-05,S003,Large,P0013,Nova Jeans 13,Clothing,14,172,11,9000,4,165,25,190,183,8817,7,Normal
+2024-01-05,S003,Large,P0025,Creston Desk 25,Furniture,14,33,12,9000,4,45,7,52,45,8955,7,Normal
+2024-01-05,S006,Medium,P0013,Nova Jeans 13,Clothing,7,60,11,5250,2,67,10,77,71,5179,6,Normal
+2024-01-05,S001,Small,P0020,Everline Marker Set 20,Office Supplies,3,39,19,3250,1,55,8,63,58,3192,5,Normal
+2024-01-05,S005,Small,P0011,Mosaic Frozen Meal 11,Groceries,3,98,48,3250,1,131,20,151,146,3104,5,Normal
+2024-01-05,S005,Small,P0019,DailyChoice Football 19,Sports,3,15,2,3250,1,19,3,22,17,3233,5,Normal
+2024-01-05,S010,Medium,P0015,Aster Bedside Table 15,Furniture,7,39,5,5250,2,43,6,49,44,5206,5,Normal
+2024-01-05,S009,Small,P0018,Everline Detergent 18,Household,3,41,15,3250,1,52,8,60,56,3194,4,Normal
+2024-01-05,S002,Medium,P0010,Creston Stapler 10,Office Supplies,7,84,10,5250,2,85,13,98,94,5156,4,Normal
+2024-01-05,S002,Medium,P0025,Creston Desk 25,Furniture,7,11,0,5250,2,13,2,15,11,5239,4,Normal
+2024-01-05,S006,Medium,P0016,Summit Puzzle 16,Toys,7,25,5,5250,2,30,4,34,30,5220,4,Normal
+2024-01-05,S006,Medium,P0019,DailyChoice Football 19,Sports,7,53,14,5250,2,62,9,71,67,5183,4,Normal
+2024-01-05,S005,Small,P0001,Oak & Co Bread 1,Groceries,3,67,12,3250,1,71,11,82,79,3171,3,Normal
+2024-01-05,S005,Small,P0013,Nova Jeans 13,Clothing,3,15,2,3250,1,17,3,20,17,3233,3,Normal
+2024-01-05,S001,Small,P0006,Everline Model Car 6,Toys,3,7,4,3250,1,11,2,13,11,3239,2,Normal
+2024-01-05,S001,Small,P0007,Oak & Co Face Cream 7,Personal Care,3,18,4,3250,1,21,3,24,22,3228,2,Normal
+2024-01-05,S001,Small,P0015,Aster Bedside Table 15,Furniture,3,13,3,3250,1,16,2,18,16,3234,2,Normal
+2024-01-05,S001,Small,P0024,Creston Headphones 24,Electronics,3,18,2,3250,1,19,3,22,20,3230,2,Normal
+2024-01-05,S005,Small,P0007,Oak & Co Face Cream 7,Personal Care,3,13,7,3250,1,19,3,22,20,3230,2,Normal
+2024-01-05,S005,Small,P0008,Northfield Storage Box 8,Household,3,46,5,3250,1,46,7,53,51,3199,2,Normal
+2024-01-05,S009,Small,P0005,Summit Bookshelf 5,Furniture,3,4,1,3250,1,6,1,7,5,3245,2,Normal
+2024-01-05,S006,Medium,P0024,Creston Headphones 24,Electronics,7,66,9,5250,2,67,10,77,75,5175,2,Normal
+2024-01-05,S009,Small,P0021,Northfield Frozen Meal 21,Groceries,3,62,9,3250,1,63,9,72,71,3179,1,Normal
+2024-01-05,S006,Medium,P0007,Oak & Co Face Cream 7,Personal Care,7,60,9,5250,2,61,9,70,69,5181,1,Normal
+2024-01-05,S010,Medium,P0025,Creston Desk 25,Furniture,7,16,3,5250,2,17,3,20,19,5231,1,Normal
+2024-01-05,S001,Small,P0001,Oak & Co Bread 1,Groceries,3,79,35,3250,1,99,15,114,114,3136,0,Low
+2024-01-05,S001,Small,P0002,Everline Tea 2,Beverages,3,104,53,3250,1,118,18,136,157,3093,0,Low
+2024-01-05,S001,Small,P0003,Oak & Co T-Shirt 3,Clothing,3,44,10,3250,1,42,6,48,54,3196,0,Low
+2024-01-05,S001,Small,P0004,Nova Smart Speaker 4,Electronics,3,36,14,3250,1,30,4,34,50,3200,0,Low
+2024-01-05,S001,Small,P0008,Northfield Storage Box 8,Household,3,74,20,3250,1,62,9,71,94,3156,0,Low
+2024-01-05,S001,Small,P0009,Creston Resistance Band 9,Sports,3,47,16,3250,1,50,8,58,63,3187,0,Low
+2024-01-05,S001,Small,P0010,Creston Stapler 10,Office Supplies,3,41,21,3250,1,35,5,40,62,3188,0,Low
+2024-01-05,S001,Small,P0012,Creston Energy Drink 12,Beverages,3,97,31,3250,1,82,12,94,128,3122,0,Low
+2024-01-05,S001,Small,P0013,Nova Jeans 13,Clothing,3,29,13,3250,1,27,4,31,42,3208,0,Low
+2024-01-05,S001,Small,P0016,Summit Puzzle 16,Toys,3,11,2,3250,1,9,1,10,13,3237,0,Low
+2024-01-05,S001,Small,P0017,Mosaic Shampoo 17,Personal Care,3,82,23,3250,1,75,11,86,105,3145,0,Low
+2024-01-05,S001,Small,P0018,Everline Detergent 18,Household,3,59,18,3250,1,63,9,72,77,3173,0,Low
+2024-01-05,S001,Small,P0019,DailyChoice Football 19,Sports,3,16,10,3250,1,23,3,26,26,3224,0,Low
+2024-01-05,S001,Small,P0021,Northfield Frozen Meal 21,Groceries,3,74,21,3250,1,81,12,93,95,3155,0,Low
+2024-01-05,S001,Small,P0022,Everline Orange Juice 22,Beverages,3,47,7,3250,1,43,6,49,54,3196,0,Low
+2024-01-05,S001,Small,P0023,DailyChoice T-Shirt 23,Clothing,3,27,12,3250,1,34,5,39,39,3211,0,Low
+2024-01-05,S001,Small,P0025,Creston Desk 25,Furniture,3,6,6,3250,1,5,1,6,12,3238,0,Low
+2024-01-05,S005,Small,P0003,Oak & Co T-Shirt 3,Clothing,3,39,8,3250,1,31,5,36,47,3203,0,Low
+2024-01-05,S005,Small,P0004,Nova Smart Speaker 4,Electronics,3,27,12,3250,1,24,4,28,39,3211,0,Low
+2024-01-05,S005,Small,P0006,Everline Model Car 6,Toys,3,10,0,3250,1,8,1,9,10,3240,0,Low
+2024-01-05,S005,Small,P0010,Creston Stapler 10,Office Supplies,3,23,8,3250,1,24,4,28,31,3219,0,Low
+2024-01-05,S005,Small,P0012,Creston Energy Drink 12,Beverages,3,76,19,3250,1,70,10,80,95,3155,0,Low
+2024-01-05,S005,Small,P0014,Nova Headphones 14,Electronics,3,41,16,3250,1,36,5,41,57,3193,0,Low
+2024-01-05,S005,Small,P0015,Aster Bedside Table 15,Furniture,3,14,1,3250,1,13,2,15,15,3235,0,Low
+2024-01-05,S005,Small,P0016,Summit Puzzle 16,Toys,3,8,1,3250,1,8,1,9,9,3241,0,Low
+2024-01-05,S005,Small,P0017,Mosaic Shampoo 17,Personal Care,3,62,29,3250,1,69,10,79,91,3159,0,Low
+2024-01-05,S005,Small,P0020,Everline Marker Set 20,Office Supplies,3,41,18,3250,1,44,7,51,59,3191,0,Low
+2024-01-05,S005,Small,P0021,Northfield Frozen Meal 21,Groceries,3,67,22,3250,1,67,10,77,89,3161,0,Low
+2024-01-05,S005,Small,P0022,Everline Orange Juice 22,Beverages,3,38,7,3250,1,35,5,40,45,3205,0,Low
+2024-01-05,S005,Small,P0024,Creston Headphones 24,Electronics,3,15,2,3250,1,13,2,15,17,3233,0,Low
+2024-01-05,S005,Small,P0025,Creston Desk 25,Furniture,3,5,3,3250,1,5,1,6,8,3242,0,Low
+2024-01-05,S009,Small,P0003,Oak & Co T-Shirt 3,Clothing,3,43,12,3250,1,38,6,44,55,3195,0,Low
+2024-01-05,S009,Small,P0004,Nova Smart Speaker 4,Electronics,3,29,12,3250,1,25,4,29,41,3209,0,Low
+2024-01-05,S009,Small,P0006,Everline Model Car 6,Toys,3,11,4,3250,1,11,2,13,15,3235,0,Low
+2024-01-05,S009,Small,P0007,Oak & Co Face Cream 7,Personal Care,3,14,9,3250,1,17,3,20,23,3227,0,Low
+2024-01-05,S009,Small,P0008,Northfield Storage Box 8,Household,3,59,15,3250,1,55,8,63,74,3176,0,Low
+2024-01-05,S009,Small,P0009,Creston Resistance Band 9,Sports,3,36,15,3250,1,36,5,41,51,3199,0,Low
+2024-01-05,S009,Small,P0010,Creston Stapler 10,Office Supplies,3,20,11,3250,1,24,4,28,31,3219,0,Low
+2024-01-05,S009,Small,P0012,Creston Energy Drink 12,Beverages,3,86,18,3250,1,82,12,94,104,3146,0,Low
+2024-01-05,S009,Small,P0013,Nova Jeans 13,Clothing,3,26,4,3250,1,22,3,25,30,3220,0,Low
+2024-01-05,S009,Small,P0014,Nova Headphones 14,Electronics,3,34,10,3250,1,38,6,44,44,3206,0,Low
+2024-01-05,S009,Small,P0015,Aster Bedside Table 15,Furniture,3,15,7,3250,1,12,2,14,22,3228,0,Low
+2024-01-05,S009,Small,P0016,Summit Puzzle 16,Toys,3,8,1,3250,1,7,1,8,9,3241,0,Low
+2024-01-05,S009,Small,P0017,Mosaic Shampoo 17,Personal Care,3,80,21,3250,1,71,11,82,101,3149,0,Low
+2024-01-05,S009,Small,P0019,DailyChoice Football 19,Sports,3,16,9,3250,1,15,2,17,25,3225,0,Low
+2024-01-05,S009,Small,P0022,Everline Orange Juice 22,Beverages,3,39,6,3250,1,35,5,40,45,3205,0,Low
+2024-01-05,S009,Small,P0023,DailyChoice T-Shirt 23,Clothing,3,30,3,3250,1,26,4,30,33,3217,0,Low
+2024-01-05,S009,Small,P0024,Creston Headphones 24,Electronics,3,17,8,3250,1,16,2,18,25,3225,0,Low
+2024-01-05,S009,Small,P0025,Creston Desk 25,Furniture,3,7,0,3250,1,6,1,7,7,3243,0,Low
+2024-01-05,S002,Medium,P0004,Nova Smart Speaker 4,Electronics,7,80,20,5250,2,87,13,100,100,5150,0,Low
+2024-01-05,S002,Medium,P0005,Summit Bookshelf 5,Furniture,7,15,3,5250,2,15,2,17,18,5232,0,Low
+2024-01-05,S002,Medium,P0006,Everline Model Car 6,Toys,7,28,4,5250,2,27,4,31,32,5218,0,Low
+2024-01-05,S002,Medium,P0007,Oak & Co Face Cream 7,Personal Care,7,47,18,5250,2,53,8,61,65,5185,0,Low
+2024-01-05,S002,Medium,P0016,Summit Puzzle 16,Toys,7,25,3,5250,2,23,3,26,28,5222,0,Low
+2024-01-05,S002,Medium,P0020,Everline Marker Set 20,Office Supplies,7,142,41,5250,2,147,22,169,183,5067,0,Low
+2024-01-05,S002,Medium,P0022,Everline Orange Juice 22,Beverages,7,107,34,5250,2,123,18,141,141,5109,0,Low
+2024-01-05,S002,Medium,P0023,DailyChoice T-Shirt 23,Clothing,7,77,29,5250,2,86,13,99,106,5144,0,Low
+2024-01-05,S002,Medium,P0024,Creston Headphones 24,Electronics,7,57,12,5250,2,59,9,68,69,5181,0,Low
+2024-01-05,S006,Medium,P0005,Summit Bookshelf 5,Furniture,7,16,11,5250,2,19,3,22,27,5223,0,Low
+2024-01-05,S006,Medium,P0022,Everline Orange Juice 22,Beverages,7,129,37,5250,2,138,21,159,166,5084,0,Low
+2024-01-05,S006,Medium,P0025,Creston Desk 25,Furniture,7,24,2,5250,2,21,3,24,26,5224,0,Low
+2024-01-05,S010,Medium,P0005,Summit Bookshelf 5,Furniture,7,18,5,5250,2,17,3,20,23,5227,0,Low
+2024-01-05,S010,Medium,P0018,Everline Detergent 18,Household,7,170,33,5250,2,171,26,197,203,5047,0,Low
+2024-01-05,S003,Large,P0005,Summit Bookshelf 5,Furniture,14,61,7,9000,4,59,9,68,68,8932,0,Low
