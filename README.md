@@ -21,103 +21,18 @@ It helps a central depot predict store-level product demand, track depot invento
 - `docs/`: project and API documentation
 - `reports/`: market research and presentation material
 
-## Datasets
+## Dataset
 
-DepotIQ keeps two dataset paths:
-
-- The original Kaggle dataset in `data/raw/` for research and leakage investigation.
-- The generated synthetic dataset in `data/synthetic/` for the final forecasting models.
-
-The original Kaggle experiment is documented because it helped reveal data
-leakage and weak time-series signal in the source data. The current leakage-safe
-models, including the 7-day demand model, use the reproducible synthetic dataset.
-
-Generated datasets and trained model artifacts are **not committed to GitHub**
-because they can be recreated locally. The repo only keeps the folder structure
-with `.gitkeep` files.
-
-### Synthetic Dataset For Model Training
-
-The synthetic dataset contains 100,000 rows, 10 stores, 25 products, and 400
-days. It includes prices, promotions, weather, seasonality, inventory,
-warehouses, delivery times, and stockouts.
-
-Generate it locally from the repo root:
-
-```bash
-cd ml-service
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-python scripts/generate_synthetic_retail_data.py
-```
-
-Then create the leakage-safe multi-day targets:
-
-```bash
-python notebooks/08_create_multiday_targets.py
-```
-
-Train the 7-day demand model from the same `ml-service` directory:
-
-```bash
-python notebooks/12_train_7_day_demand_model.py
-```
-
-This saves the local model artifact here:
-
-```text
-ml-service/models/demand_model_7_day.joblib
-```
-
-### Original Kaggle Dataset For Research
+DepotIQ uses the **Retail Store Inventory Forecasting Dataset** from Kaggle.
 
 - **Dataset name:** Retail Store Inventory Forecasting Dataset
 - **Source:** Kaggle
 - **License:** CC0 Public Domain
 - **URL:** https://www.kaggle.com/datasets/anirudhchauhan/retail-store-inventory-forecasting-dataset/data
 
-This dataset is kept for the original exploration and leakage investigation. It
-is not used for the final leakage-safe forecasting models.
+The dataset is used for demand forecasting and inventory/shipment recommendation modeling.
 
-#### Option 1: Download With The Helper Script
-
-If you have a Kaggle account, you can use the Kaggle CLI and the local helper
-script to download and unzip the dataset automatically.
-
-Install the Kaggle CLI:
-
-```bash
-python -m pip install kaggle
-```
-
-Authenticate with Kaggle by setting environment variables:
-
-```bash
-export KAGGLE_USERNAME="your_kaggle_username"
-export KAGGLE_KEY="your_kaggle_api_key"
-```
-
-You can place those same variables in a local `.env` file at the repo root if
-you prefer. The `.env` file is ignored by Git.
-
-Then run the downloader from the repo root:
-
-```bash
-./ml-service/scripts/download_retail_dataset.sh
-```
-
-The script downloads the dataset into `data/raw/`, unzips it, and checks that
-this file exists:
-
-```text
-data/raw/retail_store_inventory.csv
-```
-
-You can also authenticate with Kaggle by placing `kaggle.json` at
-`~/.kaggle/kaggle.json` instead of setting environment variables.
-
-#### Option 2: Download Manually
+Raw dataset files are **not committed to GitHub** because data files can be large and should stay local. The repo only keeps the folder structure with `.gitkeep` files.
 
 Download the dataset from Kaggle, then place the CSV here:
 
@@ -172,12 +87,32 @@ python3 --version
 psql --version
 ```
 
+The backend must use Java 17. Java 11 is not supported.
+
+Expected Java output should include version `17`, for example:
+
+```text
+openjdk version "17.x"
+```
+
+Expected Maven output should show Maven `3.8.0` or newer and Java version `17`.
+
 If Java or Maven is missing in WSL:
 
 ```bash
 sudo apt update
 sudo apt install openjdk-17-jdk maven
 ```
+
+If `java -version` shows Java 11, install Java 17 and select it:
+
+```bash
+sudo apt install openjdk-17-jdk
+sudo update-alternatives --config java
+sudo update-alternatives --config javac
+```
+
+Then choose the Java 17 option.
 
 If PostgreSQL is missing:
 
@@ -283,6 +218,47 @@ spring.datasource.username=depotiq
 spring.datasource.password=depotiq
 ```
 
+## Database Migrations
+
+DepotIQ uses Flyway migrations so every teammate can create the same database schema.
+
+Migration files live here:
+
+```text
+backend/src/main/resources/db/migration/
+```
+
+The first migration is:
+
+```text
+V1__create_core_schema.sql
+```
+
+It creates the core backend tables:
+
+- `stores`
+- `products`
+- `store_inventory`
+- `depot_inventory`
+- `sales_records`
+- `demand_forecasts`
+- `shipment_recommendations`
+
+Teammates only need to create the empty PostgreSQL database and user. When the backend starts, Flyway automatically runs the migrations and creates the tables.
+
+Run migrations by starting the backend:
+
+```bash
+cd ~/DepotIQ/backend
+mvn spring-boot:run
+```
+
+To confirm the tables were created:
+
+```bash
+PGPASSWORD=depotiq psql -h localhost -U depotiq -d depotiq -c "\dt"
+```
+
 ## Run The Backend
 
 From WSL:
@@ -305,7 +281,122 @@ Backend URL:
 http://localhost:8080
 ```
 
-The app may show a default error or security page at first. That is okay while endpoints are still being built.
+The backend currently allows local development access to `/api/**` endpoints without login.
+
+## Store API
+
+The Store API is the first backend feature endpoint. It lets the frontend read, create, update, and delete stores supplied by the depot.
+
+Main files:
+
+```text
+backend/src/main/java/com/depotiq/models/Store.java
+backend/src/main/java/com/depotiq/models/StoreType.java
+backend/src/main/java/com/depotiq/repositories/StoreRepository.java
+backend/src/main/java/com/depotiq/dtos/store/CreateStoreRequest.java
+backend/src/main/java/com/depotiq/dtos/store/UpdateStoreRequest.java
+backend/src/main/java/com/depotiq/dtos/store/StoreResponse.java
+backend/src/main/java/com/depotiq/mappers/StoreMapper.java
+backend/src/main/java/com/depotiq/services/StoreService.java
+backend/src/main/java/com/depotiq/controllers/StoreController.java
+backend/src/main/java/com/depotiq/config/SecurityConfig.java
+```
+
+Available endpoints:
+
+```text
+GET    /api/stores
+GET    /api/stores/{id}
+POST   /api/stores
+PUT    /api/stores/{id}
+DELETE /api/stores/{id}
+```
+
+Store type values must use these enum names:
+
+```text
+SMALL
+MEDIUM
+LARGE
+WAREHOUSE_STORE
+```
+
+To test the Store API, start PostgreSQL first:
+
+```bash
+sudo service postgresql start
+```
+
+Then run the backend:
+
+```bash
+cd ~/DepotIQ/backend
+mvn spring-boot:run
+```
+
+In a second WSL terminal, get all stores:
+
+```bash
+curl http://localhost:8080/api/stores
+```
+
+Create a store:
+
+```bash
+curl -X POST http://localhost:8080/api/stores \
+  -H "Content-Type: application/json" \
+  -d '{
+    "storeCode": "S011",
+    "name": "North Side Store",
+    "storeType": "SMALL",
+    "region": "North",
+    "hasWarehouse": false,
+    "storageCapacity": 500,
+    "deliveryLeadTimeDays": 2,
+    "preferredHorizonDays": 3
+  }'
+```
+
+Get one store by ID:
+
+```bash
+curl http://localhost:8080/api/stores/1
+```
+
+Update a store:
+
+```bash
+curl -X PUT http://localhost:8080/api/stores/1 \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Updated Store Name",
+    "storeType": "MEDIUM",
+    "region": "North",
+    "hasWarehouse": false,
+    "storageCapacity": 900,
+    "deliveryLeadTimeDays": 3,
+    "preferredHorizonDays": 7
+  }'
+```
+
+Delete a store:
+
+```bash
+curl -X DELETE http://localhost:8080/api/stores/1
+```
+
+Confirm stores directly in PostgreSQL:
+
+```bash
+PGPASSWORD=depotiq psql -h localhost -U depotiq -d depotiq -c "SELECT * FROM stores;"
+```
+
+Before opening a pull request for backend API changes, run:
+
+```bash
+cd ~/DepotIQ/backend
+mvn clean test
+```
 
 ## Run The Frontend
 
