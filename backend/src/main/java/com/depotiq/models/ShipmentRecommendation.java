@@ -9,11 +9,23 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "shipment_recommendations")
+@Table(
+    name = "shipment_recommendations",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uq_recommendation_store_product_date_horizon",
+        columnNames = {
+            "store_id",
+            "product_id",
+            "recommendation_date",
+            "horizon_days"
+        }
+    )
+)
 public class ShipmentRecommendation extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

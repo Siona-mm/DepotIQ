@@ -1,0 +1,145 @@
+package com.depotiq.services;
+
+import com.depotiq.dtos.ml.MlRecommendationBatchResponse;
+import com.depotiq.dtos.ml.MlRecommendationPayload;
+import com.depotiq.dtos.ml.MlSyncResponse;
+import com.depotiq.models.DemandForecast;
+import com.depotiq.models.Product;
+import com.depotiq.models.RecommendationPriority;
+import com.depotiq.models.RecommendationStatus;
+import com.depotiq.models.ShipmentRecommendation;
+import com.depotiq.models.Store;
+import com.depotiq.repositories.DemandForecastRepository;
+import com.depotiq.repositories.ProductRepository;
+import com.depotiq.repositories.ShipmentRecommendationRepository;
+import com.depotiq.repositories.StoreRepository;
+import java.util.Locale;
+import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Transactional
+public class MlIntegrationService {
+    private final MlServiceClient mlServiceClient;
+    private final StoreRepository storeRepository;
+    private final ProductRepository productRepository;
+    private final DemandForecastRepository demandForecastRepository;
+    private final ShipmentRecommendationRepository recommendationRepository;
+
+    public MlIntegrationService(
+            MlServiceClient mlServiceClient,
+            StoreRepository storeRepository,
+            ProductRepository productRepository,
+            DemandForecastRepository demandForecastRepository,
+            ShipmentRecommendationRepository recommendationRepository
+    ) {
+        this.mlServiceClient = mlServiceClient;
+        this.storeRepository = storeRepository;
+        this.productRepository = productRepository;
+        this.demandForecastRepository = demandForecastRepository;
+        this.recommendationRepository = recommendationRepository;
+    }
+
+    public MlSyncResponse syncRecommendations() {
+        MlRecommendationBatchResponse batch = mlServiceClient.getRecommendations();
+        int forecastsSynced = 0;
+        int recommendationsSynced = 0;
+        int skipped = 0;
+
+        for (MlRecommendationPayload payload : batch.recommendations()) {
+            Optional<Store> store = storeRepository.findByStoreCode(payload.storeCode());
+            Optional<Product> product = productRepository.findByProductCode(payload.productCode());
+
+            if (store.isEmpty() || product.isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            DemandForecast forecast = upsertForecast(payload, store.get(), product.get());
+            upsertRecommendation(payload, store.get(), product.get(), forecast);
+            forecastsSynced++;
+            recommendationsSynced++;
+        }
+
+        return new MlSyncResponse(
+                batch.sourceDate(),
+                batch.recommendations().size(),
+                forecastsSynced,
+                recommendationsSynced,
+                skipped
+        );
+    }
+
+    private DemandForecast upsertForecast(
+            MlRecommendationPayload payload,
+            Store store,
+            Product product
+    ) {
+        DemandForecast forecast = demandForecastRepository
+                .findByStoreIdAndProductIdAndForecastDateAndHorizonDays(
+                        store.getId(),
+                        product.getId(),
+                        payload.forecastDate(),
+                        payload.horizonDays()
+                )
+                .orElseGet(DemandForecast::new);
+
+        forecast.setStore(store);
+        forecast.setProduct(product);
+        forecast.setForecastDate(payload.forecastDate());
+        forecast.setHorizonDays(payload.horizonDays());
+        forecast.setPredictedDemand(payload.predictedDemand());
+        forecast.setConfidenceLower(payload.confidenceLower());
+        forecast.setConfidenceUpper(payload.confidenceUpper());
+        forecast.setModelName(payload.modelName());
+        forecast.setModelVersion(payload.modelVersion());
+        forecast.setModelMae(payload.modelMae());
+
+        return demandForecastRepository.save(forecast);
+    }
+
+    private void upsertRecommendation(
+            MlRecommendationPayload payload,
+            Store store,
+            Product product,
+            DemandForecast forecast
+    ) {
+        ShipmentRecommendation recommendation = recommendationRepository
+                .findByStoreIdAndProductIdAndRecommendationDateAndHorizonDays(
+                        store.getId(),
+                        product.getId(),
+                        payload.forecastDate(),
+                        payload.horizonDays()
+                )
+                .orElseGet(ShipmentRecommendation::new);
+
+        recommendation.setStore(store);
+        recommendation.setProduct(product);
+        recommendation.setDemandForecast(forecast);
+        recommendation.setRecommendationDate(payload.forecastDate());
+        recommendation.setHorizonDays(payload.horizonDays());
+        recommendation.setPredictedDemand(payload.predictedDemand());
+        recommendation.setConfidenceLower(payload.confidenceLower());
+        recommendation.setConfidenceUpper(payload.confidenceUpper());
+        recommendation.setCurrentInventory(payload.currentInventory());
+        recommendation.setIncomingUnits(payload.incomingUnits());
+        recommendation.setSafetyStock(payload.safetyStock());
+        recommendation.setRequiredStock(payload.requiredStock());
+        recommendation.setRecommendedShipment(payload.recommendedShipment());
+        recommendation.setPriority(parsePriority(payload.priority()));
+        recommendation.setExplanation(payload.explanation());
+
+        if (recommendation.getId() == null) {
+            recommendation.setStatus(RecommendationStatus.PENDING);
+        }
+
+        recommendationRepository.save(recommendation);
+    }
+
+    private RecommendationPriority parsePriority(String priority) {
+        return RecommendationPriority.valueOf(
+                priority.trim().toUpperCase(Locale.ROOT).replace(' ', '_')
+        );
+    }
+}

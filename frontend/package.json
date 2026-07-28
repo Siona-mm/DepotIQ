@@ -15,7 +15,6 @@
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest",
     "recharts": "latest",
     "vite": "latest"
   },
@@ -23,4 +22,3 @@
     "eslint": "latest"
   }
 }
-
