@@ -36,6 +36,10 @@ public class ShipmentRecommendationMapper {
         response.setSafetyStock(recommendation.getSafetyStock());
         response.setRequiredStock(recommendation.getRequiredStock());
         response.setRecommendedShipment(recommendation.getRecommendedShipment());
+        response.setOriginalRecommendedShipment(recommendation.getOriginalRecommendedShipment());
+        response.setOverrideReason(recommendation.getOverrideReason());
+        response.setOverriddenBy(recommendation.getOverriddenBy());
+        response.setOverriddenAt(recommendation.getOverriddenAt());
         response.setPriority(recommendation.getPriority());
         response.setStatus(recommendation.getStatus());
         response.setExplanation(recommendation.getExplanation());

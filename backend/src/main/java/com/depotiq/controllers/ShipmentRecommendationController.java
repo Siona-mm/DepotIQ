@@ -1,6 +1,7 @@
 package com.depotiq.controllers;
 
 import com.depotiq.dtos.recommendation.CreateShipmentRecommendationRequest;
+import com.depotiq.dtos.recommendation.OverrideRecommendationRequest;
 import com.depotiq.dtos.recommendation.ShipmentRecommendationResponse;
 import com.depotiq.dtos.recommendation.UpdateRecommendationStatusRequest;
 import com.depotiq.models.RecommendationPriority;
@@ -70,6 +71,14 @@ public class ShipmentRecommendationController {
             @Valid @RequestBody UpdateRecommendationStatusRequest request
     ) {
         return shipmentRecommendationService.updateRecommendationStatus(id, request);
+    }
+
+    @PatchMapping("/{id}/override")
+    public ShipmentRecommendationResponse overrideRecommendedShipment(
+            @PathVariable Long id,
+            @Valid @RequestBody OverrideRecommendationRequest request
+    ) {
+        return shipmentRecommendationService.overrideRecommendedShipment(id, request);
     }
 
     @DeleteMapping("/{id}")

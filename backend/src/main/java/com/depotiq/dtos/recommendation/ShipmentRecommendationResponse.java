@@ -5,6 +5,7 @@ import com.depotiq.models.RecommendationStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 public class ShipmentRecommendationResponse {
     private Long id;
@@ -26,6 +27,10 @@ public class ShipmentRecommendationResponse {
     private Integer safetyStock;
     private Integer requiredStock;
     private Integer recommendedShipment;
+    private Integer originalRecommendedShipment;
+    private String overrideReason;
+    private String overriddenBy;
+    private OffsetDateTime overriddenAt;
     private RecommendationPriority priority;
     private RecommendationStatus status;
     private String explanation;
@@ -180,6 +185,38 @@ public class ShipmentRecommendationResponse {
 
     public void setRecommendedShipment(Integer recommendedShipment) {
         this.recommendedShipment = recommendedShipment;
+    }
+
+    public Integer getOriginalRecommendedShipment() {
+        return originalRecommendedShipment;
+    }
+
+    public void setOriginalRecommendedShipment(Integer originalRecommendedShipment) {
+        this.originalRecommendedShipment = originalRecommendedShipment;
+    }
+
+    public String getOverrideReason() {
+        return overrideReason;
+    }
+
+    public void setOverrideReason(String overrideReason) {
+        this.overrideReason = overrideReason;
+    }
+
+    public String getOverriddenBy() {
+        return overriddenBy;
+    }
+
+    public void setOverriddenBy(String overriddenBy) {
+        this.overriddenBy = overriddenBy;
+    }
+
+    public OffsetDateTime getOverriddenAt() {
+        return overriddenAt;
+    }
+
+    public void setOverriddenAt(OffsetDateTime overriddenAt) {
+        this.overriddenAt = overriddenAt;
     }
 
     public RecommendationPriority getPriority() {

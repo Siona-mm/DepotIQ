@@ -1,6 +1,7 @@
 package com.depotiq.services;
 
 import com.depotiq.dtos.recommendation.CreateShipmentRecommendationRequest;
+import com.depotiq.dtos.recommendation.OverrideRecommendationRequest;
 import com.depotiq.dtos.recommendation.ShipmentRecommendationResponse;
 import com.depotiq.dtos.recommendation.UpdateRecommendationStatusRequest;
 import com.depotiq.mappers.ShipmentRecommendationMapper;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.time.OffsetDateTime;
 
 @Service
 @Transactional
@@ -98,6 +100,24 @@ public class ShipmentRecommendationService {
     ) {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
         recommendation.setStatus(request.getStatus());
+
+        return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
+    }
+
+    public ShipmentRecommendationResponse overrideRecommendedShipment(
+            Long id,
+            OverrideRecommendationRequest request
+    ) {
+        ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
+
+        if (recommendation.getOriginalRecommendedShipment() == null) {
+            recommendation.setOriginalRecommendedShipment(recommendation.getRecommendedShipment());
+        }
+
+        recommendation.setRecommendedShipment(request.getRecommendedShipment());
+        recommendation.setOverrideReason(request.getReason().trim());
+        recommendation.setOverriddenBy(request.getOverriddenBy().trim());
+        recommendation.setOverriddenAt(OffsetDateTime.now());
 
         return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
     }
