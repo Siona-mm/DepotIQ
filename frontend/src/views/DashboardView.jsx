@@ -1,5 +1,6 @@
 import {
   ArrowUpDown,
+  Ban,
   BarChart3,
   Boxes,
   ChartNoAxesCombined,
@@ -101,7 +102,8 @@ export default function DashboardView() {
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
-  const [approvingId, setApprovingId] = useState(null);
+  const [rejectItem, setRejectItem] = useState(null);
+  const [statusUpdate, setStatusUpdate] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -276,13 +278,13 @@ export default function DashboardView() {
     setSyncMessage(`Shipment amount for ${updated.storeCode} was overridden.`);
   };
 
-  const approveRecommendation = async (item) => {
-    setApprovingId(item.id);
+  const changeRecommendationStatus = async (item, status) => {
+    setStatusUpdate({ id: item.id, status });
     setError("");
     setSyncMessage("");
 
     try {
-      const updated = await updateRecommendationStatus(item.id, "APPROVED");
+      const updated = await updateRecommendationStatus(item.id, status);
       setData((current) => ({
         ...current,
         recommendations: current.recommendations.map((recommendation) =>
@@ -290,12 +292,23 @@ export default function DashboardView() {
         ),
       }));
       setSyncMessage(
-        `Shipment for ${updated.storeCode} / ${updated.productCode} was approved.`,
+        `Shipment for ${updated.storeCode} / ${updated.productCode} was ${
+          status === "APPROVED" ? "approved" : "rejected"
+        }.`,
       );
+      return true;
     } catch (requestError) {
       setError(requestError.message);
+      return false;
     } finally {
-      setApprovingId(null);
+      setStatusUpdate(null);
+    }
+  };
+
+  const rejectRecommendation = async () => {
+    const rejected = await changeRecommendationStatus(rejectItem, "REJECTED");
+    if (rejected) {
+      setRejectItem(null);
     }
   };
 
@@ -537,35 +550,61 @@ export default function DashboardView() {
                         <div className="action-buttons">
                           <button
                             aria-label={`${
-                              item.status === "APPROVED" ? "Approved" : "Approve"
+                              item.status === "APPROVED"
+                                ? "Approved"
+                                : item.status === "REJECTED"
+                                  ? "Rejected"
+                                  : "Approve"
                             } shipment for ${item.storeCode} ${item.productCode}`}
                             className={
                               item.status === "APPROVED"
                                 ? "approve-button approved"
-                                : "approve-button"
+                                : item.status === "REJECTED"
+                                  ? "approve-button rejected"
+                                  : "approve-button"
                             }
                             disabled={
-                              item.status === "APPROVED" ||
-                              approvingId === item.id
+                              item.status !== "PENDING" ||
+                              statusUpdate?.id === item.id
                             }
-                            onClick={() => approveRecommendation(item)}
+                            onClick={() =>
+                              changeRecommendationStatus(item, "APPROVED")
+                            }
                             type="button"
                           >
-                            <Check aria-hidden="true" size={13} />
+                            {item.status === "REJECTED" ? (
+                              <Ban aria-hidden="true" size={13} />
+                            ) : (
+                              <Check aria-hidden="true" size={13} />
+                            )}
                             {item.status === "APPROVED"
                               ? "Approved"
-                              : approvingId === item.id
+                              : item.status === "REJECTED"
+                                ? "Rejected"
+                                : statusUpdate?.id === item.id
                                 ? "Saving"
                                 : "Approve"}
                           </button>
+                          {item.status === "PENDING" && (
+                            <button
+                              aria-label={`Reject shipment for ${item.storeCode} ${item.productCode}`}
+                              className="reject-button"
+                              disabled={statusUpdate?.id === item.id}
+                              onClick={() => setRejectItem(item)}
+                              title="Reject recommendation"
+                              type="button"
+                            >
+                              <Ban aria-hidden="true" size={14} />
+                            </button>
+                          )}
                           <button
                             aria-label={`Edit shipment for ${item.storeCode} ${item.productCode}`}
                             className="override-button"
-                            disabled={item.status === "APPROVED"}
+                            disabled={item.status !== "PENDING"}
                             onClick={() => openOverride(item)}
                             title={
-                              item.status === "APPROVED"
-                                ? "Approved shipments are locked"
+                              item.status !== "PENDING"
+                                ? "Completed recommendations are locked"
                                 : "Edit shipment amount"
                             }
                             type="button"
@@ -726,6 +765,57 @@ export default function DashboardView() {
                 <button className="save-button" type="submit">Save override</button>
               </footer>
             </form>
+          </section>
+        </div>
+      )}
+      {rejectItem && (
+        <div className="modal-backdrop">
+          <section
+            aria-labelledby="reject-dialog-title"
+            aria-modal="true"
+            className="override-dialog reject-dialog"
+            role="dialog"
+          >
+            <header>
+              <div>
+                <span>Admin action</span>
+                <h2 id="reject-dialog-title">Reject recommendation</h2>
+              </div>
+              <button
+                aria-label="Close reject dialog"
+                className="icon-button"
+                onClick={() => setRejectItem(null)}
+                type="button"
+              >
+                <X aria-hidden="true" size={17} />
+              </button>
+            </header>
+            <p>
+              Reject the shipment of{" "}
+              {formatNumber(rejectItem.recommendedShipment)} units for{" "}
+              {rejectItem.storeCode} / {rejectItem.productCode}? This removes it
+              from the pending approval workflow.
+            </p>
+            <footer>
+              <button
+                className="secondary-button"
+                onClick={() => setRejectItem(null)}
+                type="button"
+              >
+                Keep recommendation
+              </button>
+              <button
+                className="reject-confirm-button"
+                disabled={
+                  statusUpdate?.id === rejectItem.id &&
+                  statusUpdate?.status === "REJECTED"
+                }
+                onClick={rejectRecommendation}
+                type="button"
+              >
+                Reject recommendation
+              </button>
+            </footer>
           </section>
         </div>
       )}
