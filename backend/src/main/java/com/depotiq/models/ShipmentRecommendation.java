@@ -12,6 +12,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(
@@ -69,6 +70,18 @@ public class ShipmentRecommendation extends BaseEntity {
 
     @Column(name = "recommended_shipment", nullable = false)
     private Integer recommendedShipment = 0;
+
+    @Column(name = "original_recommended_shipment")
+    private Integer originalRecommendedShipment;
+
+    @Column(name = "override_reason", length = 500)
+    private String overrideReason;
+
+    @Column(name = "overridden_by", length = 100)
+    private String overriddenBy;
+
+    @Column(name = "overridden_at")
+    private OffsetDateTime overriddenAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -183,6 +196,38 @@ public class ShipmentRecommendation extends BaseEntity {
 
     public void setRecommendedShipment(Integer recommendedShipment) {
         this.recommendedShipment = recommendedShipment;
+    }
+
+    public Integer getOriginalRecommendedShipment() {
+        return originalRecommendedShipment;
+    }
+
+    public void setOriginalRecommendedShipment(Integer originalRecommendedShipment) {
+        this.originalRecommendedShipment = originalRecommendedShipment;
+    }
+
+    public String getOverrideReason() {
+        return overrideReason;
+    }
+
+    public void setOverrideReason(String overrideReason) {
+        this.overrideReason = overrideReason;
+    }
+
+    public String getOverriddenBy() {
+        return overriddenBy;
+    }
+
+    public void setOverriddenBy(String overriddenBy) {
+        this.overriddenBy = overriddenBy;
+    }
+
+    public OffsetDateTime getOverriddenAt() {
+        return overriddenAt;
+    }
+
+    public void setOverriddenAt(OffsetDateTime overriddenAt) {
+        this.overriddenAt = overriddenAt;
     }
 
     public RecommendationPriority getPriority() {
