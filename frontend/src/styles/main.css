@@ -22,7 +22,8 @@ body {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
@@ -41,6 +42,35 @@ input:focus-visible {
   display: grid;
   grid-template-columns: 214px minmax(0, 1fr);
   background: #fafafa;
+}
+
+.app-shell.sidebar-collapsed {
+  grid-template-columns: 66px minmax(0, 1fr);
+}
+
+.sidebar.collapsed {
+  padding-inline: 12px;
+}
+
+.sidebar.collapsed .brand,
+.sidebar.collapsed .nav-item,
+.sidebar.collapsed .collapse-button {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.sidebar.collapsed .brand span,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .collapse-button span {
+  display: none;
+}
+
+.sidebar.collapsed .collapse-button {
+  width: 100%;
+}
+
+.sidebar.collapsed .collapse-button svg {
+  transform: rotate(180deg);
 }
 
 .sidebar {
@@ -129,7 +159,7 @@ input:focus-visible {
 .topbar {
   min-height: 47px;
   display: grid;
-  grid-template-columns: 1fr minmax(220px, 290px) 1fr;
+  grid-template-columns: minmax(170px, 0.7fr) minmax(340px, 480px) 1fr;
   align-items: center;
   gap: 20px;
   margin-bottom: 25px;
@@ -151,7 +181,7 @@ input:focus-visible {
   gap: 8px;
   padding: 0 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 6px;
+  border-radius: 14px;
   color: #6b7280;
   background: #ffffff;
 }
@@ -330,7 +360,7 @@ table {
   table-layout: fixed;
   border-collapse: collapse;
   color: #6b7280;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 th,
@@ -354,7 +384,7 @@ th {
   height: 39px;
   color: #111111;
   background: #ffffff;
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 500;
   line-height: 1.25;
   white-space: normal;
@@ -407,11 +437,101 @@ tbody tr:hover {
   font-weight: 500;
 }
 
-.priority.normal,
-.priority.low {
+.priority.urgent { color: #dc2626; border-color: #dc2626; }
+.priority.high { color: #d97706; border-color: #d97706; }
+.priority.normal { color: #2563eb; border-color: #2563eb; }
+.priority.low { color: #059669; border-color: #059669; }
+
+.override-button,
+.icon-button {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
   color: #6b7280;
-  border-color: #e5e7eb;
-  background: #fafafa;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(17 17 17 / 35%);
+}
+
+.override-dialog {
+  width: min(440px, 100%);
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 48px rgb(17 17 17 / 14%);
+}
+
+.override-dialog header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.override-dialog header span,
+.override-dialog > p {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.override-dialog h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.override-dialog form,
+.override-dialog label {
+  display: grid;
+  gap: 8px;
+}
+
+.override-dialog form {
+  gap: 15px;
+}
+
+.override-dialog input,
+.override-dialog textarea {
+  padding: 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.override-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.secondary-button,
+.save-button {
+  min-height: 35px;
+  padding: 0 13px;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+.secondary-button {
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.save-button {
+  border: 1px solid #111111;
+  color: #ffffff;
+  background: #111111;
 }
 
 .panel-empty {
@@ -644,12 +764,12 @@ tbody tr:hover {
   }
 
   table {
-    min-width: 570px;
-    font-size: 9px;
+    min-width: 700px;
+    font-size: 11px;
   }
 
   th {
-    font-size: 8px;
+    font-size: 10px;
   }
 }
 
