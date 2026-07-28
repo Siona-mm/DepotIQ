@@ -41,3 +41,10 @@ export async function loadDashboardData() {
 export function syncMlRecommendations() {
   return request("/api/ml/sync", { method: "POST" });
 }
+
+export function overrideRecommendationAmount(id, recommendedShipment, reason) {
+  return request(`/api/recommendations/${id}/override`, {
+    method: "PATCH",
+    body: JSON.stringify({ recommendedShipment, reason, overriddenBy: "SM" }),
+  });
+}
