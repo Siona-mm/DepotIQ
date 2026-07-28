@@ -1,17 +1,22 @@
 import {
-  AlertTriangle,
+  ArrowUpDown,
+  BarChart3,
   Boxes,
   ChartNoAxesCombined,
-  ChevronLeft,
-  ClipboardList,
+  ChevronsLeft,
+  FileChartColumn,
   LayoutDashboard,
+  PackageOpen,
   PackageSearch,
   RefreshCw,
   Search,
   Settings,
+  ShieldCheck,
+  SlidersHorizontal,
   Store,
   Truck,
   Upload,
+  Warehouse,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -26,15 +31,17 @@ const EMPTY_DATA = {
   recommendations: [],
 };
 
+const PAGE_SIZE = 10;
+
 const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
-  [Boxes, "Depot inventory"],
+  [Warehouse, "Depot Inventory"],
   [Store, "Stores"],
   [PackageSearch, "Products"],
   [ChartNoAxesCombined, "Forecasts"],
   [Truck, "Shipments"],
-  [Upload, "Upload data"],
-  [ClipboardList, "Reports"],
+  [Upload, "Upload Data"],
+  [FileChartColumn, "Reports"],
   [Settings, "Settings"],
 ];
 
@@ -44,10 +51,22 @@ function formatNumber(value) {
   );
 }
 
+function formatUpdated(value) {
+  if (!value) {
+    return "Not synced";
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(`${value}T00:00:00`));
+}
+
 function Metric({ icon: Icon, label, value, note }) {
   return (
-    <article className="metric">
-      <Icon aria-hidden="true" size={19} strokeWidth={1.7} />
+    <article className="metric-card">
+      <Icon aria-hidden="true" size={20} strokeWidth={1.6} />
       <div>
         <span>{label}</span>
         <strong>{value}</strong>
@@ -57,12 +76,20 @@ function Metric({ icon: Icon, label, value, note }) {
   );
 }
 
+function EmptyPanel({ children }) {
+  return <div className="panel-empty">{children}</div>;
+}
+
 export default function DashboardView() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
+  const [query, setQuery] = useState("");
+  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [descending, setDescending] = useState(true);
+  const [page, setPage] = useState(1);
 
   const load = useCallback(async () => {
     setError("");
@@ -80,6 +107,17 @@ export default function DashboardView() {
     load();
   }, [load]);
 
+  const depotInventoryByProduct = useMemo(
+    () =>
+      new Map(
+        data.depotInventory.map((item) => [
+          item.productId,
+          Number(item.availableUnits ?? item.freeUnits ?? 0),
+        ]),
+      ),
+    [data.depotInventory],
+  );
+
   const summary = useMemo(() => {
     const urgent = data.recommendations.filter(
       (item) => item.priority === "URGENT",
@@ -88,13 +126,67 @@ export default function DashboardView() {
       (item) => item.status === "PENDING",
     ).length;
     const stores = new Set(data.storeInventory.map((item) => item.storeId)).size;
-    const freeDepotUnits = data.depotInventory.reduce(
-      (total, item) => total + Number(item.freeUnits ?? 0),
-      0,
-    );
+    const meanAccuracy =
+      data.forecasts.length === 0
+        ? 0
+        : data.forecasts.reduce((total, forecast) => {
+            const predicted = Math.max(Number(forecast.predictedDemand ?? 0), 1);
+            const errorRatio = Number(forecast.modelMae ?? 0) / predicted;
+            return total + Math.max(0, Math.min(100, (1 - errorRatio) * 100));
+          }, 0) / data.forecasts.length;
 
-    return { urgent, pending, stores, freeDepotUnits };
+    return {
+      urgent,
+      pending,
+      stores,
+      accuracy: `${meanAccuracy.toFixed(1)}%`,
+    };
   }, [data]);
+
+  const filteredRecommendations = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+
+    return data.recommendations
+      .filter((item) => !urgentOnly || item.priority === "URGENT")
+      .filter((item) => {
+        if (!normalizedQuery) {
+          return true;
+        }
+
+        return [
+          item.storeCode,
+          item.storeName,
+          item.productCode,
+          item.productName,
+          item.category,
+          item.priority,
+        ].some((value) =>
+          String(value ?? "")
+            .toLowerCase()
+            .includes(normalizedQuery),
+        );
+      })
+      .sort((left, right) => {
+        const difference =
+          Number(right.recommendedShipment) -
+          Number(left.recommendedShipment);
+        return descending ? difference : -difference;
+      });
+  }, [data.recommendations, descending, query, urgentOnly]);
+
+  const pageCount = Math.max(
+    1,
+    Math.ceil(filteredRecommendations.length / PAGE_SIZE),
+  );
+  const currentPage = Math.min(page, pageCount);
+  const visibleRecommendations = filteredRecommendations.slice(
+    (currentPage - 1) * PAGE_SIZE,
+    currentPage * PAGE_SIZE,
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [query, urgentOnly, descending]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -104,8 +196,8 @@ export default function DashboardView() {
     try {
       const result = await syncMlRecommendations();
       setSyncMessage(
-        `${result.recommendationsSynced} recommendations synced; ` +
-          `${result.skippedUnknownStoreOrProduct} unmatched rows skipped.`,
+        `${result.recommendationsSynced} recommendations synced. ` +
+          `${result.skippedUnknownStoreOrProduct} unmatched model rows skipped.`,
       );
       await load();
     } catch (requestError) {
@@ -115,107 +207,132 @@ export default function DashboardView() {
     }
   };
 
+  const visiblePages = Array.from(
+    { length: Math.min(pageCount, 3) },
+    (_, index) => index + 1,
+  );
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand">
-          <Boxes aria-hidden="true" size={24} strokeWidth={1.8} />
+          <PackageOpen aria-hidden="true" size={29} strokeWidth={1.8} />
           <span>DepotIQ</span>
         </div>
 
         <nav aria-label="Main navigation">
           {NAVIGATION.map(([Icon, label, active]) => (
             <button
+              aria-current={active ? "page" : undefined}
               className={active ? "nav-item active" : "nav-item"}
               key={label}
               type="button"
             >
-              <Icon aria-hidden="true" size={18} strokeWidth={1.7} />
+              <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
               <span>{label}</span>
             </button>
           ))}
         </nav>
 
         <button className="collapse-button" type="button" title="Collapse sidebar">
-          <ChevronLeft aria-hidden="true" size={17} />
+          <ChevronsLeft aria-hidden="true" size={16} />
           <span>Collapse</span>
         </button>
       </aside>
 
       <main className="dashboard">
         <header className="topbar">
-          <div>
-            <p className="section-label">Operations overview</p>
-            <h1>Dashboard</h1>
-          </div>
-          <div className="topbar-actions">
-            <label className="search-box">
-              <Search aria-hidden="true" size={16} />
-              <span className="sr-only">Search</span>
-              <input placeholder="Search stores or products" type="search" />
-            </label>
-            <button
-              className="primary-button"
-              disabled={syncing}
-              onClick={handleSync}
-              type="button"
-            >
-              <RefreshCw
-                aria-hidden="true"
-                className={syncing ? "spinning" : ""}
-                size={16}
-              />
-              {syncing ? "Syncing" : "Sync ML"}
-            </button>
-            <div className="avatar" aria-label="Signed in as SM">
-              SM
-            </div>
+          <h1>Dashboard</h1>
+
+          <label className="search-box">
+            <Search aria-hidden="true" size={15} strokeWidth={2} />
+            <span className="sr-only">Search recommendations</span>
+            <input
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search..."
+              type="search"
+              value={query}
+            />
+          </label>
+
+          <div className="avatar" aria-label="Signed in as SM">
+            SM
           </div>
         </header>
 
-        {error && (
-          <div className="notice error" role="alert">
-            <AlertTriangle aria-hidden="true" size={17} />
-            <span>{error}</span>
+        {(error || syncMessage) && (
+          <div className={error ? "notice error" : "notice"} role="status">
+            {error || syncMessage}
           </div>
         )}
-        {syncMessage && <div className="notice">{syncMessage}</div>}
 
-        <section className="metrics" aria-label="Depot summary">
+        <section className="metrics-grid" aria-label="Depot summary">
           <Metric
-            icon={AlertTriangle}
-            label="Stockout risks"
-            note="Urgent recommendations"
+            icon={ShieldCheck}
+            label="Stockout Risks"
+            note="Stores at risk"
             value={summary.urgent}
           />
           <Metric
             icon={Truck}
-            label="Pending shipments"
-            note="Awaiting transport planning"
+            label="Pending Shipments"
+            note="Total recommendations"
             value={summary.pending}
           />
           <Metric
-            icon={ChartNoAxesCombined}
-            label="Active forecasts"
-            note="Latest model outputs"
-            value={data.forecasts.length}
+            icon={Boxes}
+            label="Forecast Accuracy"
+            note="Across current forecasts"
+            value={summary.accuracy}
           />
           <Metric
-            icon={Store}
-            label="Stores supplied"
-            note="Connected to this depot"
+            icon={BarChart3}
+            label="Stores Supplied"
+            note="Across depot"
             value={summary.stores}
           />
         </section>
 
-        <section className="workspace">
-          <div className="table-panel">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Planning queue</p>
-                <h2>Shipment recommendations</h2>
+        <section className="dashboard-grid">
+          <section className="table-panel">
+            <div className="panel-toolbar">
+              <h2>Shipment Recommendations</h2>
+              <div className="table-actions">
+                <button
+                  aria-pressed={urgentOnly}
+                  className={urgentOnly ? "tool-button active" : "tool-button"}
+                  onClick={() => setUrgentOnly((current) => !current)}
+                  type="button"
+                >
+                  <SlidersHorizontal aria-hidden="true" size={13} />
+                  Filter
+                </button>
+                <button
+                  className="tool-button"
+                  onClick={() => setDescending((current) => !current)}
+                  type="button"
+                >
+                  <ArrowUpDown aria-hidden="true" size={13} />
+                  Sort
+                </button>
+                <button
+                  className="tool-button"
+                  disabled={syncing}
+                  onClick={handleSync}
+                  type="button"
+                >
+                  {syncing ? (
+                    <RefreshCw
+                      aria-hidden="true"
+                      className="spinning"
+                      size={13}
+                    />
+                  ) : (
+                    <Settings aria-hidden="true" size={13} />
+                  )}
+                  {syncing ? "Syncing" : "Settings"}
+                </button>
               </div>
-              <span>{data.recommendations.length} records</span>
             </div>
 
             <div className="table-scroll">
@@ -224,85 +341,129 @@ export default function DashboardView() {
                   <tr>
                     <th>Store</th>
                     <th>Product</th>
-                    <th>Stock</th>
-                    <th>Forecast</th>
-                    <th>Range</th>
-                    <th>Send</th>
+                    <th>Store Stock</th>
+                    <th>Depot Stock</th>
+                    <th>Predicted Demand</th>
+                    <th>Recommended Shipment</th>
                     <th>Priority</th>
+                    <th>Updated</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.recommendations.slice(0, 12).map((item) => (
+                  {visibleRecommendations.map((item) => (
                     <tr key={item.id}>
-                      <td>
-                        <strong>{item.storeCode}</strong>
-                        <small>{item.storeName}</small>
-                      </td>
-                      <td>
-                        <strong>{item.productCode}</strong>
-                        <small>{item.productName}</small>
-                      </td>
+                      <td>{item.storeCode}</td>
+                      <td>{item.productCode}</td>
                       <td>{formatNumber(item.currentInventory)}</td>
+                      <td>
+                        {formatNumber(
+                          depotInventoryByProduct.get(item.productId),
+                        )}
+                      </td>
                       <td>{formatNumber(item.predictedDemand)}</td>
-                      <td>
-                        {formatNumber(item.confidenceLower)}-
-                        {formatNumber(item.confidenceUpper)}
-                      </td>
-                      <td>
-                        <strong>{formatNumber(item.recommendedShipment)}</strong>
-                      </td>
+                      <td>{formatNumber(item.recommendedShipment)}</td>
                       <td>
                         <span className={`priority ${item.priority.toLowerCase()}`}>
-                          {item.priority}
+                          {item.priority[0] + item.priority.slice(1).toLowerCase()}
                         </span>
                       </td>
+                      <td>{formatUpdated(item.recommendationDate)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {!loading && data.recommendations.length === 0 && (
-              <div className="empty-state">
-                <Truck aria-hidden="true" size={25} strokeWidth={1.5} />
-                <strong>No recommendations yet</strong>
-                <span>Start the ML service, then select Sync ML.</span>
-              </div>
+            {!loading && visibleRecommendations.length === 0 && (
+              <EmptyPanel>No recommendations match this view.</EmptyPanel>
             )}
-            {loading && <div className="empty-state">Loading depot data...</div>}
-          </div>
+            {loading && <EmptyPanel>Loading depot data...</EmptyPanel>}
 
-          <aside className="insights">
-            <div className="panel-heading">
-              <div>
-                <p className="section-label">Depot capacity</p>
-                <h2>Available stock</h2>
+            <footer className="pagination">
+              <span>
+                {filteredRecommendations.length} recommendation
+                {filteredRecommendations.length === 1 ? "" : "s"}
+              </span>
+              <div aria-label="Table pages">
+                {visiblePages.map((pageNumber) => (
+                  <button
+                    aria-current={
+                      currentPage === pageNumber ? "page" : undefined
+                    }
+                    className={
+                      currentPage === pageNumber ? "page-button active" : "page-button"
+                    }
+                    key={pageNumber}
+                    onClick={() => setPage(pageNumber)}
+                    type="button"
+                  >
+                    {pageNumber}
+                  </button>
+                ))}
+                {pageCount > 3 && <span>...</span>}
+                {pageCount > 3 && (
+                  <button
+                    className={
+                      currentPage === pageCount
+                        ? "page-button active"
+                        : "page-button"
+                    }
+                    onClick={() => setPage(pageCount)}
+                    type="button"
+                  >
+                    {pageCount}
+                  </button>
+                )}
               </div>
-              <strong>{formatNumber(summary.freeDepotUnits)}</strong>
-            </div>
+            </footer>
+          </section>
 
-            <div className="inventory-list">
-              {data.depotInventory.map((item) => {
-                const maximum = Math.max(
-                  ...data.depotInventory.map((entry) => entry.freeUnits),
-                  1,
-                );
-                const width = `${Math.max((item.freeUnits / maximum) * 100, 2)}%`;
+          <aside className="right-rail">
+            <section className="side-panel">
+              <div className="side-panel-heading">
+                <div>
+                  <span>Model Coverage</span>
+                  <strong>{data.forecasts.length} forecasts</strong>
+                </div>
+                <ChartNoAxesCombined aria-hidden="true" size={18} />
+              </div>
+              <div className="horizon-list">
+                {[3, 7, 14, 30].map((horizon) => {
+                  const count = data.forecasts.filter(
+                    (forecast) => forecast.horizonDays === horizon,
+                  ).length;
+                  return (
+                    <div key={horizon}>
+                      <span>{horizon}-day plan</span>
+                      <strong>{count}</strong>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
 
-                return (
+            <section className="side-panel depot-panel">
+              <div className="side-panel-heading">
+                <div>
+                  <span>Depot Inventory</span>
+                  <strong>{data.depotInventory.length} products</strong>
+                </div>
+                <Warehouse aria-hidden="true" size={18} />
+              </div>
+              <div className="inventory-list">
+                {data.depotInventory.slice(0, 5).map((item) => (
                   <div className="inventory-row" key={item.id}>
                     <div>
-                      <strong>{item.productName}</strong>
-                      <span>{item.productCode}</span>
+                      <strong>{item.productCode}</strong>
+                      <span>{item.productName}</span>
                     </div>
-                    <b>{formatNumber(item.freeUnits)}</b>
-                    <div className="stock-bar">
-                      <span style={{ width }} />
-                    </div>
+                    <b>
+                      {formatNumber(item.availableUnits ?? item.freeUnits)}
+                    </b>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            </section>
           </aside>
         </section>
       </main>
