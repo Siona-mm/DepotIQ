@@ -300,6 +300,7 @@ input:focus-visible {
   min-height: 491px;
   display: flex;
   flex-direction: column;
+  border-radius: 8px;
 }
 
 .panel-toolbar {
