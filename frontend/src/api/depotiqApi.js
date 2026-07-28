@@ -48,3 +48,10 @@ export function overrideRecommendationAmount(id, recommendedShipment, reason) {
     body: JSON.stringify({ recommendedShipment, reason, overriddenBy: "SM" }),
   });
 }
+
+export function updateRecommendationStatus(id, status) {
+  return request(`/api/recommendations/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

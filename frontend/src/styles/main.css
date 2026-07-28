@@ -488,32 +488,36 @@ th {
 }
 
 th:nth-child(1) {
-  width: 9%;
+  width: 8%;
 }
 
 th:nth-child(2) {
-  width: 10%;
+  width: 8%;
 }
 
 th:nth-child(3),
 th:nth-child(4) {
-  width: 11%;
+  width: 9%;
 }
 
 th:nth-child(5) {
-  width: 15%;
+  width: 13%;
 }
 
 th:nth-child(6) {
-  width: 19%;
+  width: 16%;
 }
 
 th:nth-child(7) {
-  width: 12%;
+  width: 10%;
 }
 
 th:nth-child(8) {
-  width: 13%;
+  width: 12%;
+}
+
+th:nth-child(9) {
+  width: 15%;
 }
 
 tbody tr:hover {
@@ -551,6 +555,50 @@ tbody tr:hover {
   color: #6b7280;
   background: #ffffff;
   cursor: pointer;
+}
+
+.recommendation-actions {
+  overflow: visible;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.approve-button {
+  min-width: 68px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 8px;
+  border: 1px solid #111111;
+  border-radius: 5px;
+  color: #ffffff;
+  background: #111111;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 550;
+}
+
+.approve-button.approved {
+  border-color: #059669;
+  color: #059669;
+  background: #ffffff;
+}
+
+.approve-button:disabled,
+.override-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.override-button:not(:disabled):hover {
+  color: #111111;
+  background: #f3f4f6;
 }
 
 .modal-backdrop {

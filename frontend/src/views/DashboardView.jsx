@@ -3,6 +3,7 @@ import {
   BarChart3,
   Boxes,
   ChartNoAxesCombined,
+  Check,
   ChevronsLeft,
   FileChartColumn,
   LayoutDashboard,
@@ -25,6 +26,7 @@ import {
   loadDashboardData,
   overrideRecommendationAmount,
   syncMlRecommendations,
+  updateRecommendationStatus,
 } from "../api/depotiqApi.js";
 
 const EMPTY_DATA = {
@@ -99,6 +101,7 @@ export default function DashboardView() {
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
+  const [approvingId, setApprovingId] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -271,6 +274,29 @@ export default function DashboardView() {
     }));
     setOverrideItem(null);
     setSyncMessage(`Shipment amount for ${updated.storeCode} was overridden.`);
+  };
+
+  const approveRecommendation = async (item) => {
+    setApprovingId(item.id);
+    setError("");
+    setSyncMessage("");
+
+    try {
+      const updated = await updateRecommendationStatus(item.id, "APPROVED");
+      setData((current) => ({
+        ...current,
+        recommendations: current.recommendations.map((recommendation) =>
+          recommendation.id === updated.id ? updated : recommendation,
+        ),
+      }));
+      setSyncMessage(
+        `Shipment for ${updated.storeCode} / ${updated.productCode} was approved.`,
+      );
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setApprovingId(null);
+    }
   };
 
   return (
@@ -485,7 +511,7 @@ export default function DashboardView() {
                     <th>Recommended Shipment</th>
                     <th>Priority</th>
                     <th>Updated</th>
-                    <th><span className="sr-only">Admin action</span></th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -507,15 +533,46 @@ export default function DashboardView() {
                         </span>
                       </td>
                       <td>{formatUpdated(item.recommendationDate)}</td>
-                      <td>
-                        <button
-                          aria-label={`Override shipment for ${item.storeCode} ${item.productCode}`}
-                          className="override-button"
-                          onClick={() => openOverride(item)}
-                          type="button"
-                        >
-                          <PencilLine aria-hidden="true" size={14} />
-                        </button>
+                      <td className="recommendation-actions">
+                        <div className="action-buttons">
+                          <button
+                            aria-label={`${
+                              item.status === "APPROVED" ? "Approved" : "Approve"
+                            } shipment for ${item.storeCode} ${item.productCode}`}
+                            className={
+                              item.status === "APPROVED"
+                                ? "approve-button approved"
+                                : "approve-button"
+                            }
+                            disabled={
+                              item.status === "APPROVED" ||
+                              approvingId === item.id
+                            }
+                            onClick={() => approveRecommendation(item)}
+                            type="button"
+                          >
+                            <Check aria-hidden="true" size={13} />
+                            {item.status === "APPROVED"
+                              ? "Approved"
+                              : approvingId === item.id
+                                ? "Saving"
+                                : "Approve"}
+                          </button>
+                          <button
+                            aria-label={`Edit shipment for ${item.storeCode} ${item.productCode}`}
+                            className="override-button"
+                            disabled={item.status === "APPROVED"}
+                            onClick={() => openOverride(item)}
+                            title={
+                              item.status === "APPROVED"
+                                ? "Approved shipments are locked"
+                                : "Edit shipment amount"
+                            }
+                            type="button"
+                          >
+                            <PencilLine aria-hidden="true" size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
