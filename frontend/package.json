@@ -10,6 +10,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
     "@vitejs/plugin-react": "latest",
     "axios": "latest",
     "lucide-react": "latest",
