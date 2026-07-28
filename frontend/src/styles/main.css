@@ -501,23 +501,23 @@ th:nth-child(4) {
 }
 
 th:nth-child(5) {
-  width: 13%;
-}
-
-th:nth-child(6) {
-  width: 16%;
-}
-
-th:nth-child(7) {
-  width: 10%;
-}
-
-th:nth-child(8) {
   width: 12%;
 }
 
-th:nth-child(9) {
+th:nth-child(6) {
   width: 15%;
+}
+
+th:nth-child(7) {
+  width: 9%;
+}
+
+th:nth-child(8) {
+  width: 11%;
+}
+
+th:nth-child(9) {
+  width: 19%;
 }
 
 tbody tr:hover {
@@ -544,6 +544,7 @@ tbody tr:hover {
 .priority.low { color: #059669; border-color: #059669; }
 
 .override-button,
+.reject-button,
 .icon-button {
   width: 28px;
   height: 28px;
@@ -590,7 +591,24 @@ tbody tr:hover {
   background: #ffffff;
 }
 
+.approve-button.rejected {
+  border-color: #dc2626;
+  color: #dc2626;
+  background: #ffffff;
+}
+
+.reject-button {
+  border-color: #fecaca;
+  color: #dc2626;
+}
+
+.reject-button:not(:disabled):hover {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
 .approve-button:disabled,
+.reject-button:disabled,
 .override-button:disabled {
   cursor: not-allowed;
   opacity: 0.65;
@@ -599,6 +617,28 @@ tbody tr:hover {
 .override-button:not(:disabled):hover {
   color: #111111;
   background: #f3f4f6;
+}
+
+.reject-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reject-confirm-button {
+  min-height: 35px;
+  padding: 0 13px;
+  border: 1px solid #dc2626;
+  border-radius: 5px;
+  color: #ffffff;
+  background: #dc2626;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.reject-confirm-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .modal-backdrop {
