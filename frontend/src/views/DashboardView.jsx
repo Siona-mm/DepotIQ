@@ -86,6 +86,10 @@ function EmptyPanel({ children }) {
   return <div className="panel-empty">{children}</div>;
 }
 
+function isActionable(status) {
+  return status === "PENDING" || status === "EDITED";
+}
+
 export default function DashboardView() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -102,6 +106,7 @@ export default function DashboardView() {
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
+  const [savingOverride, setSavingOverride] = useState(false);
   const [rejectItem, setRejectItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
 
@@ -263,19 +268,31 @@ export default function DashboardView() {
 
   const saveOverride = async (event) => {
     event.preventDefault();
-    const updated = await overrideRecommendationAmount(
-      overrideItem.id,
-      Number(overrideAmount),
-      overrideReason,
-    );
-    setData((current) => ({
-      ...current,
-      recommendations: current.recommendations.map((item) =>
-        item.id === updated.id ? updated : item,
-      ),
-    }));
-    setOverrideItem(null);
-    setSyncMessage(`Shipment amount for ${updated.storeCode} was overridden.`);
+    setSavingOverride(true);
+    setError("");
+    setSyncMessage("");
+
+    try {
+      const updated = await overrideRecommendationAmount(
+        overrideItem.id,
+        Number(overrideAmount),
+        overrideReason,
+      );
+      setData((current) => ({
+        ...current,
+        recommendations: current.recommendations.map((item) =>
+          item.id === updated.id ? updated : item,
+        ),
+      }));
+      setOverrideItem(null);
+      setSyncMessage(
+        `Shipment for ${updated.storeCode} / ${updated.productCode} was updated and saved.`,
+      );
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSavingOverride(false);
+    }
   };
 
   const changeRecommendationStatus = async (item, status) => {
@@ -539,7 +556,24 @@ export default function DashboardView() {
                         )}
                       </td>
                       <td>{formatNumber(item.predictedDemand)}</td>
-                      <td>{formatNumber(item.recommendedShipment)}</td>
+                      <td>
+                        <div className="shipment-value">
+                          <span>{formatNumber(item.recommendedShipment)}</span>
+                          {item.originalRecommendedShipment != null && (
+                            <small
+                              title={
+                                `Original model amount: ${formatNumber(
+                                  item.originalRecommendedShipment,
+                                )} units. ` +
+                                `Changed by ${item.overriddenBy ?? "an admin"}. ` +
+                                `Reason: ${item.overrideReason ?? "Not provided"}`
+                              }
+                            >
+                              Edited
+                            </small>
+                          )}
+                        </div>
+                      </td>
                       <td>
                         <span className={`priority ${item.priority.toLowerCase()}`}>
                           {item.priority[0] + item.priority.slice(1).toLowerCase()}
@@ -564,7 +598,7 @@ export default function DashboardView() {
                                   : "approve-button"
                             }
                             disabled={
-                              item.status !== "PENDING" ||
+                              !isActionable(item.status) ||
                               statusUpdate?.id === item.id
                             }
                             onClick={() =>
@@ -585,7 +619,7 @@ export default function DashboardView() {
                                 ? "Saving"
                                 : "Approve"}
                           </button>
-                          {item.status === "PENDING" && (
+                          {isActionable(item.status) && (
                             <button
                               aria-label={`Reject shipment for ${item.storeCode} ${item.productCode}`}
                               className="reject-button"
@@ -600,10 +634,10 @@ export default function DashboardView() {
                           <button
                             aria-label={`Edit shipment for ${item.storeCode} ${item.productCode}`}
                             className="override-button"
-                            disabled={item.status !== "PENDING"}
+                            disabled={!isActionable(item.status)}
                             onClick={() => openOverride(item)}
                             title={
-                              item.status !== "PENDING"
+                              !isActionable(item.status)
                                 ? "Completed recommendations are locked"
                                 : "Edit shipment amount"
                             }
@@ -731,7 +765,13 @@ export default function DashboardView() {
             </header>
             <p>
               {overrideItem.storeCode} / {overrideItem.productCode}. Model
-              recommendation: {formatNumber(overrideItem.recommendedShipment)} units.
+              recommendation:{" "}
+              {formatNumber(
+                overrideItem.originalRecommendedShipment ??
+                  overrideItem.recommendedShipment,
+              )}{" "}
+              units. Current shipment:{" "}
+              {formatNumber(overrideItem.recommendedShipment)} units.
             </p>
             <form onSubmit={saveOverride}>
               <label>
@@ -762,7 +802,13 @@ export default function DashboardView() {
                 >
                   Cancel
                 </button>
-                <button className="save-button" type="submit">Save override</button>
+                <button
+                  className="save-button"
+                  disabled={savingOverride}
+                  type="submit"
+                >
+                  {savingOverride ? "Saving..." : "Save override"}
+                </button>
               </footer>
             </form>
           </section>

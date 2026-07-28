@@ -524,6 +524,23 @@ tbody tr:hover {
   background: #fafafa;
 }
 
+.shipment-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.shipment-value small {
+  padding: 2px 5px;
+  border: 1px solid #9ca3af;
+  border-radius: 4px;
+  color: #6b7280;
+  background: #ffffff;
+  font-size: 9px;
+  font-weight: 550;
+  line-height: 1.2;
+}
+
 .priority {
   min-width: 55px;
   display: inline-flex;
@@ -717,6 +734,11 @@ tbody tr:hover {
   border: 1px solid #111111;
   color: #ffffff;
   background: #111111;
+}
+
+.save-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .panel-empty {
