@@ -22,7 +22,7 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   loadDashboardData,
   overrideRecommendationAmount,
@@ -90,6 +90,12 @@ function isActionable(status) {
   return status === "PENDING" || status === "EDITED";
 }
 
+function closeFromBackdrop(event, close) {
+  if (event.target === event.currentTarget) {
+    close();
+  }
+}
+
 export default function DashboardView() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -109,6 +115,7 @@ export default function DashboardView() {
   const [savingOverride, setSavingOverride] = useState(false);
   const [rejectItem, setRejectItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
+  const filterControlRef = useRef(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -125,6 +132,44 @@ export default function DashboardView() {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    if (!filterOpen) {
+      return undefined;
+    }
+
+    const closeFilterFromOutside = (event) => {
+      if (!filterControlRef.current?.contains(event.target)) {
+        setFilterOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeFilterFromOutside);
+    return () => {
+      document.removeEventListener("pointerdown", closeFilterFromOutside);
+    };
+  }, [filterOpen]);
+
+  useEffect(() => {
+    const closePopupFromKeyboard = (event) => {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      setFilterOpen(false);
+      if (!savingOverride) {
+        setOverrideItem(null);
+      }
+      if (!statusUpdate) {
+        setRejectItem(null);
+      }
+    };
+
+    document.addEventListener("keydown", closePopupFromKeyboard);
+    return () => {
+      document.removeEventListener("keydown", closePopupFromKeyboard);
+    };
+  }, [savingOverride, statusUpdate]);
 
   const depotInventoryByProduct = useMemo(
     () =>
@@ -421,7 +466,7 @@ export default function DashboardView() {
             <div className="panel-toolbar">
               <h2>Shipment Recommendations</h2>
               <div className="table-actions">
-                <div className="filter-control">
+                <div className="filter-control" ref={filterControlRef}>
                   <button
                     aria-expanded={filterOpen}
                     aria-haspopup="dialog"
@@ -747,7 +792,14 @@ export default function DashboardView() {
         </section>
       </main>
       {overrideItem && (
-        <div className="modal-backdrop">
+        <div
+          className="modal-backdrop"
+          onClick={(event) => {
+            if (!savingOverride) {
+              closeFromBackdrop(event, () => setOverrideItem(null));
+            }
+          }}
+        >
           <section aria-modal="true" className="override-dialog" role="dialog">
             <header>
               <div>
@@ -815,7 +867,14 @@ export default function DashboardView() {
         </div>
       )}
       {rejectItem && (
-        <div className="modal-backdrop">
+        <div
+          className="modal-backdrop"
+          onClick={(event) => {
+            if (!statusUpdate) {
+              closeFromBackdrop(event, () => setRejectItem(null));
+            }
+          }}
+        >
           <section
             aria-labelledby="reject-dialog-title"
             aria-modal="true"
