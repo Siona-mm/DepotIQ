@@ -110,6 +110,14 @@ public class ShipmentRecommendationService {
     ) {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
 
+        if (recommendation.getStatus() != RecommendationStatus.PENDING
+                && recommendation.getStatus() != RecommendationStatus.EDITED) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Only pending or edited recommendations can be overridden"
+            );
+        }
+
         if (recommendation.getOriginalRecommendedShipment() == null) {
             recommendation.setOriginalRecommendedShipment(recommendation.getRecommendedShipment());
         }
@@ -118,6 +126,7 @@ public class ShipmentRecommendationService {
         recommendation.setOverrideReason(request.getReason().trim());
         recommendation.setOverriddenBy(request.getOverriddenBy().trim());
         recommendation.setOverriddenAt(OffsetDateTime.now());
+        recommendation.setStatus(RecommendationStatus.EDITED);
 
         return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
     }
