@@ -90,7 +90,9 @@ export default function DashboardView() {
   const [error, setError] = useState("");
   const [syncMessage, setSyncMessage] = useState("");
   const [query, setQuery] = useState("");
-  const [urgentOnly, setUrgentOnly] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [storeFilter, setStoreFilter] = useState("ALL");
+  const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [descending, setDescending] = useState(true);
   const [page, setPage] = useState(1);
   const [collapsed, setCollapsed] = useState(false);
@@ -154,7 +156,12 @@ export default function DashboardView() {
     const normalizedQuery = query.trim().toLowerCase();
 
     return data.recommendations
-      .filter((item) => !urgentOnly || item.priority === "URGENT")
+      .filter(
+        (item) => storeFilter === "ALL" || item.storeCode === storeFilter,
+      )
+      .filter(
+        (item) => priorityFilter === "ALL" || item.priority === priorityFilter,
+      )
       .filter((item) => {
         if (!normalizedQuery) {
           return true;
@@ -179,7 +186,31 @@ export default function DashboardView() {
           Number(left.recommendedShipment);
         return descending ? difference : -difference;
       });
-  }, [data.recommendations, descending, query, urgentOnly]);
+  }, [
+    data.recommendations,
+    descending,
+    priorityFilter,
+    query,
+    storeFilter,
+  ]);
+
+  const storeOptions = useMemo(
+    () =>
+      Array.from(
+        new Map(
+          data.recommendations.map((item) => [
+            item.storeCode,
+            `${item.storeCode} - ${item.storeName}`,
+          ]),
+        ),
+      ),
+    [data.recommendations],
+  );
+
+  const filtersActive =
+    storeFilter !== "ALL" || priorityFilter !== "ALL";
+  const activeFilterCount =
+    Number(storeFilter !== "ALL") + Number(priorityFilter !== "ALL");
 
   const pageCount = Math.max(
     1,
@@ -193,7 +224,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     setPage(1);
-  }, [query, urgentOnly, descending]);
+  }, [query, storeFilter, priorityFilter, descending]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -334,15 +365,86 @@ export default function DashboardView() {
             <div className="panel-toolbar">
               <h2>Shipment Recommendations</h2>
               <div className="table-actions">
-                <button
-                  aria-pressed={urgentOnly}
-                  className={urgentOnly ? "tool-button active" : "tool-button"}
-                  onClick={() => setUrgentOnly((current) => !current)}
-                  type="button"
-                >
-                  <SlidersHorizontal aria-hidden="true" size={13} />
-                  Filter
-                </button>
+                <div className="filter-control">
+                  <button
+                    aria-expanded={filterOpen}
+                    aria-haspopup="dialog"
+                    className={
+                      filtersActive ? "tool-button active" : "tool-button"
+                    }
+                    onClick={() => setFilterOpen((current) => !current)}
+                    type="button"
+                  >
+                    <SlidersHorizontal aria-hidden="true" size={13} />
+                    Filter
+                    {filtersActive && (
+                      <span className="filter-count">{activeFilterCount}</span>
+                    )}
+                  </button>
+
+                  {filterOpen && (
+                    <section
+                      aria-label="Recommendation filters"
+                      className="filter-popover"
+                      role="dialog"
+                    >
+                      <header>
+                        <strong>Filter recommendations</strong>
+                        <span>{filteredRecommendations.length} results</span>
+                      </header>
+
+                      <label>
+                        Store
+                        <select
+                          onChange={(event) => setStoreFilter(event.target.value)}
+                          value={storeFilter}
+                        >
+                          <option value="ALL">All stores</option>
+                          {storeOptions.map(([code, label]) => (
+                            <option key={code} value={code}>
+                              {label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label>
+                        Priority
+                        <select
+                          onChange={(event) =>
+                            setPriorityFilter(event.target.value)
+                          }
+                          value={priorityFilter}
+                        >
+                          <option value="ALL">All priorities</option>
+                          <option value="URGENT">Urgent</option>
+                          <option value="HIGH">High</option>
+                          <option value="NORMAL">Normal</option>
+                          <option value="LOW">Low</option>
+                        </select>
+                      </label>
+
+                      <footer>
+                        <button
+                          disabled={!filtersActive}
+                          onClick={() => {
+                            setStoreFilter("ALL");
+                            setPriorityFilter("ALL");
+                          }}
+                          type="button"
+                        >
+                          Clear filters
+                        </button>
+                        <button
+                          onClick={() => setFilterOpen(false)}
+                          type="button"
+                        >
+                          Done
+                        </button>
+                      </footer>
+                    </section>
+                  )}
+                </div>
                 <button
                   className="tool-button"
                   onClick={() => setDescending((current) => !current)}
