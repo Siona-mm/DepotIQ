@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   PackageOpen,
   PackageSearch,
+  PencilLine,
   RefreshCw,
   Search,
   Settings,
@@ -17,10 +18,12 @@ import {
   Truck,
   Upload,
   Warehouse,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   loadDashboardData,
+  overrideRecommendationAmount,
   syncMlRecommendations,
 } from "../api/depotiqApi.js";
 
@@ -90,6 +93,10 @@ export default function DashboardView() {
   const [urgentOnly, setUrgentOnly] = useState(false);
   const [descending, setDescending] = useState(true);
   const [page, setPage] = useState(1);
+  const [collapsed, setCollapsed] = useState(false);
+  const [overrideItem, setOverrideItem] = useState(null);
+  const [overrideAmount, setOverrideAmount] = useState("");
+  const [overrideReason, setOverrideReason] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -212,9 +219,32 @@ export default function DashboardView() {
     (_, index) => index + 1,
   );
 
+  const openOverride = (item) => {
+    setOverrideItem(item);
+    setOverrideAmount(String(item.recommendedShipment));
+    setOverrideReason("");
+  };
+
+  const saveOverride = async (event) => {
+    event.preventDefault();
+    const updated = await overrideRecommendationAmount(
+      overrideItem.id,
+      Number(overrideAmount),
+      overrideReason,
+    );
+    setData((current) => ({
+      ...current,
+      recommendations: current.recommendations.map((item) =>
+        item.id === updated.id ? updated : item,
+      ),
+    }));
+    setOverrideItem(null);
+    setSyncMessage(`Shipment amount for ${updated.storeCode} was overridden.`);
+  };
+
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
+    <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
+      <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
         <div className="brand">
           <PackageOpen aria-hidden="true" size={29} strokeWidth={1.8} />
           <span>DepotIQ</span>
@@ -234,7 +264,13 @@ export default function DashboardView() {
           ))}
         </nav>
 
-        <button className="collapse-button" type="button" title="Collapse sidebar">
+        <button
+          aria-expanded={!collapsed}
+          className="collapse-button"
+          onClick={() => setCollapsed((current) => !current)}
+          type="button"
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
           <ChevronsLeft aria-hidden="true" size={16} />
           <span>Collapse</span>
         </button>
@@ -347,6 +383,7 @@ export default function DashboardView() {
                     <th>Recommended Shipment</th>
                     <th>Priority</th>
                     <th>Updated</th>
+                    <th><span className="sr-only">Admin action</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -368,6 +405,16 @@ export default function DashboardView() {
                         </span>
                       </td>
                       <td>{formatUpdated(item.recommendationDate)}</td>
+                      <td>
+                        <button
+                          aria-label={`Override shipment for ${item.storeCode} ${item.productCode}`}
+                          className="override-button"
+                          onClick={() => openOverride(item)}
+                          type="button"
+                        >
+                          <PencilLine aria-hidden="true" size={14} />
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -467,6 +514,62 @@ export default function DashboardView() {
           </aside>
         </section>
       </main>
+      {overrideItem && (
+        <div className="modal-backdrop">
+          <section aria-modal="true" className="override-dialog" role="dialog">
+            <header>
+              <div>
+                <span>Admin action</span>
+                <h2>Override shipment amount</h2>
+              </div>
+              <button
+                aria-label="Close override dialog"
+                className="icon-button"
+                onClick={() => setOverrideItem(null)}
+                type="button"
+              >
+                <X aria-hidden="true" size={17} />
+              </button>
+            </header>
+            <p>
+              {overrideItem.storeCode} / {overrideItem.productCode}. Model
+              recommendation: {formatNumber(overrideItem.recommendedShipment)} units.
+            </p>
+            <form onSubmit={saveOverride}>
+              <label>
+                Shipment amount
+                <input
+                  min="0"
+                  onChange={(event) => setOverrideAmount(event.target.value)}
+                  required
+                  type="number"
+                  value={overrideAmount}
+                />
+              </label>
+              <label>
+                Reason for override
+                <textarea
+                  maxLength="500"
+                  onChange={(event) => setOverrideReason(event.target.value)}
+                  required
+                  rows="3"
+                  value={overrideReason}
+                />
+              </label>
+              <footer>
+                <button
+                  className="secondary-button"
+                  onClick={() => setOverrideItem(null)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button className="save-button" type="submit">Save override</button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
