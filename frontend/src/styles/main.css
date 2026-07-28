@@ -416,6 +416,7 @@ td small {
 }
 
 .stock-bar span {
+  display: block;
   height: 100%;
   margin: 0;
   background: #222222;
