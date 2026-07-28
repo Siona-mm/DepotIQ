@@ -1,6 +1,5 @@
-import { AppRoutes } from "./routes/AppRoutes.jsx";
+import DashboardView from "./views/DashboardView.jsx";
 
 export default function App() {
-  return <AppRoutes />;
+  return <DashboardView />;
 }
-
