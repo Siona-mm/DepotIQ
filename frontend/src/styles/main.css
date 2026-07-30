@@ -677,6 +677,82 @@ tbody tr:hover {
   box-shadow: 0 16px 48px rgb(17 17 17 / 14%);
 }
 
+.upload-dialog {
+  width: min(500px, 100%);
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 16px 48px rgb(17 17 17 / 14%);
+}
+
+.upload-dialog header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.upload-dialog header span,
+.upload-dialog > p {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.upload-dialog h2 {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.upload-dialog form {
+  display: grid;
+  gap: 14px;
+}
+
+.file-input {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.file-input input {
+  width: 100%;
+  padding: 9px;
+  border: 1px dashed #9ca3af;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.selected-file {
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.import-result {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 6px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 12px;
+}
+
+.import-result ul {
+  margin: 3px 0 0;
+  padding-left: 17px;
+}
+
+.upload-dialog footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .override-dialog header {
   display: flex;
   justify-content: space-between;
