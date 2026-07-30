@@ -79,8 +79,8 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[17,18)</version>
-                                    <message>DepotIQ backend must be built with Java 17. Java 11 is not supported.</message>
+                                    <version>[17,22)</version>
+                                    <message>DepotIQ backend must be built with Java 17 through 21.</message>
                                 </requireJavaVersion>
                                 <requireMavenVersion>
                                     <version>[3.8.0,)</version>
