@@ -3,7 +3,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
-      "Content-Type": "application/json",
+      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
       ...options.headers,
     },
     ...options,
@@ -53,5 +53,15 @@ export function updateRecommendationStatus(id, status) {
   return request(`/api/recommendations/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export function importHistoricalSalesCsv(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return request("/api/imports/sales-records", {
+    method: "POST",
+    body: formData,
   });
 }
