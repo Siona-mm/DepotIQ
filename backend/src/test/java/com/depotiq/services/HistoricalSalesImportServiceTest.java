@@ -12,6 +12,7 @@ import com.depotiq.models.Store;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreRepository;
+import java.math.BigDecimal;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,8 +45,11 @@ class HistoricalSalesImportServiceTest {
     void importsKnownStoreAndProductRows() {
         Store store = new Store();
         store.setId(1L);
+        store.setRegion("Old region");
         Product product = new Product();
         product.setId(2L);
+        product.setCategory("Other");
+        product.setPrice(BigDecimal.ONE);
         when(storeRepository.findByStoreCode("S001")).thenReturn(Optional.of(store));
         when(productRepository.findByProductCode("P0001")).thenReturn(Optional.of(product));
         when(salesRecordRepository.findByStoreIdAndProductIdAndSaleDate(any(), any(), any()))
@@ -62,20 +66,30 @@ class HistoricalSalesImportServiceTest {
         assertThat(saved.getUnitsSold()).isEqualTo(127);
         assertThat(saved.getPrice()).isEqualByComparingTo("33.5");
         assertThat(saved.getHolidayPromotion()).isFalse();
+        assertThat(store.getRegion()).isEqualTo("North");
+        assertThat(product.getCategory()).isEqualTo("Groceries");
+        assertThat(product.getPrice()).isEqualByComparingTo("33.5");
     }
 
     @Test
-    void skipsRowsForUnknownReferences() {
+    void createsMissingStoreAndProductFromCsvMetadata() {
         when(storeRepository.findByStoreCode("S999")).thenReturn(Optional.empty());
+        when(productRepository.findByProductCode("P9999")).thenReturn(Optional.empty());
+        when(storeRepository.save(any(Store.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(salesRecordRepository.findByStoreIdAndProductIdAndSaleDate(any(), any(), any()))
+                .thenReturn(Optional.empty());
 
         HistoricalSalesImportResponse response = service.importCsv(csvFile(
-                "2022-01-01,S999,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"
+                "2022-01-01,S999,P9999,Electronics,South,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"
         ));
 
-        assertThat(response.processedRows()).isEqualTo(1);
-        assertThat(response.createdRecords()).isZero();
-        assertThat(response.skippedRows()).isEqualTo(1);
-        assertThat(response.errors()).containsExactly("Line 2: unknown store 'S999'.");
+        assertThat(response.createdRecords()).isEqualTo(1);
+        assertThat(response.createdStores()).isEqualTo(1);
+        assertThat(response.createdProducts()).isEqualTo(1);
+        assertThat(response.skippedRows()).isZero();
+        verify(storeRepository).save(any(Store.class));
+        verify(productRepository).save(any(Product.class));
     }
 
     private MockMultipartFile csvFile(String row) {
