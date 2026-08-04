@@ -66,6 +66,7 @@ function ShipmentMetric({ icon: Icon, label, value, note }) {
 export default function ShipmentsView({
   collapsed,
   onCollapse,
+  onAction,
   onNavigate,
 }) {
   const [shipments, setShipments] = useState([]);
@@ -252,6 +253,7 @@ export default function ShipmentsView({
         collapsed={collapsed}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onAction={onAction}
       />
 
       <main className="dashboard shipments-page">
