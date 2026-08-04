@@ -3,7 +3,9 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
     headers: {
-      ...(options.body instanceof FormData ? {} : { "Content-Type": "application/json" }),
+      ...(options.body instanceof globalThis.FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
       ...options.headers,
     },
     ...options,
@@ -56,8 +58,31 @@ export function updateRecommendationStatus(id, status) {
   });
 }
 
+export async function loadShipmentPageData() {
+  const [shipments, approvedRecommendations] = await Promise.all([
+    request("/api/shipments"),
+    request("/api/recommendations?status=APPROVED"),
+  ]);
+
+  return { shipments, approvedRecommendations };
+}
+
+export function createShipment(payload) {
+  return request("/api/shipments", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateShipmentStatus(id, status) {
+  return request(`/api/shipments/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
+
 export function importHistoricalSalesCsv(file) {
-  const formData = new FormData();
+  const formData = new globalThis.FormData();
   formData.append("file", file);
 
   return request("/api/imports/sales-records", {

@@ -5,24 +5,20 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Check,
-  ChevronsLeft,
-  FileChartColumn,
-  LayoutDashboard,
-  PackageOpen,
-  PackageSearch,
+  ChevronLeft,
+  ChevronRight,
   PencilLine,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
-  Store,
   Truck,
-  Upload,
   Warehouse,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AppSidebar from "../components/AppSidebar.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
@@ -39,18 +35,46 @@ const EMPTY_DATA = {
 };
 
 const PAGE_SIZE = 10;
+const PRIORITY_ORDER = {
+  URGENT: 0,
+  HIGH: 1,
+  NORMAL: 2,
+  LOW: 3,
+};
 
-const NAVIGATION = [
-  [LayoutDashboard, "Dashboard", true],
-  [Warehouse, "Depot Inventory"],
-  [Store, "Stores"],
-  [PackageSearch, "Products"],
-  [ChartNoAxesCombined, "Forecasts"],
-  [Truck, "Shipments"],
-  [Upload, "Upload Data"],
-  [FileChartColumn, "Reports"],
-  [Settings, "Settings"],
-];
+function paginationItems(currentPage, pageCount) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  let start = Math.max(2, currentPage - 1);
+  let end = Math.min(pageCount - 1, currentPage + 1);
+
+  if (currentPage <= 4) {
+    start = 2;
+    end = 5;
+  } else if (currentPage >= pageCount - 3) {
+    start = pageCount - 4;
+    end = pageCount - 1;
+  }
+
+  const items = [1];
+
+  if (start > 2) {
+    items.push("ellipsis-start");
+  }
+
+  for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+    items.push(pageNumber);
+  }
+
+  if (end < pageCount - 1) {
+    items.push("ellipsis-end");
+  }
+
+  items.push(pageCount);
+  return items;
+}
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
@@ -91,13 +115,65 @@ function isActionable(status) {
   return status === "PENDING" || status === "EDITED";
 }
 
+function recommendationActionLabel(status) {
+  const labels = {
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    READY_FOR_TRANSPORT: "Ready",
+    ASSIGNED_TO_ROUTE: "Assigned",
+    SHIPPED: "Shipped",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
+  };
+
+  return labels[status] ?? "Approve";
+}
+
+function recommendationActionClass(status) {
+  if (status === "APPROVED") {
+    return "approve-button approved";
+  }
+
+  if (status === "REJECTED" || status === "CANCELLED") {
+    return "approve-button rejected";
+  }
+
+  if (!isActionable(status)) {
+    return "approve-button processed";
+  }
+
+  return "approve-button";
+}
+
+function recommendationActionTitle(status) {
+  if (isActionable(status)) {
+    return "Approve recommendation";
+  }
+
+  if (status === "APPROVED") {
+    return "Approved and ready to be added to a shipment";
+  }
+
+  if (status === "REJECTED" || status === "CANCELLED") {
+    return "This recommendation is closed";
+  }
+
+  return "This recommendation is already being processed in transportation planning";
+}
+
 function closeFromBackdrop(event, close) {
   if (event.target === event.currentTarget) {
     close();
   }
 }
 
-export default function DashboardView() {
+export default function DashboardView({
+  collapsed,
+  onCollapse,
+  onAction,
+  onNavigate,
+  refreshRequest,
+}) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -109,7 +185,6 @@ export default function DashboardView() {
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [descending, setDescending] = useState(true);
   const [page, setPage] = useState(1);
-  const [collapsed, setCollapsed] = useState(false);
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
@@ -136,7 +211,7 @@ export default function DashboardView() {
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, refreshRequest]);
 
   useEffect(() => {
     if (!filterOpen) {
@@ -190,11 +265,21 @@ export default function DashboardView() {
     [data.depotInventory],
   );
 
+  const dashboardRecommendations = useMemo(
+    () =>
+      data.recommendations.filter(
+        (item) =>
+          item.status !== "DELIVERED" &&
+          Number(item.recommendedShipment) > 0,
+      ),
+    [data.recommendations],
+  );
+
   const summary = useMemo(() => {
-    const urgent = data.recommendations.filter(
+    const urgent = dashboardRecommendations.filter(
       (item) => item.priority === "URGENT",
     ).length;
-    const pending = data.recommendations.filter(
+    const pending = dashboardRecommendations.filter(
       (item) => item.status === "PENDING",
     ).length;
     const stores = new Set(data.storeInventory.map((item) => item.storeId)).size;
@@ -213,12 +298,12 @@ export default function DashboardView() {
       stores,
       accuracy: `${meanAccuracy.toFixed(1)}%`,
     };
-  }, [data]);
+  }, [dashboardRecommendations, data.forecasts, data.storeInventory]);
 
   const filteredRecommendations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return data.recommendations
+    return dashboardRecommendations
       .filter(
         (item) => storeFilter === "ALL" || item.storeCode === storeFilter,
       )
@@ -244,13 +329,21 @@ export default function DashboardView() {
         );
       })
       .sort((left, right) => {
-        const difference =
+        const priorityDifference =
+          (PRIORITY_ORDER[left.priority] ?? Number.MAX_SAFE_INTEGER) -
+          (PRIORITY_ORDER[right.priority] ?? Number.MAX_SAFE_INTEGER);
+
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        const shipmentDifference =
           Number(right.recommendedShipment) -
           Number(left.recommendedShipment);
-        return descending ? difference : -difference;
+        return descending ? shipmentDifference : -shipmentDifference;
       });
   }, [
-    data.recommendations,
+    dashboardRecommendations,
     descending,
     priorityFilter,
     query,
@@ -261,13 +354,13 @@ export default function DashboardView() {
     () =>
       Array.from(
         new Map(
-          data.recommendations.map((item) => [
+          dashboardRecommendations.map((item) => [
             item.storeCode,
             `${item.storeCode} - ${item.storeName}`,
           ]),
         ),
       ),
-    [data.recommendations],
+    [dashboardRecommendations],
   );
 
   const filtersActive =
@@ -308,10 +401,7 @@ export default function DashboardView() {
     }
   };
 
-  const visiblePages = Array.from(
-    { length: Math.min(pageCount, 3) },
-    (_, index) => index + 1,
-  );
+  const visiblePages = paginationItems(currentPage, pageCount);
 
   const openOverride = (item) => {
     setOverrideItem(item);
@@ -382,13 +472,6 @@ export default function DashboardView() {
     }
   };
 
-  const openUpload = () => {
-    setUploadFile(null);
-    setImportResult(null);
-    setError("");
-    setUploadOpen(true);
-  };
-
   const uploadHistoricalSales = async (event) => {
     event.preventDefault();
     if (!uploadFile) {
@@ -414,38 +497,13 @@ export default function DashboardView() {
 
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-      <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
-        <div className="brand">
-          <PackageOpen aria-hidden="true" size={29} strokeWidth={1.8} />
-          <span>DepotIQ</span>
-        </div>
-
-        <nav aria-label="Main navigation">
-          {NAVIGATION.map(([Icon, label, active]) => (
-            <button
-              aria-current={active ? "page" : undefined}
-              className={active ? "nav-item active" : "nav-item"}
-              key={label}
-              onClick={label === "Upload Data" ? openUpload : undefined}
-              type="button"
-            >
-              <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <button
-          aria-expanded={!collapsed}
-          className="collapse-button"
-          onClick={() => setCollapsed((current) => !current)}
-          type="button"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronsLeft aria-hidden="true" size={16} />
-          <span>Collapse</span>
-        </button>
-      </aside>
+      <AppSidebar
+        activePage="Dashboard"
+        collapsed={collapsed}
+        onCollapse={onCollapse}
+        onNavigate={onNavigate}
+        onAction={onAction}
+      />
 
       <main className="dashboard">
         <header className="topbar">
@@ -588,6 +646,7 @@ export default function DashboardView() {
                 <button
                   className="tool-button"
                   onClick={() => setDescending((current) => !current)}
+                  title="Reverse shipment quantity within each priority"
                   type="button"
                 >
                   <ArrowUpDown aria-hidden="true" size={13} />
@@ -667,20 +726,10 @@ export default function DashboardView() {
                       <td className="recommendation-actions">
                         <div className="action-buttons">
                           <button
-                            aria-label={`${
-                              item.status === "APPROVED"
-                                ? "Approved"
-                                : item.status === "REJECTED"
-                                  ? "Rejected"
-                                  : "Approve"
-                            } shipment for ${item.storeCode} ${item.productCode}`}
-                            className={
-                              item.status === "APPROVED"
-                                ? "approve-button approved"
-                                : item.status === "REJECTED"
-                                  ? "approve-button rejected"
-                                  : "approve-button"
-                            }
+                            aria-label={`${recommendationActionLabel(
+                              item.status,
+                            )} shipment for ${item.storeCode} ${item.productCode}`}
+                            className={recommendationActionClass(item.status)}
                             disabled={
                               !isActionable(item.status) ||
                               statusUpdate?.id === item.id
@@ -688,20 +737,21 @@ export default function DashboardView() {
                             onClick={() =>
                               changeRecommendationStatus(item, "APPROVED")
                             }
+                            title={recommendationActionTitle(item.status)}
                             type="button"
                           >
-                            {item.status === "REJECTED" ? (
+                            {item.status === "REJECTED" ||
+                            item.status === "CANCELLED" ? (
                               <Ban aria-hidden="true" size={13} />
+                            ) : !isActionable(item.status) &&
+                              item.status !== "APPROVED" ? (
+                              <Truck aria-hidden="true" size={13} />
                             ) : (
                               <Check aria-hidden="true" size={13} />
                             )}
-                            {item.status === "APPROVED"
-                              ? "Approved"
-                              : item.status === "REJECTED"
-                                ? "Rejected"
-                                : statusUpdate?.id === item.id
-                                ? "Saving"
-                                : "Approve"}
+                            {statusUpdate?.id === item.id
+                              ? "Saving"
+                              : recommendationActionLabel(item.status)}
                           </button>
                           {isActionable(item.status) && (
                             <button
@@ -748,35 +798,54 @@ export default function DashboardView() {
                 {filteredRecommendations.length === 1 ? "" : "s"}
               </span>
               <div aria-label="Table pages">
-                {visiblePages.map((pageNumber) => (
-                  <button
-                    aria-current={
-                      currentPage === pageNumber ? "page" : undefined
-                    }
-                    className={
-                      currentPage === pageNumber ? "page-button active" : "page-button"
-                    }
-                    key={pageNumber}
-                    onClick={() => setPage(pageNumber)}
-                    type="button"
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
-                {pageCount > 3 && <span>...</span>}
-                {pageCount > 3 && (
-                  <button
-                    className={
-                      currentPage === pageCount
-                        ? "page-button active"
-                        : "page-button"
-                    }
-                    onClick={() => setPage(pageCount)}
-                    type="button"
-                  >
-                    {pageCount}
-                  </button>
+                <button
+                  aria-label="Previous page"
+                  className="page-button page-arrow"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  type="button"
+                >
+                  <ChevronLeft aria-hidden="true" size={14} />
+                </button>
+                {visiblePages.map((item) =>
+                  typeof item === "number" ? (
+                    <button
+                      aria-current={
+                        currentPage === item ? "page" : undefined
+                      }
+                      aria-label={`Page ${item}`}
+                      className={
+                        currentPage === item
+                          ? "page-button active"
+                          : "page-button"
+                      }
+                      key={item}
+                      onClick={() => setPage(item)}
+                      type="button"
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="pagination-ellipsis"
+                      key={item}
+                    >
+                      ...
+                    </span>
+                  ),
                 )}
+                <button
+                  aria-label="Next page"
+                  className="page-button page-arrow"
+                  disabled={currentPage === pageCount}
+                  onClick={() =>
+                    setPage((current) => Math.min(pageCount, current + 1))
+                  }
+                  type="button"
+                >
+                  <ChevronRight aria-hidden="true" size={14} />
+                </button>
               </div>
             </footer>
           </section>
