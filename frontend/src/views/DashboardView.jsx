@@ -5,6 +5,8 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Check,
+  ChevronLeft,
+  ChevronRight,
   PencilLine,
   RefreshCw,
   Search,
@@ -33,6 +35,40 @@ const EMPTY_DATA = {
 };
 
 const PAGE_SIZE = 10;
+
+function paginationItems(currentPage, pageCount) {
+  if (pageCount <= 7) {
+    return Array.from({ length: pageCount }, (_, index) => index + 1);
+  }
+
+  let start = Math.max(2, currentPage - 1);
+  let end = Math.min(pageCount - 1, currentPage + 1);
+
+  if (currentPage <= 4) {
+    start = 2;
+    end = 5;
+  } else if (currentPage >= pageCount - 3) {
+    start = pageCount - 4;
+    end = pageCount - 1;
+  }
+
+  const items = [1];
+
+  if (start > 2) {
+    items.push("ellipsis-start");
+  }
+
+  for (let pageNumber = start; pageNumber <= end; pageNumber += 1) {
+    items.push(pageNumber);
+  }
+
+  if (end < pageCount - 1) {
+    items.push("ellipsis-end");
+  }
+
+  items.push(pageCount);
+  return items;
+}
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
@@ -293,10 +329,7 @@ export default function DashboardView({
     }
   };
 
-  const visiblePages = Array.from(
-    { length: Math.min(pageCount, 3) },
-    (_, index) => index + 1,
-  );
+  const visiblePages = paginationItems(currentPage, pageCount);
 
   const openOverride = (item) => {
     setOverrideItem(item);
@@ -712,35 +745,54 @@ export default function DashboardView({
                 {filteredRecommendations.length === 1 ? "" : "s"}
               </span>
               <div aria-label="Table pages">
-                {visiblePages.map((pageNumber) => (
-                  <button
-                    aria-current={
-                      currentPage === pageNumber ? "page" : undefined
-                    }
-                    className={
-                      currentPage === pageNumber ? "page-button active" : "page-button"
-                    }
-                    key={pageNumber}
-                    onClick={() => setPage(pageNumber)}
-                    type="button"
-                  >
-                    {pageNumber}
-                  </button>
-                ))}
-                {pageCount > 3 && <span>...</span>}
-                {pageCount > 3 && (
-                  <button
-                    className={
-                      currentPage === pageCount
-                        ? "page-button active"
-                        : "page-button"
-                    }
-                    onClick={() => setPage(pageCount)}
-                    type="button"
-                  >
-                    {pageCount}
-                  </button>
+                <button
+                  aria-label="Previous page"
+                  className="page-button page-arrow"
+                  disabled={currentPage === 1}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  type="button"
+                >
+                  <ChevronLeft aria-hidden="true" size={14} />
+                </button>
+                {visiblePages.map((item) =>
+                  typeof item === "number" ? (
+                    <button
+                      aria-current={
+                        currentPage === item ? "page" : undefined
+                      }
+                      aria-label={`Page ${item}`}
+                      className={
+                        currentPage === item
+                          ? "page-button active"
+                          : "page-button"
+                      }
+                      key={item}
+                      onClick={() => setPage(item)}
+                      type="button"
+                    >
+                      {item}
+                    </button>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="pagination-ellipsis"
+                      key={item}
+                    >
+                      ...
+                    </span>
+                  ),
                 )}
+                <button
+                  aria-label="Next page"
+                  className="page-button page-arrow"
+                  disabled={currentPage === pageCount}
+                  onClick={() =>
+                    setPage((current) => Math.min(pageCount, current + 1))
+                  }
+                  type="button"
+                >
+                  <ChevronRight aria-hidden="true" size={14} />
+                </button>
               </div>
             </footer>
           </section>
