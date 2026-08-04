@@ -263,11 +263,19 @@ export default function DashboardView({
     [data.depotInventory],
   );
 
+  const dashboardRecommendations = useMemo(
+    () =>
+      data.recommendations.filter(
+        (item) => item.status !== "DELIVERED",
+      ),
+    [data.recommendations],
+  );
+
   const summary = useMemo(() => {
-    const urgent = data.recommendations.filter(
+    const urgent = dashboardRecommendations.filter(
       (item) => item.priority === "URGENT",
     ).length;
-    const pending = data.recommendations.filter(
+    const pending = dashboardRecommendations.filter(
       (item) => item.status === "PENDING",
     ).length;
     const stores = new Set(data.storeInventory.map((item) => item.storeId)).size;
@@ -286,12 +294,12 @@ export default function DashboardView({
       stores,
       accuracy: `${meanAccuracy.toFixed(1)}%`,
     };
-  }, [data]);
+  }, [dashboardRecommendations, data.forecasts, data.storeInventory]);
 
   const filteredRecommendations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return data.recommendations
+    return dashboardRecommendations
       .filter(
         (item) => storeFilter === "ALL" || item.storeCode === storeFilter,
       )
@@ -331,7 +339,7 @@ export default function DashboardView({
         return descending ? shipmentDifference : -shipmentDifference;
       });
   }, [
-    data.recommendations,
+    dashboardRecommendations,
     descending,
     priorityFilter,
     query,
@@ -342,13 +350,13 @@ export default function DashboardView({
     () =>
       Array.from(
         new Map(
-          data.recommendations.map((item) => [
+          dashboardRecommendations.map((item) => [
             item.storeCode,
             `${item.storeCode} - ${item.storeName}`,
           ]),
         ),
       ),
-    [data.recommendations],
+    [dashboardRecommendations],
   );
 
   const filtersActive =
