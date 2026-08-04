@@ -5,24 +5,18 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Check,
-  ChevronsLeft,
-  FileChartColumn,
-  LayoutDashboard,
-  PackageOpen,
-  PackageSearch,
   PencilLine,
   RefreshCw,
   Search,
   Settings,
   ShieldCheck,
   SlidersHorizontal,
-  Store,
   Truck,
-  Upload,
   Warehouse,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import AppSidebar from "../components/AppSidebar.jsx";
 import {
   loadDashboardData,
   overrideRecommendationAmount,
@@ -38,18 +32,6 @@ const EMPTY_DATA = {
 };
 
 const PAGE_SIZE = 10;
-
-const NAVIGATION = [
-  [LayoutDashboard, "Dashboard", true],
-  [Warehouse, "Depot Inventory"],
-  [Store, "Stores"],
-  [PackageSearch, "Products"],
-  [ChartNoAxesCombined, "Forecasts"],
-  [Truck, "Shipments"],
-  [Upload, "Upload Data"],
-  [FileChartColumn, "Reports"],
-  [Settings, "Settings"],
-];
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(
@@ -96,7 +78,11 @@ function closeFromBackdrop(event, close) {
   }
 }
 
-export default function DashboardView() {
+export default function DashboardView({
+  collapsed,
+  onCollapse,
+  onNavigate,
+}) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -108,7 +94,6 @@ export default function DashboardView() {
   const [priorityFilter, setPriorityFilter] = useState("ALL");
   const [descending, setDescending] = useState(true);
   const [page, setPage] = useState(1);
-  const [collapsed, setCollapsed] = useState(false);
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
@@ -376,37 +361,12 @@ export default function DashboardView() {
 
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-      <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
-        <div className="brand">
-          <PackageOpen aria-hidden="true" size={29} strokeWidth={1.8} />
-          <span>DepotIQ</span>
-        </div>
-
-        <nav aria-label="Main navigation">
-          {NAVIGATION.map(([Icon, label, active]) => (
-            <button
-              aria-current={active ? "page" : undefined}
-              className={active ? "nav-item active" : "nav-item"}
-              key={label}
-              type="button"
-            >
-              <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </nav>
-
-        <button
-          aria-expanded={!collapsed}
-          className="collapse-button"
-          onClick={() => setCollapsed((current) => !current)}
-          type="button"
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          <ChevronsLeft aria-hidden="true" size={16} />
-          <span>Collapse</span>
-        </button>
-      </aside>
+      <AppSidebar
+        activePage="Dashboard"
+        collapsed={collapsed}
+        onCollapse={onCollapse}
+        onNavigate={onNavigate}
+      />
 
       <main className="dashboard">
         <header className="topbar">
