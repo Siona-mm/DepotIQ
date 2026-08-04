@@ -35,6 +35,12 @@ const EMPTY_DATA = {
 };
 
 const PAGE_SIZE = 10;
+const PRIORITY_ORDER = {
+  URGENT: 0,
+  HIGH: 1,
+  NORMAL: 2,
+  LOW: 3,
+};
 
 function paginationItems(currentPage, pageCount) {
   if (pageCount <= 7) {
@@ -265,10 +271,18 @@ export default function DashboardView({
         );
       })
       .sort((left, right) => {
-        const difference =
+        const priorityDifference =
+          (PRIORITY_ORDER[left.priority] ?? Number.MAX_SAFE_INTEGER) -
+          (PRIORITY_ORDER[right.priority] ?? Number.MAX_SAFE_INTEGER);
+
+        if (priorityDifference !== 0) {
+          return priorityDifference;
+        }
+
+        const shipmentDifference =
           Number(right.recommendedShipment) -
           Number(left.recommendedShipment);
-        return descending ? difference : -difference;
+        return descending ? shipmentDifference : -shipmentDifference;
       });
   }, [
     data.recommendations,
@@ -585,6 +599,7 @@ export default function DashboardView({
                 <button
                   className="tool-button"
                   onClick={() => setDescending((current) => !current)}
+                  title="Reverse shipment quantity within each priority"
                   type="button"
                 >
                   <ArrowUpDown aria-hidden="true" size={13} />
