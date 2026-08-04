@@ -7,6 +7,8 @@ public record HistoricalSalesImportResponse(
         int createdRecords,
         int updatedRecords,
         int skippedRows,
+        int createdStores,
+        int createdProducts,
         List<String> errors
 ) {
 }

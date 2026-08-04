@@ -4,6 +4,7 @@ import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
 import com.depotiq.models.Product;
 import com.depotiq.models.SalesRecord;
 import com.depotiq.models.Store;
+import com.depotiq.models.StoreType;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreRepository;
@@ -26,7 +27,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class HistoricalSalesImportService {
 
     private static final String[] REQUIRED_COLUMNS = {
-            "Date", "Store ID", "Product ID", "Units Sold", "Price", "Discount",
+            "Date", "Store ID", "Product ID", "Category", "Region", "Units Sold", "Price", "Discount",
             "Weather Condition", "Holiday/Promotion", "Seasonality"
     };
 
@@ -58,6 +59,8 @@ public class HistoricalSalesImportService {
             int processed = 0;
             int created = 0;
             int updated = 0;
+            int createdStores = 0;
+            int createdProducts = 0;
             List<String> errors = new ArrayList<>();
             String line;
             int lineNumber = 1;
@@ -70,24 +73,34 @@ public class HistoricalSalesImportService {
 
                 processed++;
                 try {
-                    boolean wasCreated = importRow(line);
-                    if (wasCreated) {
+                    ImportRowResult result = importRow(line);
+                    if (result.salesRecordCreated()) {
                         created++;
                     } else {
                         updated++;
                     }
+                    createdStores += result.storeCreated() ? 1 : 0;
+                    createdProducts += result.productCreated() ? 1 : 0;
                 } catch (IllegalArgumentException exception) {
                     errors.add("Line " + lineNumber + ": " + exception.getMessage());
                 }
             }
 
-            return new HistoricalSalesImportResponse(processed, created, updated, errors.size(), List.copyOf(errors));
+            return new HistoricalSalesImportResponse(
+                    processed,
+                    created,
+                    updated,
+                    errors.size(),
+                    createdStores,
+                    createdProducts,
+                    List.copyOf(errors)
+            );
         } catch (IOException exception) {
             throw new IllegalArgumentException("The CSV file could not be read.", exception);
         }
     }
 
-    private boolean importRow(String line) {
+    private ImportRowResult importRow(String line) {
         String[] values = line.split(",", -1);
         if (values.length < 15) {
             throw new IllegalArgumentException("expected 15 columns.");
@@ -96,10 +109,11 @@ public class HistoricalSalesImportService {
         LocalDate saleDate = parseDate(values[0]);
         String storeCode = requiredValue(values[1], "Store ID");
         String productCode = requiredValue(values[2], "Product ID");
-        Store store = storeRepository.findByStoreCode(storeCode)
-                .orElseThrow(() -> new IllegalArgumentException("unknown store '" + storeCode + "'."));
-        Product product = productRepository.findByProductCode(productCode)
-                .orElseThrow(() -> new IllegalArgumentException("unknown product '" + productCode + "'."));
+        CatalogUpsertResult<Store> storeResult = upsertStore(storeCode, values[4]);
+        BigDecimal price = parseDecimal(values[9], "Price");
+        CatalogUpsertResult<Product> productResult = upsertProduct(productCode, values[3], price);
+        Store store = storeResult.entity();
+        Product product = productResult.entity();
 
         Optional<SalesRecord> existing = salesRecordRepository
                 .findByStoreIdAndProductIdAndSaleDate(store.getId(), product.getId(), saleDate);
@@ -108,7 +122,7 @@ public class HistoricalSalesImportService {
         record.setProduct(product);
         record.setSaleDate(saleDate);
         record.setUnitsSold(parseNonNegativeInteger(values[6], "Units Sold"));
-        record.setPrice(parseDecimal(values[9], "Price"));
+        record.setPrice(price);
         record.setDiscount(parseDecimal(values[10], "Discount"));
         record.setWeatherCondition(blankToNull(values[11]));
         boolean holidayPromotion = parseBoolean(values[12], "Holiday/Promotion");
@@ -117,7 +131,61 @@ public class HistoricalSalesImportService {
         record.setSeasonality(blankToNull(values[14]));
         salesRecordRepository.save(record);
 
-        return existing.isEmpty();
+        return new ImportRowResult(existing.isEmpty(), storeResult.created(), productResult.created());
+    }
+
+    private CatalogUpsertResult<Store> upsertStore(String storeCode, String regionValue) {
+        String region = blankToNull(regionValue);
+        Optional<Store> existing = storeRepository.findByStoreCode(storeCode);
+        if (existing.isPresent()) {
+            Store store = existing.get();
+            if (region != null && !region.equals(store.getRegion())) {
+                store.setRegion(region);
+                storeRepository.save(store);
+            }
+            return new CatalogUpsertResult<>(store, false);
+        }
+
+        Store store = new Store();
+        store.setStoreCode(storeCode);
+        store.setName("Imported Store " + storeCode);
+        store.setStoreType(StoreType.MEDIUM);
+        store.setRegion(region);
+        store.setHasWarehouse(false);
+        store.setStorageCapacity(0);
+        store.setDeliveryLeadTimeDays(0);
+        store.setPreferredHorizonDays(7);
+        return new CatalogUpsertResult<>(storeRepository.save(store), true);
+    }
+
+    private CatalogUpsertResult<Product> upsertProduct(
+            String productCode,
+            String categoryValue,
+            BigDecimal price
+    ) {
+        String category = requiredValue(categoryValue, "Category");
+        Optional<Product> existing = productRepository.findByProductCode(productCode);
+        if (existing.isPresent()) {
+            Product product = existing.get();
+            if (!category.equals(product.getCategory()) || hasDifferentValue(product.getPrice(), price)) {
+                product.setCategory(category);
+                product.setPrice(price);
+                productRepository.save(product);
+            }
+            return new CatalogUpsertResult<>(product, false);
+        }
+
+        Product product = new Product();
+        product.setProductCode(productCode);
+        product.setName("Imported Product " + productCode);
+        product.setCategory(category);
+        product.setPrice(price);
+        product.setPerishable(false);
+        return new CatalogUpsertResult<>(productRepository.save(product), true);
+    }
+
+    private boolean hasDifferentValue(BigDecimal current, BigDecimal updated) {
+        return current == null || current.compareTo(updated) != 0;
     }
 
     private void validateHeader(String header) {
@@ -190,5 +258,15 @@ public class HistoricalSalesImportService {
     private String blankToNull(String value) {
         String normalized = value == null ? "" : value.trim();
         return normalized.isEmpty() ? null : normalized;
+    }
+
+    private record CatalogUpsertResult<T>(T entity, boolean created) {
+    }
+
+    private record ImportRowResult(
+            boolean salesRecordCreated,
+            boolean storeCreated,
+            boolean productCreated
+    ) {
     }
 }
