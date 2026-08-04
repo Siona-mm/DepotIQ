@@ -266,7 +266,9 @@ export default function DashboardView({
   const dashboardRecommendations = useMemo(
     () =>
       data.recommendations.filter(
-        (item) => item.status !== "DELIVERED",
+        (item) =>
+          item.status !== "DELIVERED" &&
+          Number(item.recommendedShipment) > 0,
       ),
     [data.recommendations],
   );
