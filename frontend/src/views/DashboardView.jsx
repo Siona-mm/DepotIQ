@@ -170,7 +170,9 @@ function closeFromBackdrop(event, close) {
 export default function DashboardView({
   collapsed,
   onCollapse,
+  onAction,
   onNavigate,
+  refreshRequest,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -209,7 +211,7 @@ export default function DashboardView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [load, refreshRequest]);
 
   useEffect(() => {
     if (!filterOpen) {
@@ -470,13 +472,6 @@ export default function DashboardView({
     }
   };
 
-  const openUpload = () => {
-    setUploadFile(null);
-    setImportResult(null);
-    setError("");
-    setUploadOpen(true);
-  };
-
   const uploadHistoricalSales = async (event) => {
     event.preventDefault();
     if (!uploadFile) {
@@ -507,11 +502,7 @@ export default function DashboardView({
         collapsed={collapsed}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
-        onAction={(action) => {
-          if (action === "upload") {
-            openUpload();
-          }
-        }}
+        onAction={onAction}
       />
 
       <main className="dashboard">
