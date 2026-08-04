@@ -624,6 +624,12 @@ tbody tr:hover {
   background: #ffffff;
 }
 
+.approve-button.processed {
+  border-color: #9ca3af;
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
 .reject-button {
   border-color: #fecaca;
   color: #dc2626;
