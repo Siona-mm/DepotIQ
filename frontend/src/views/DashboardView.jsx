@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
 import {
   loadDashboardData,
+  importHistoricalSalesCsv,
   overrideRecommendationAmount,
   syncMlRecommendations,
   updateRecommendationStatus,
@@ -100,6 +101,10 @@ export default function DashboardView({
   const [savingOverride, setSavingOverride] = useState(false);
   const [rejectItem, setRejectItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [importResult, setImportResult] = useState(null);
   const filterControlRef = useRef(null);
 
   const load = useCallback(async () => {
@@ -148,13 +153,16 @@ export default function DashboardView({
       if (!statusUpdate) {
         setRejectItem(null);
       }
+      if (!uploading) {
+        setUploadOpen(false);
+      }
     };
 
     document.addEventListener("keydown", closePopupFromKeyboard);
     return () => {
       document.removeEventListener("keydown", closePopupFromKeyboard);
     };
-  }, [savingOverride, statusUpdate]);
+  }, [savingOverride, statusUpdate, uploading]);
 
   const depotInventoryByProduct = useMemo(
     () =>
@@ -359,6 +367,36 @@ export default function DashboardView({
     }
   };
 
+  const openUpload = () => {
+    setUploadFile(null);
+    setImportResult(null);
+    setError("");
+    setUploadOpen(true);
+  };
+
+  const uploadHistoricalSales = async (event) => {
+    event.preventDefault();
+    if (!uploadFile) {
+      return;
+    }
+
+    setUploading(true);
+    setError("");
+    setImportResult(null);
+
+    try {
+      const result = await importHistoricalSalesCsv(uploadFile);
+      setImportResult(result);
+      setSyncMessage(
+        `${result.createdRecords} sales records imported and ${result.updatedRecords} updated.`,
+      );
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <AppSidebar
@@ -366,6 +404,11 @@ export default function DashboardView({
         collapsed={collapsed}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onAction={(action) => {
+          if (action === "upload") {
+            openUpload();
+          }
+        }}
       />
 
       <main className="dashboard">
@@ -751,6 +794,80 @@ export default function DashboardView({
           </aside>
         </section>
       </main>
+      {uploadOpen && (
+        <div
+          className="modal-backdrop"
+          onClick={(event) => {
+            if (!uploading) {
+              closeFromBackdrop(event, () => setUploadOpen(false));
+            }
+          }}
+        >
+          <section
+            aria-labelledby="upload-dialog-title"
+            aria-modal="true"
+            className="upload-dialog"
+            role="dialog"
+          >
+            <header>
+              <div>
+                <span>Historical data</span>
+                <h2 id="upload-dialog-title">Import sales CSV</h2>
+              </div>
+              <button
+                aria-label="Close import dialog"
+                className="icon-button"
+                disabled={uploading}
+                onClick={() => setUploadOpen(false)}
+                type="button"
+              >
+                <X aria-hidden="true" size={15} />
+              </button>
+            </header>
+            <p>
+              Upload the retail inventory CSV. Rows are matched by store, product, and date.
+            </p>
+            <form onSubmit={uploadHistoricalSales}>
+              <label className="file-input">
+                <span>CSV file</span>
+                <input
+                  accept=".csv,text/csv"
+                  disabled={uploading}
+                  onChange={(event) => setUploadFile(event.target.files?.[0] ?? null)}
+                  type="file"
+                />
+              </label>
+              {uploadFile && <small className="selected-file">Selected: {uploadFile.name}</small>}
+              {importResult && (
+                <div className="import-result" role="status">
+                  <strong>Import complete</strong>
+                  <span>
+                    {importResult.processedRows} processed · {importResult.createdRecords} created · {importResult.updatedRecords} updated · {importResult.skippedRows} skipped
+                  </span>
+                  {importResult.errors?.length > 0 && (
+                    <ul>
+                      {importResult.errors.slice(0, 3).map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  )}
+                </div>
+              )}
+              <footer>
+                <button
+                  className="secondary-button"
+                  disabled={uploading}
+                  onClick={() => setUploadOpen(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button className="save-button" disabled={!uploadFile || uploading} type="submit">
+                  {uploading ? "Importing..." : "Import data"}
+                </button>
+              </footer>
+            </form>
+          </section>
+        </div>
+      )}
       {overrideItem && (
         <div
           className="modal-backdrop"

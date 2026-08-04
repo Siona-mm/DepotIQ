@@ -19,7 +19,7 @@ const NAVIGATION = [
   [PackageSearch, "Products", false],
   [ChartNoAxesCombined, "Forecasts", false],
   [Truck, "Shipments", true],
-  [Upload, "Upload Data", false],
+  [Upload, "Upload Data", false, "upload"],
   [FileChartColumn, "Reports", false],
   [Settings, "Settings", false],
 ];
@@ -29,6 +29,7 @@ export default function AppSidebar({
   collapsed,
   onCollapse,
   onNavigate,
+  onAction,
 }) {
   return (
     <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -38,22 +39,28 @@ export default function AppSidebar({
       </div>
 
       <nav aria-label="Main navigation">
-        {NAVIGATION.map(([Icon, label, available]) => (
-          <button
-            aria-current={activePage === label ? "page" : undefined}
-            className={
-              activePage === label ? "nav-item active" : "nav-item"
-            }
-            disabled={!available}
-            key={label}
-            onClick={() => available && onNavigate(label)}
-            title={available ? label : `${label} is coming next`}
-            type="button"
-          >
-            <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
-            <span>{label}</span>
-          </button>
-        ))}
+        {NAVIGATION.map(([Icon, label, routeAvailable, action]) => {
+          const available = routeAvailable || Boolean(action && onAction);
+
+          return (
+            <button
+              aria-current={activePage === label ? "page" : undefined}
+              className={
+                activePage === label ? "nav-item active" : "nav-item"
+              }
+              disabled={!available}
+              key={label}
+              onClick={() =>
+                action ? onAction?.(action) : onNavigate(label)
+              }
+              title={available ? label : `${label} is coming next`}
+              type="button"
+            >
+              <Icon aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span>{label}</span>
+            </button>
+          );
+        })}
       </nav>
 
       <button
