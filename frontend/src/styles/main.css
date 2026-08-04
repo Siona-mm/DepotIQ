@@ -876,6 +876,24 @@ tbody tr:hover {
   background: #111111;
 }
 
+.page-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.page-arrow {
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
+  background: #ffffff;
+}
+
+.pagination-ellipsis {
+  min-width: 18px;
+  color: #9ca3af;
+  font-size: 11px;
+  text-align: center;
+}
+
 .right-rail {
   display: grid;
   grid-template-rows: minmax(170px, auto) minmax(0, 1fr);
