@@ -115,6 +115,52 @@ function isActionable(status) {
   return status === "PENDING" || status === "EDITED";
 }
 
+function recommendationActionLabel(status) {
+  const labels = {
+    APPROVED: "Approved",
+    REJECTED: "Rejected",
+    READY_FOR_TRANSPORT: "Ready",
+    ASSIGNED_TO_ROUTE: "Assigned",
+    SHIPPED: "Shipped",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
+  };
+
+  return labels[status] ?? "Approve";
+}
+
+function recommendationActionClass(status) {
+  if (status === "APPROVED") {
+    return "approve-button approved";
+  }
+
+  if (status === "REJECTED" || status === "CANCELLED") {
+    return "approve-button rejected";
+  }
+
+  if (!isActionable(status)) {
+    return "approve-button processed";
+  }
+
+  return "approve-button";
+}
+
+function recommendationActionTitle(status) {
+  if (isActionable(status)) {
+    return "Approve recommendation";
+  }
+
+  if (status === "APPROVED") {
+    return "Approved and ready to be added to a shipment";
+  }
+
+  if (status === "REJECTED" || status === "CANCELLED") {
+    return "This recommendation is closed";
+  }
+
+  return "This recommendation is already being processed in transportation planning";
+}
+
 function closeFromBackdrop(event, close) {
   if (event.target === event.currentTarget) {
     close();
@@ -679,20 +725,10 @@ export default function DashboardView({
                       <td className="recommendation-actions">
                         <div className="action-buttons">
                           <button
-                            aria-label={`${
-                              item.status === "APPROVED"
-                                ? "Approved"
-                                : item.status === "REJECTED"
-                                  ? "Rejected"
-                                  : "Approve"
-                            } shipment for ${item.storeCode} ${item.productCode}`}
-                            className={
-                              item.status === "APPROVED"
-                                ? "approve-button approved"
-                                : item.status === "REJECTED"
-                                  ? "approve-button rejected"
-                                  : "approve-button"
-                            }
+                            aria-label={`${recommendationActionLabel(
+                              item.status,
+                            )} shipment for ${item.storeCode} ${item.productCode}`}
+                            className={recommendationActionClass(item.status)}
                             disabled={
                               !isActionable(item.status) ||
                               statusUpdate?.id === item.id
@@ -700,20 +736,21 @@ export default function DashboardView({
                             onClick={() =>
                               changeRecommendationStatus(item, "APPROVED")
                             }
+                            title={recommendationActionTitle(item.status)}
                             type="button"
                           >
-                            {item.status === "REJECTED" ? (
+                            {item.status === "REJECTED" ||
+                            item.status === "CANCELLED" ? (
                               <Ban aria-hidden="true" size={13} />
+                            ) : !isActionable(item.status) &&
+                              item.status !== "APPROVED" ? (
+                              <Truck aria-hidden="true" size={13} />
                             ) : (
                               <Check aria-hidden="true" size={13} />
                             )}
-                            {item.status === "APPROVED"
-                              ? "Approved"
-                              : item.status === "REJECTED"
-                                ? "Rejected"
-                                : statusUpdate?.id === item.id
-                                ? "Saving"
-                                : "Approve"}
+                            {statusUpdate?.id === item.id
+                              ? "Saving"
+                              : recommendationActionLabel(item.status)}
                           </button>
                           {isActionable(item.status) && (
                             <button
