@@ -55,3 +55,26 @@ export function updateRecommendationStatus(id, status) {
     body: JSON.stringify({ status }),
   });
 }
+
+export async function loadShipmentPageData() {
+  const [shipments, approvedRecommendations] = await Promise.all([
+    request("/api/shipments"),
+    request("/api/recommendations?status=APPROVED"),
+  ]);
+
+  return { shipments, approvedRecommendations };
+}
+
+export function createShipment(payload) {
+  return request("/api/shipments", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateShipmentStatus(id, status) {
+  return request(`/api/shipments/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}
