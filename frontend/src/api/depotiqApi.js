@@ -40,6 +40,17 @@ export async function loadDashboardData() {
   };
 }
 
+export function loadDepotInventory() {
+  return request("/api/inventory/depot");
+}
+
+export function updateDepotInventory(productId, availableUnits, reservedUnits) {
+  return request("/api/inventory/depot", {
+    method: "POST",
+    body: JSON.stringify({ productId, availableUnits, reservedUnits }),
+  });
+}
+
 export function syncMlRecommendations() {
   return request("/api/ml/sync", { method: "POST" });
 }
