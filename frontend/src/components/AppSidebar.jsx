@@ -14,7 +14,7 @@ import {
 
 const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
-  [Warehouse, "Depot Inventory", false],
+  [Warehouse, "Depot Inventory", true],
   [Store, "Stores", false],
   [PackageSearch, "Products", false],
   [ChartNoAxesCombined, "Forecasts", false],
