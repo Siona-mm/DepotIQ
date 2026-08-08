@@ -809,6 +809,51 @@ tbody tr:hover {
   gap: 8px;
 }
 
+.store-form-dialog {
+  width: min(620px, 100%);
+}
+
+.store-form-dialog form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.store-form-dialog label {
+  min-width: 0;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.store-form-dialog input,
+.store-form-dialog select {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.store-form-dialog .checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.store-form-dialog .checkbox-field input {
+  width: 15px;
+  min-height: auto;
+}
+
+.store-form-dialog footer {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 560px) {
+  .store-form-dialog form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .secondary-button,
 .save-button {
   min-height: 35px;
