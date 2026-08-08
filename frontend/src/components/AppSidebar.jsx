@@ -16,7 +16,7 @@ const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
   [Store, "Stores", true],
-  [PackageSearch, "Products", false],
+  [PackageSearch, "Products", true],
   [ChartNoAxesCombined, "Forecasts", false],
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],

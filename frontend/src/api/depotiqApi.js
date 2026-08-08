@@ -48,6 +48,11 @@ export function loadStores() {
   return request("/api/stores");
 }
 
+export function loadProducts() { return request("/api/products"); }
+export function createProduct(payload) { return request("/api/products", { method: "POST", body: JSON.stringify(payload) }); }
+export function updateProduct(id, payload) { return request(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(payload) }); }
+export function deleteProduct(id) { return request(`/api/products/${id}`, { method: "DELETE" }); }
+
 export function createStore(payload) {
   return request("/api/stores", {
     method: "POST",
