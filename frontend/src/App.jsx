@@ -1,21 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
+import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 
+function pageFromHash() {
+  const routes = {
+    "#inventory": "Depot Inventory",
+    "#shipments": "Shipments",
+  };
+
+  return routes[globalThis.location.hash] ?? "Dashboard";
+}
+
 export default function App() {
-  const [page, setPage] = useState(
-    globalThis.location.hash === "#shipments" ? "Shipments" : "Dashboard",
-  );
+  const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [dashboardRefresh, setDashboardRefresh] = useState(0);
 
   useEffect(() => {
     const followHash = () => {
-      setPage(
-        globalThis.location.hash === "#shipments" ? "Shipments" : "Dashboard",
-      );
+      setPage(pageFromHash());
     };
 
     globalThis.addEventListener("hashchange", followHash);
@@ -23,8 +29,12 @@ export default function App() {
   }, []);
 
   const navigate = useCallback((destination) => {
-    globalThis.location.hash =
-      destination === "Shipments" ? "shipments" : "";
+    const hashes = {
+      "Depot Inventory": "inventory",
+      Shipments: "shipments",
+    };
+
+    globalThis.location.hash = hashes[destination] ?? "";
     setPage(destination);
   }, []);
 
@@ -51,6 +61,8 @@ export default function App() {
     <>
       {page === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
+      ) : page === "Depot Inventory" ? (
+        <DepotInventoryView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
