@@ -3,11 +3,13 @@ import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
+import StoresView from "./views/StoresView.jsx";
 
 function pageFromHash() {
   const routes = {
     "#inventory": "Depot Inventory",
     "#shipments": "Shipments",
+    "#stores": "Stores",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -32,6 +34,7 @@ export default function App() {
     const hashes = {
       "Depot Inventory": "inventory",
       Shipments: "shipments",
+      Stores: "stores",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -61,6 +64,8 @@ export default function App() {
     <>
       {page === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
+      ) : page === "Stores" ? (
+        <StoresView {...sharedProps} />
       ) : page === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
       ) : (
