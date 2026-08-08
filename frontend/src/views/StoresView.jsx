@@ -1,17 +1,26 @@
-import { Building2, MapPin, Search, Store } from "lucide-react";
+import { Building2, MapPin, Plus, Search, Store, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { loadStores } from "../api/depotiqApi.js";
+import { createStore, loadStores } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
 }
 
+const EMPTY_STORE = {
+  storeCode: "", name: "", storeType: "MEDIUM", region: "", hasWarehouse: false,
+  storageCapacity: 1, deliveryLeadTimeDays: 1, preferredHorizonDays: 7,
+};
+
 export default function StoresView({ collapsed, onAction, onCollapse, onNavigate }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [form, setForm] = useState(EMPTY_STORE);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
   const load = useCallback(async () => {
     setError("");
@@ -41,6 +50,25 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
     );
   }, [query, stores]);
 
+  const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
+  const openCreate = () => { setForm(EMPTY_STORE); setError(""); setCreateOpen(true); };
+  const saveStore = async (event) => {
+    event.preventDefault();
+    setSaving(true); setError("");
+    try {
+      const created = await createStore({
+        ...form,
+        storageCapacity: Number(form.storageCapacity),
+        deliveryLeadTimeDays: Number(form.deliveryLeadTimeDays),
+        preferredHorizonDays: Number(form.preferredHorizonDays),
+      });
+      setStores((current) => [...current, created]);
+      setCreateOpen(false);
+      setMessage(`${created.storeCode} was created.`);
+    } catch (requestError) { setError(requestError.message); }
+    finally { setSaving(false); }
+  };
+
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <AppSidebar
@@ -66,7 +94,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
           </label>
         </header>
 
-        {error && <div className="notice error" role="status">{error}</div>}
+        {(error || message) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}
 
         <section className="metrics-grid" aria-label="Store summary">
           <article className="metric-card"><Store size={20} /><div><span>Total Stores</span><strong>{stores.length}</strong><small>Active locations</small></div></article>
@@ -75,7 +103,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         </section>
 
         <section className="table-panel stores-table-panel">
-          <div className="panel-toolbar"><h2>Store directory</h2><span>{visibleStores.length} shown</span></div>
+          <div className="panel-toolbar"><h2>Store directory</h2><div className="table-actions"><span>{visibleStores.length} shown</span><button className="tool-button" onClick={openCreate} type="button"><Plus size={14} />Add store</button></div></div>
           <div className="table-scroll">
             <table>
               <thead><tr><th>Code</th><th>Store</th><th>Type</th><th>Region</th><th>Capacity</th><th>Lead time</th><th>Horizon</th></tr></thead>
@@ -93,6 +121,23 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
           {loading && <div className="panel-empty">Loading stores...</div>}
         </section>
       </main>
+
+      {createOpen && <div className="modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget && !saving) setCreateOpen(false); }}>
+        <section aria-modal="true" className="override-dialog store-form-dialog" role="dialog">
+          <header><div><span>Store directory</span><h2>Add store</h2></div><button aria-label="Close create store dialog" className="icon-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></button></header>
+          <form onSubmit={saveStore}>
+            <label>Store code<input onChange={(event) => updateForm("storeCode", event.target.value.toUpperCase())} required value={form.storeCode} /></label>
+            <label>Name<input onChange={(event) => updateForm("name", event.target.value)} required value={form.name} /></label>
+            <label>Store type<select onChange={(event) => updateForm("storeType", event.target.value)} value={form.storeType}>{["SMALL", "MEDIUM", "LARGE", "WAREHOUSE_STORE"].map((type) => <option key={type}>{type}</option>)}</select></label>
+            <label>Region<input onChange={(event) => updateForm("region", event.target.value)} required value={form.region} /></label>
+            <label>Storage capacity<input min="1" onChange={(event) => updateForm("storageCapacity", event.target.value)} required type="number" value={form.storageCapacity} /></label>
+            <label>Delivery lead time (days)<input min="1" onChange={(event) => updateForm("deliveryLeadTimeDays", event.target.value)} required type="number" value={form.deliveryLeadTimeDays} /></label>
+            <label>Preferred horizon (days)<input min="1" onChange={(event) => updateForm("preferredHorizonDays", event.target.value)} required type="number" value={form.preferredHorizonDays} /></label>
+            <label className="checkbox-field"><input checked={form.hasWarehouse} onChange={(event) => updateForm("hasWarehouse", event.target.checked)} type="checkbox" />Has warehouse</label>
+            <footer><button className="secondary-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button">Cancel</button><button className="save-button" disabled={saving} type="submit">{saving ? "Saving..." : "Create store"}</button></footer>
+          </form>
+        </section>
+      </div>}
     </div>
   );
 }
