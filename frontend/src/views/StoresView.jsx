@@ -1,6 +1,6 @@
-import { Building2, MapPin, Plus, Search, Store, X } from "lucide-react";
+import { Building2, MapPin, PencilLine, Plus, Search, Store, Trash2, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createStore, loadStores } from "../api/depotiqApi.js";
+import { createStore, deleteStore, loadStores, updateStore } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 
 function formatNumber(value) {
@@ -21,6 +21,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
   const [form, setForm] = useState(EMPTY_STORE);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [editItem, setEditItem] = useState(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -51,22 +52,34 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
   }, [query, stores]);
 
   const updateForm = (field, value) => setForm((current) => ({ ...current, [field]: value }));
-  const openCreate = () => { setForm(EMPTY_STORE); setError(""); setCreateOpen(true); };
+  const openCreate = () => { setForm(EMPTY_STORE); setEditItem(null); setError(""); setCreateOpen(true); };
+  const openEdit = (store) => { setForm({ ...store }); setEditItem(store); setError(""); setCreateOpen(true); };
   const saveStore = async (event) => {
     event.preventDefault();
     setSaving(true); setError("");
     try {
-      const created = await createStore({
+      const payload = {
         ...form,
         storageCapacity: Number(form.storageCapacity),
         deliveryLeadTimeDays: Number(form.deliveryLeadTimeDays),
         preferredHorizonDays: Number(form.preferredHorizonDays),
-      });
-      setStores((current) => [...current, created]);
+      };
+      const saved = editItem
+        ? await updateStore(editItem.id, (({ storeCode, ...update }) => update)(payload))
+        : await createStore(payload);
+      setStores((current) => editItem
+        ? current.map((store) => store.id === saved.id ? saved : store)
+        : [...current, saved]);
       setCreateOpen(false);
-      setMessage(`${created.storeCode} was created.`);
+      setMessage(`${saved.storeCode} was ${editItem ? "updated" : "created"}.`);
     } catch (requestError) { setError(requestError.message); }
     finally { setSaving(false); }
+  };
+  const removeStore = async (store) => {
+    if (!globalThis.confirm(`Delete ${store.storeCode}?`)) return;
+    setError("");
+    try { await deleteStore(store.id); setStores((current) => current.filter((item) => item.id !== store.id)); setMessage(`${store.storeCode} was deleted.`); }
+    catch (requestError) { setError(requestError.message); }
   };
 
   return (
@@ -106,12 +119,12 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
           <div className="panel-toolbar"><h2>Store directory</h2><div className="table-actions"><span>{visibleStores.length} shown</span><button className="tool-button" onClick={openCreate} type="button"><Plus size={14} />Add store</button></div></div>
           <div className="table-scroll">
             <table>
-              <thead><tr><th>Code</th><th>Store</th><th>Type</th><th>Region</th><th>Capacity</th><th>Lead time</th><th>Horizon</th></tr></thead>
+              <thead><tr><th>Code</th><th>Store</th><th>Type</th><th>Region</th><th>Capacity</th><th>Lead time</th><th>Horizon</th><th>Actions</th></tr></thead>
               <tbody>
                 {visibleStores.map((store) => (
                   <tr key={store.id}>
                     <td>{store.storeCode}</td><td>{store.name}</td><td>{store.storeType}</td><td>{store.region}</td>
-                    <td>{formatNumber(store.storageCapacity)}</td><td>{store.deliveryLeadTimeDays} days</td><td>{store.preferredHorizonDays} days</td>
+                    <td>{formatNumber(store.storageCapacity)}</td><td>{store.deliveryLeadTimeDays} days</td><td>{store.preferredHorizonDays} days</td><td><div className="action-buttons"><button aria-label={`Edit ${store.storeCode}`} className="icon-button" onClick={() => openEdit(store)} type="button"><PencilLine size={14} /></button><button aria-label={`Delete ${store.storeCode}`} className="reject-button" onClick={() => removeStore(store)} type="button"><Trash2 size={14} /></button></div></td>
                   </tr>
                 ))}
               </tbody>
@@ -124,9 +137,9 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
 
       {createOpen && <div className="modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget && !saving) setCreateOpen(false); }}>
         <section aria-modal="true" className="override-dialog store-form-dialog" role="dialog">
-          <header><div><span>Store directory</span><h2>Add store</h2></div><button aria-label="Close create store dialog" className="icon-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></button></header>
+          <header><div><span>Store directory</span><h2>{editItem ? "Edit store" : "Add store"}</h2></div><button aria-label="Close store dialog" className="icon-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></button></header>
           <form onSubmit={saveStore}>
-            <label>Store code<input onChange={(event) => updateForm("storeCode", event.target.value.toUpperCase())} required value={form.storeCode} /></label>
+            <label>Store code<input disabled={Boolean(editItem)} onChange={(event) => updateForm("storeCode", event.target.value.toUpperCase())} required value={form.storeCode} /></label>
             <label>Name<input onChange={(event) => updateForm("name", event.target.value)} required value={form.name} /></label>
             <label>Store type<select onChange={(event) => updateForm("storeType", event.target.value)} value={form.storeType}>{["SMALL", "MEDIUM", "LARGE", "WAREHOUSE_STORE"].map((type) => <option key={type}>{type}</option>)}</select></label>
             <label>Region<input onChange={(event) => updateForm("region", event.target.value)} required value={form.region} /></label>
@@ -134,7 +147,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
             <label>Delivery lead time (days)<input min="1" onChange={(event) => updateForm("deliveryLeadTimeDays", event.target.value)} required type="number" value={form.deliveryLeadTimeDays} /></label>
             <label>Preferred horizon (days)<input min="1" onChange={(event) => updateForm("preferredHorizonDays", event.target.value)} required type="number" value={form.preferredHorizonDays} /></label>
             <label className="checkbox-field"><input checked={form.hasWarehouse} onChange={(event) => updateForm("hasWarehouse", event.target.checked)} type="checkbox" />Has warehouse</label>
-            <footer><button className="secondary-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button">Cancel</button><button className="save-button" disabled={saving} type="submit">{saving ? "Saving..." : "Create store"}</button></footer>
+            <footer><button className="secondary-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button">Cancel</button><button className="save-button" disabled={saving} type="submit">{saving ? "Saving..." : editItem ? "Save changes" : "Create store"}</button></footer>
           </form>
         </section>
       </div>}
