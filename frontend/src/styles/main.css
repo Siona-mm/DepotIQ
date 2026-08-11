@@ -848,6 +848,28 @@ tbody tr:hover {
   grid-column: 1 / -1;
 }
 
+.settings-grid {
+  display: grid;
+  gap: 16px;
+  max-width: 760px;
+}
+
+.settings-card {
+  padding: 20px;
+}
+
+.settings-card header {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.settings-card h2 { margin: 0; font-size: 15px; }
+.settings-card p { margin: 5px 0 16px; color: #6b7280; font-size: 12px; }
+.settings-card select { min-height: 36px; padding: 0 10px; border: 1px solid #e5e7eb; border-radius: 6px; background: #fff; }
+.toggle-field { display: flex; gap: 9px; align-items: center; font-size: 13px; }
+.settings-grid > footer { display: flex; justify-content: flex-end; }
+
 @media (max-width: 560px) {
   .store-form-dialog form {
     grid-template-columns: 1fr;
