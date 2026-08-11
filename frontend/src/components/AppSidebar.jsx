@@ -21,7 +21,7 @@ const NAVIGATION = [
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],
   [FileChartColumn, "Reports", false],
-  [Settings, "Settings", false],
+  [Settings, "Settings", true],
 ];
 
 export default function AppSidebar({
