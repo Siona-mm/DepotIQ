@@ -53,6 +53,8 @@ export function createProduct(payload) { return request("/api/products", { metho
 export function updateProduct(id, payload) { return request(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(payload) }); }
 export function deleteProduct(id) { return request(`/api/products/${id}`, { method: "DELETE" }); }
 
+export function loadForecasts() { return request("/api/forecasts"); }
+
 export function createStore(payload) {
   return request("/api/stores", {
     method: "POST",
