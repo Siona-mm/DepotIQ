@@ -17,7 +17,7 @@ const NAVIGATION = [
   [Warehouse, "Depot Inventory", true],
   [Store, "Stores", true],
   [PackageSearch, "Products", true],
-  [ChartNoAxesCombined, "Forecasts", false],
+  [ChartNoAxesCombined, "Forecasts", true],
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],
   [FileChartColumn, "Reports", false],
