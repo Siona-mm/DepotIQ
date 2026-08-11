@@ -5,7 +5,6 @@ import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import StoresView from "./views/StoresView.jsx";
 import ProductsView from "./views/ProductsView.jsx";
-<<<<<<< HEAD
 import ForecastsView from "./views/ForecastsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
 
@@ -15,7 +14,6 @@ function pageFromHash() {
     "#shipments": "Shipments",
     "#stores": "Stores",
     "#products": "Products",
-<<<<<<< HEAD
     "#forecasts": "Forecasts",
     "#settings": "Settings",
   };
@@ -44,7 +42,6 @@ export default function App() {
       Shipments: "shipments",
       Stores: "stores",
       Products: "products",
-<<<<<<< HEAD
       Forecasts: "forecasts",
       Settings: "settings",
     };
@@ -80,7 +77,6 @@ export default function App() {
         <StoresView {...sharedProps} />
       ) : page === "Products" ? (
         <ProductsView {...sharedProps} />
-<<<<<<< HEAD
       ) : page === "Forecasts" ? (
         <ForecastsView {...sharedProps} />
       ) : page === "Settings" ? (
