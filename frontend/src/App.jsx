@@ -5,6 +5,7 @@ import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import StoresView from "./views/StoresView.jsx";
 import ProductsView from "./views/ProductsView.jsx";
+import SettingsView from "./views/SettingsView.jsx";
 
 function pageFromHash() {
   const routes = {
@@ -12,6 +13,7 @@ function pageFromHash() {
     "#shipments": "Shipments",
     "#stores": "Stores",
     "#products": "Products",
+    "#settings": "Settings",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -38,6 +40,7 @@ export default function App() {
       Shipments: "shipments",
       Stores: "stores",
       Products: "products",
+      Settings: "settings",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -71,6 +74,8 @@ export default function App() {
         <StoresView {...sharedProps} />
       ) : page === "Products" ? (
         <ProductsView {...sharedProps} />
+      ) : page === "Settings" ? (
+        <SettingsView {...sharedProps} />
       ) : page === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
       ) : (
