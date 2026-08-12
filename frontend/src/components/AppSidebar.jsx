@@ -15,13 +15,13 @@ import {
 const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
-  [Store, "Stores", false],
-  [PackageSearch, "Products", false],
-  [ChartNoAxesCombined, "Forecasts", false],
+  [Store, "Stores", true],
+  [PackageSearch, "Products", true],
+  [ChartNoAxesCombined, "Forecasts", true],
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],
   [FileChartColumn, "Reports", false],
-  [Settings, "Settings", false],
+  [Settings, "Settings", true],
 ];
 
 export default function AppSidebar({

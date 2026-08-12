@@ -44,6 +44,35 @@ export function loadDepotInventory() {
   return request("/api/inventory/depot");
 }
 
+export function loadStores() {
+  return request("/api/stores");
+}
+
+export function loadProducts() { return request("/api/products"); }
+export function createProduct(payload) { return request("/api/products", { method: "POST", body: JSON.stringify(payload) }); }
+export function updateProduct(id, payload) { return request(`/api/products/${id}`, { method: "PUT", body: JSON.stringify(payload) }); }
+export function deleteProduct(id) { return request(`/api/products/${id}`, { method: "DELETE" }); }
+
+export function loadForecasts() { return request("/api/forecasts"); }
+
+export function createStore(payload) {
+  return request("/api/stores", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateStore(id, payload) {
+  return request(`/api/stores/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function deleteStore(id) {
+  return request(`/api/stores/${id}`, { method: "DELETE" });
+}
+
 export function updateDepotInventory(productId, availableUnits, reservedUnits) {
   return request("/api/inventory/depot", {
     method: "POST",
