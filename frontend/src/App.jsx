@@ -2,19 +2,15 @@ import { useCallback, useEffect, useState } from "react";
 import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
-import ShipmentsView from "./views/ShipmentsView.jsx";
-import StoresView from "./views/StoresView.jsx";
-import ProductsView from "./views/ProductsView.jsx";
-import ForecastsView from "./views/ForecastsView.jsx";
+import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
+import ShipmentsView from "./views/ShipmentsView.jsx";
 
 function pageFromHash() {
   const routes = {
     "#inventory": "Depot Inventory",
     "#shipments": "Shipments",
-    "#stores": "Stores",
-    "#products": "Products",
-    "#forecasts": "Forecasts",
+    "#reports": "Reports",
     "#settings": "Settings",
   };
 
@@ -40,9 +36,7 @@ export default function App() {
     const hashes = {
       "Depot Inventory": "inventory",
       Shipments: "shipments",
-      Stores: "stores",
-      Products: "products",
-      Forecasts: "forecasts",
+      Reports: "reports",
       Settings: "settings",
     };
 
@@ -73,16 +67,12 @@ export default function App() {
     <>
       {page === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
-      ) : page === "Stores" ? (
-        <StoresView {...sharedProps} />
-      ) : page === "Products" ? (
-        <ProductsView {...sharedProps} />
-      ) : page === "Forecasts" ? (
-        <ForecastsView {...sharedProps} />
-      ) : page === "Settings" ? (
-        <SettingsView {...sharedProps} />
       ) : page === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
+      ) : page === "Reports" ? (
+        <ReportsView {...sharedProps} />
+      ) : page === "Settings" ? (
+        <SettingsView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}

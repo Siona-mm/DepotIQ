@@ -15,12 +15,12 @@ import {
 const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
-  [Store, "Stores", true],
-  [PackageSearch, "Products", true],
-  [ChartNoAxesCombined, "Forecasts", true],
+  [Store, "Stores", false],
+  [PackageSearch, "Products", false],
+  [ChartNoAxesCombined, "Forecasts", false],
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],
-  [FileChartColumn, "Reports", false],
+  [FileChartColumn, "Reports", true],
   [Settings, "Settings", true],
 ];
 

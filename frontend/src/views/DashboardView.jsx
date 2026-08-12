@@ -42,6 +42,56 @@ const PRIORITY_ORDER = {
   LOW: 3,
 };
 
+const SORT_OPTIONS = [
+  { value: "PRIORITY_ASC", label: "Priority", note: "Urgent first" },
+  { value: "PRIORITY_DESC", label: "Priority", note: "Low first" },
+  { value: "SHIPMENT_DESC", label: "Shipment", note: "Highest quantity first" },
+  { value: "SHIPMENT_ASC", label: "Shipment", note: "Lowest quantity first" },
+  { value: "DEMAND_DESC", label: "Predicted demand", note: "Highest first" },
+  { value: "DEMAND_ASC", label: "Predicted demand", note: "Lowest first" },
+  { value: "STOCK_ASC", label: "Store stock", note: "Lowest first" },
+  { value: "UPDATED_DESC", label: "Last updated", note: "Newest first" },
+];
+
+function compareRecommendations(left, right, sortBy) {
+  const priorityDifference =
+    (PRIORITY_ORDER[left.priority] ?? Number.MAX_SAFE_INTEGER) -
+    (PRIORITY_ORDER[right.priority] ?? Number.MAX_SAFE_INTEGER);
+  const shipmentDifference =
+    Number(right.recommendedShipment) - Number(left.recommendedShipment);
+
+  switch (sortBy) {
+    case "PRIORITY_DESC":
+      return -priorityDifference || shipmentDifference;
+    case "SHIPMENT_DESC":
+      return shipmentDifference || priorityDifference;
+    case "SHIPMENT_ASC":
+      return -shipmentDifference || priorityDifference;
+    case "DEMAND_DESC":
+      return (
+        Number(right.predictedDemand) - Number(left.predictedDemand) ||
+        priorityDifference
+      );
+    case "DEMAND_ASC":
+      return (
+        Number(left.predictedDemand) - Number(right.predictedDemand) ||
+        priorityDifference
+      );
+    case "STOCK_ASC":
+      return (
+        Number(left.currentInventory) - Number(right.currentInventory) ||
+        priorityDifference
+      );
+    case "UPDATED_DESC":
+      return (
+        new Date(right.recommendationDate).getTime() -
+          new Date(left.recommendationDate).getTime() || priorityDifference
+      );
+    default:
+      return priorityDifference || shipmentDifference;
+  }
+}
+
 function paginationItems(currentPage, pageCount) {
   if (pageCount <= 7) {
     return Array.from({ length: pageCount }, (_, index) => index + 1);
@@ -181,9 +231,10 @@ export default function DashboardView({
   const [syncMessage, setSyncMessage] = useState("");
   const [query, setQuery] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [storeFilter, setStoreFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
-  const [descending, setDescending] = useState(true);
+  const [sortBy, setSortBy] = useState("PRIORITY_ASC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
@@ -196,6 +247,7 @@ export default function DashboardView({
   const [uploading, setUploading] = useState(false);
   const [importResult, setImportResult] = useState(null);
   const filterControlRef = useRef(null);
+  const sortControlRef = useRef(null);
 
   const load = useCallback(async () => {
     setError("");
@@ -231,12 +283,30 @@ export default function DashboardView({
   }, [filterOpen]);
 
   useEffect(() => {
+    if (!sortOpen) {
+      return undefined;
+    }
+
+    const closeSortFromOutside = (event) => {
+      if (!sortControlRef.current?.contains(event.target)) {
+        setSortOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeSortFromOutside);
+    return () => {
+      document.removeEventListener("pointerdown", closeSortFromOutside);
+    };
+  }, [sortOpen]);
+
+  useEffect(() => {
     const closePopupFromKeyboard = (event) => {
       if (event.key !== "Escape") {
         return;
       }
 
       setFilterOpen(false);
+      setSortOpen(false);
       if (!savingOverride) {
         setOverrideItem(null);
       }
@@ -328,25 +398,12 @@ export default function DashboardView({
             .includes(normalizedQuery),
         );
       })
-      .sort((left, right) => {
-        const priorityDifference =
-          (PRIORITY_ORDER[left.priority] ?? Number.MAX_SAFE_INTEGER) -
-          (PRIORITY_ORDER[right.priority] ?? Number.MAX_SAFE_INTEGER);
-
-        if (priorityDifference !== 0) {
-          return priorityDifference;
-        }
-
-        const shipmentDifference =
-          Number(right.recommendedShipment) -
-          Number(left.recommendedShipment);
-        return descending ? shipmentDifference : -shipmentDifference;
-      });
+      .sort((left, right) => compareRecommendations(left, right, sortBy));
   }, [
     dashboardRecommendations,
-    descending,
     priorityFilter,
     query,
+    sortBy,
     storeFilter,
   ]);
 
@@ -380,7 +437,7 @@ export default function DashboardView({
 
   useEffect(() => {
     setPage(1);
-  }, [query, storeFilter, priorityFilter, descending]);
+  }, [query, storeFilter, priorityFilter, sortBy]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -570,7 +627,10 @@ export default function DashboardView({
                     className={
                       filtersActive ? "tool-button active" : "tool-button"
                     }
-                    onClick={() => setFilterOpen((current) => !current)}
+                    onClick={() => {
+                      setSortOpen(false);
+                      setFilterOpen((current) => !current);
+                    }}
                     type="button"
                   >
                     <SlidersHorizontal aria-hidden="true" size={13} />
@@ -643,15 +703,68 @@ export default function DashboardView({
                     </section>
                   )}
                 </div>
-                <button
-                  className="tool-button"
-                  onClick={() => setDescending((current) => !current)}
-                  title="Reverse shipment quantity within each priority"
-                  type="button"
-                >
-                  <ArrowUpDown aria-hidden="true" size={13} />
-                  Sort
-                </button>
+                <div className="filter-control" ref={sortControlRef}>
+                  <button
+                    aria-expanded={sortOpen}
+                    aria-haspopup="dialog"
+                    className={
+                      sortBy === "PRIORITY_ASC"
+                        ? "tool-button"
+                        : "tool-button active"
+                    }
+                    onClick={() => {
+                      setFilterOpen(false);
+                      setSortOpen((current) => !current);
+                    }}
+                    type="button"
+                  >
+                    <ArrowUpDown aria-hidden="true" size={13} />
+                    Sort
+                  </button>
+
+                  {sortOpen && (
+                    <section
+                      aria-label="Recommendation sorting"
+                      className="filter-popover sort-popover"
+                      role="dialog"
+                    >
+                      <header>
+                        <strong>Sort recommendations</strong>
+                        <span>
+                          {SORT_OPTIONS.find((option) => option.value === sortBy)
+                            ?.note}
+                        </span>
+                      </header>
+                      <div aria-label="Sort options" className="sort-options" role="radiogroup">
+                        {SORT_OPTIONS.map((option) => (
+                          <button
+                            aria-checked={sortBy === option.value}
+                            className={
+                              sortBy === option.value
+                                ? "sort-option selected"
+                                : "sort-option"
+                            }
+                            key={option.value}
+                            onClick={() => {
+                              setSortBy(option.value);
+                              setSortOpen(false);
+                            }}
+                            role="radio"
+                            type="button"
+                          >
+                            <span>
+                              <strong>{option.label}</strong>
+                              <small>{option.note}</small>
+                            </span>
+                            {sortBy === option.value && (
+                              <Check aria-hidden="true" size={14} />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+                </div>
                 <button
                   className="tool-button"
                   disabled={syncing}
