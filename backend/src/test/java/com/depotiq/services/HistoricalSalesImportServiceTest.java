@@ -10,6 +10,7 @@ import com.depotiq.models.Product;
 import com.depotiq.models.SalesRecord;
 import com.depotiq.models.Store;
 import com.depotiq.repositories.ProductRepository;
+import com.depotiq.repositories.ImportAuditLogRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreRepository;
 import java.math.BigDecimal;
@@ -34,6 +35,9 @@ class HistoricalSalesImportServiceTest {
 
     @Mock
     private SalesRecordRepository salesRecordRepository;
+
+    @Mock
+    private ImportAuditLogRepository importAuditLogRepository;
 
     @Captor
     private ArgumentCaptor<SalesRecord> salesRecordCaptor;

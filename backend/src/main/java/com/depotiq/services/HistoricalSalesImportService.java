@@ -1,6 +1,7 @@
 package com.depotiq.services;
 
 import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
+import com.depotiq.dtos.importing.ImportAuditLogResponse;
 import com.depotiq.models.Product;
 import com.depotiq.models.ImportAuditLog;
 import com.depotiq.models.SalesRecord;
@@ -105,6 +106,25 @@ public class HistoricalSalesImportService {
         } catch (IOException exception) {
             throw new IllegalArgumentException("The CSV file could not be read.", exception);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ImportAuditLogResponse> getImportHistory() {
+        return importAuditLogRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(auditLog -> new ImportAuditLogResponse(
+                        auditLog.getId(),
+                        auditLog.getFileName(),
+                        auditLog.getImportType(),
+                        auditLog.getProcessedRows(),
+                        auditLog.getCreatedRecords(),
+                        auditLog.getUpdatedRecords(),
+                        auditLog.getSkippedRows(),
+                        auditLog.getCreatedStores(),
+                        auditLog.getCreatedProducts(),
+                        auditLog.getErrorSummary(),
+                        auditLog.getCreatedAt()
+                ))
+                .toList();
     }
 
     private void saveAuditLog(String fileName, HistoricalSalesImportResponse response) {
