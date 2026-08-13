@@ -2,10 +2,12 @@ package com.depotiq.services;
 
 import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
 import com.depotiq.models.Product;
+import com.depotiq.models.ImportAuditLog;
 import com.depotiq.models.SalesRecord;
 import com.depotiq.models.Store;
 import com.depotiq.models.StoreType;
 import com.depotiq.repositories.ProductRepository;
+import com.depotiq.repositories.ImportAuditLogRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreRepository;
 import java.io.BufferedReader;
@@ -34,15 +36,18 @@ public class HistoricalSalesImportService {
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
     private final SalesRecordRepository salesRecordRepository;
+    private final ImportAuditLogRepository importAuditLogRepository;
 
     public HistoricalSalesImportService(
             StoreRepository storeRepository,
             ProductRepository productRepository,
-            SalesRecordRepository salesRecordRepository
+            SalesRecordRepository salesRecordRepository,
+            ImportAuditLogRepository importAuditLogRepository
     ) {
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.salesRecordRepository = salesRecordRepository;
+        this.importAuditLogRepository = importAuditLogRepository;
     }
 
     public HistoricalSalesImportResponse importCsv(MultipartFile file) {
@@ -86,7 +91,7 @@ public class HistoricalSalesImportService {
                 }
             }
 
-            return new HistoricalSalesImportResponse(
+            HistoricalSalesImportResponse response = new HistoricalSalesImportResponse(
                     processed,
                     created,
                     updated,
@@ -95,9 +100,25 @@ public class HistoricalSalesImportService {
                     createdProducts,
                     List.copyOf(errors)
             );
+            saveAuditLog(file.getOriginalFilename(), response);
+            return response;
         } catch (IOException exception) {
             throw new IllegalArgumentException("The CSV file could not be read.", exception);
         }
+    }
+
+    private void saveAuditLog(String fileName, HistoricalSalesImportResponse response) {
+        ImportAuditLog auditLog = new ImportAuditLog();
+        auditLog.setFileName(fileName == null || fileName.isBlank() ? "unnamed.csv" : fileName);
+        auditLog.setImportType("HISTORICAL_SALES");
+        auditLog.setProcessedRows(response.processedRows());
+        auditLog.setCreatedRecords(response.createdRecords());
+        auditLog.setUpdatedRecords(response.updatedRecords());
+        auditLog.setSkippedRows(response.skippedRows());
+        auditLog.setCreatedStores(response.createdStores());
+        auditLog.setCreatedProducts(response.createdProducts());
+        auditLog.setErrorSummary(response.errors().isEmpty() ? null : String.join("\n", response.errors()));
+        importAuditLogRepository.save(auditLog);
     }
 
     private ImportRowResult importRow(String line) {
