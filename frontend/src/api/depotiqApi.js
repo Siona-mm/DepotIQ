@@ -44,6 +44,17 @@ export function loadDepotInventory() {
   return request("/api/inventory/depot");
 }
 
+export function loadStoreInventory() {
+  return request("/api/inventory/stores");
+}
+
+export function updateStoreInventory(payload) {
+  return request("/api/inventory/stores", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
 export function loadStores() {
   return request("/api/stores");
 }

@@ -1,4 +1,5 @@
 import {
+  Boxes,
   ChartNoAxesCombined,
   ChevronsLeft,
   FileChartColumn,
@@ -15,6 +16,7 @@ import {
 const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
+  [Boxes, "Store Inventory", true],
   [Store, "Stores", false],
   [PackageSearch, "Products", false],
   [ChartNoAxesCombined, "Forecasts", false],
