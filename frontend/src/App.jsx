@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
-import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
@@ -8,6 +7,8 @@ import SettingsView from "./views/SettingsView.jsx";
 import StoreInventoryView from "./views/StoreInventoryView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import LoginView from "./views/LoginView.jsx";
+import ProfileView from "./views/ProfileView.jsx";
+import UploadDataView from "./views/UploadDataView.jsx";
 
 function pageFromHash() {
   const routes = {
@@ -16,6 +17,8 @@ function pageFromHash() {
     "#reports": "Reports",
     "#settings": "Settings",
     "#store-inventory": "Store Inventory",
+    "#profile": "Profile",
+    "#upload-data": "Upload Data",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -25,7 +28,6 @@ export default function App() {
   const [user, setUser] = useState(undefined);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [dashboardRefresh, setDashboardRefresh] = useState(0);
 
   useEffect(() => {
@@ -53,6 +55,8 @@ export default function App() {
       Reports: "reports",
       Settings: "settings",
       "Store Inventory": "store-inventory",
+      Profile: "profile",
+      "Upload Data": "upload-data",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -61,15 +65,9 @@ export default function App() {
 
   const handleAction = useCallback((action) => {
     if (action === "upload") {
-      setUploadOpen(true);
+      navigate("Upload Data");
     }
-  }, []);
-
-  const closeUpload = useCallback(() => setUploadOpen(false), []);
-  const handleImported = useCallback(
-    () => setDashboardRefresh((current) => current + 1),
-    [],
-  );
+  }, [navigate]);
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
@@ -78,6 +76,7 @@ export default function App() {
 
   const handleSignOut = useCallback(() => {
     signOut();
+    globalThis.location.hash = "";
     setUser(null);
   }, []);
 
@@ -110,17 +109,16 @@ export default function App() {
         <SettingsView {...sharedProps} />
       ) : page === "Store Inventory" ? (
         <StoreInventoryView {...sharedProps} />
+      ) : page === "Profile" ? (
+        <ProfileView {...sharedProps} />
+      ) : page === "Upload Data" ? (
+        <UploadDataView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
           refreshRequest={dashboardRefresh}
         />
       )}
-      <UploadDataDialog
-        onClose={closeUpload}
-        onImported={handleImported}
-        open={uploadOpen}
-      />
     </>
   );
 }
