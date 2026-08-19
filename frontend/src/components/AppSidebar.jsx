@@ -23,6 +23,7 @@ const NAVIGATION = [
   [Truck, "Shipments", true],
   [Upload, "Upload Data", false, "upload"],
   [FileChartColumn, "Reports", true],
+  [Settings, "Profile", true],
   [Settings, "Settings", true],
 ];
 
@@ -69,10 +70,10 @@ export default function AppSidebar({
 
       {user && (
         <div className="sidebar-user">
-          <div>
+          <button className="sidebar-profile" onClick={() => onNavigate("Profile")} type="button">
             <strong>{user.username}</strong>
             <span>{user.roles?.[0]?.replace("ROLE_", "") ?? "User"}</span>
-          </div>
+          </button>
           <button onClick={onSignOut} type="button">
             Sign out
           </button>
