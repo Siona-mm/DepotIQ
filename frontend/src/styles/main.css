@@ -127,6 +127,14 @@ input:focus-visible {
   color: #111111;
 }
 
+.sidebar-user .sidebar-profile {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  color: inherit;
+  text-align: left;
+}
+
 .sidebar.collapsed .sidebar-user {
   display: none;
 }
@@ -430,6 +438,58 @@ input:focus-visible {
   gap: 17px;
   margin-top: 25px;
 }
+
+.store-inventory-table {
+  margin-top: 24px;
+}
+
+.profile-layout,
+.upload-page-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.38fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.profile-summary,
+.profile-form,
+.upload-page-card,
+.upload-help {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.profile-summary {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+}
+
+.profile-summary > strong { font-size: 15px; }
+.profile-summary > span, .upload-help p { color: #6b7280; font-size: 11px; line-height: 1.5; }
+.profile-summary .secondary-button { margin-top: 10px; }
+.profile-photo { width: 104px; height: 104px; position: relative; display: grid; place-items: center; overflow: hidden; border: 1px solid #9ca3af; border-radius: 50%; background: #f3f4f6; font-size: 25px; font-weight: 600; }
+.profile-photo img { width: 100%; height: 100%; object-fit: cover; }
+.photo-button { width: 30px; height: 30px; position: absolute; right: 1px; bottom: 1px; display: grid; place-items: center; border: 1px solid #111111; border-radius: 50%; color: #ffffff; background: #111111; cursor: pointer; }
+.profile-form > header, .upload-page-card > header { display: flex; align-items: flex-start; gap: 11px; padding: 18px; border-bottom: 1px solid #e5e7eb; }
+.profile-form h2, .upload-page-card h2, .upload-help h2 { margin: 0; font-size: 14px; }
+.profile-form header p, .upload-page-card header p { margin: 5px 0 0; color: #6b7280; font-size: 11px; line-height: 1.5; }
+.profile-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 18px; }
+.profile-fields label { display: grid; gap: 6px; color: #6b7280; font-size: 11px; }
+.profile-fields input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #e5e7eb; border-radius: 6px; color: #111111; background: #ffffff; font-size: 12px; }
+.profile-fields input:disabled { color: #6b7280; background: #f9fafb; }
+.profile-form footer, .upload-page-card footer { display: flex; justify-content: flex-end; padding: 15px 18px; border-top: 1px solid #e5e7eb; }
+.upload-page-grid { grid-template-columns: minmax(0, 1fr) minmax(230px, 0.38fr); }
+.upload-dropzone { min-height: 210px; display: grid; place-content: center; justify-items: center; gap: 8px; margin: 18px; padding: 18px; border: 1px dashed #9ca3af; border-radius: 7px; color: #6b7280; text-align: center; cursor: pointer; }
+.upload-dropzone strong { color: #111111; font-size: 13px; }
+.upload-dropzone span { font-size: 11px; }
+.upload-dropzone input { max-width: 180px; margin-top: 5px; font-size: 11px; }
+.upload-help { display: grid; align-content: start; gap: 12px; padding: 18px; }
+.upload-help p { margin: 0; }
+.upload-help code { padding: 10px; border: 1px solid #e5e7eb; border-radius: 5px; background: #f9fafb; font-size: 10.5px; line-height: 1.5; white-space: normal; }
 
 .table-panel,
 .side-panel {
@@ -1285,6 +1345,12 @@ tbody tr:hover {
 }
 
 @media (max-width: 760px) {
+  .profile-layout,
+  .upload-page-grid,
+  .profile-fields {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell {
     grid-template-columns: 62px minmax(0, 1fr);
   }
