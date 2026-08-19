@@ -7,6 +7,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  CircleHelp,
   PencilLine,
   RefreshCw,
   Search,
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
+import DemoGuide from "../components/DemoGuide.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
@@ -246,6 +248,7 @@ export default function DashboardView({
   const [rejectItem, setRejectItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [demoGuideOpen, setDemoGuideOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -786,7 +789,11 @@ export default function DashboardView({
                   ) : (
                     <Settings aria-hidden="true" size={13} />
                   )}
-                  {syncing ? "Syncing" : "Settings"}
+                  {syncing ? "Syncing" : "Sync ML"}
+                </button>
+                <button className="tool-button" onClick={() => setDemoGuideOpen(true)} type="button">
+                  <CircleHelp aria-hidden="true" size={13} />
+                  Demo guide
                 </button>
               </div>
             </div>
@@ -1020,6 +1027,7 @@ export default function DashboardView({
           </aside>
         </section>
       </main>
+      {demoGuideOpen && <DemoGuide onClose={() => setDemoGuideOpen(false)} permissions={permissions} />}
       {uploadOpen && (
         <div
           className="modal-backdrop"
