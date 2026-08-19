@@ -72,6 +72,8 @@ export default function DepotInventoryView({
   onAction,
   onCollapse,
   onNavigate,
+  onSignOut,
+  user,
 }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -206,6 +208,8 @@ export default function DepotInventoryView({
         onAction={onAction}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard inventory-page">

@@ -222,7 +222,9 @@ export default function DashboardView({
   onCollapse,
   onAction,
   onNavigate,
+  onSignOut,
   refreshRequest,
+  user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -560,6 +562,8 @@ export default function DashboardView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onAction={onAction}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard">

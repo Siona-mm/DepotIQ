@@ -73,6 +73,8 @@ export default function ReportsView({
   onCollapse,
   onAction,
   onNavigate,
+  onSignOut,
+  user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -200,6 +202,8 @@ export default function ReportsView({
         onAction={onAction}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard reports-page">

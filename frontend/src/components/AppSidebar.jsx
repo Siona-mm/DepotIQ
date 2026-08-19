@@ -32,6 +32,8 @@ export default function AppSidebar({
   onCollapse,
   onNavigate,
   onAction,
+  onSignOut,
+  user,
 }) {
   return (
     <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -64,6 +66,18 @@ export default function AppSidebar({
           );
         })}
       </nav>
+
+      {user && (
+        <div className="sidebar-user">
+          <div>
+            <strong>{user.username}</strong>
+            <span>{user.roles?.[0]?.replace("ROLE_", "") ?? "User"}</span>
+          </div>
+          <button onClick={onSignOut} type="button">
+            Sign out
+          </button>
+        </div>
+      )}
 
       <button
         aria-expanded={!collapsed}

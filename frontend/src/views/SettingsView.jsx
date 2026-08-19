@@ -49,6 +49,8 @@ export default function SettingsView({
   onCollapse,
   onAction,
   onNavigate,
+  onSignOut,
+  user,
 }) {
   const [settings, setSettings] = useState(readSettings);
   const [message, setMessage] = useState("");
@@ -82,6 +84,8 @@ export default function SettingsView({
         onAction={onAction}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard settings-page">
