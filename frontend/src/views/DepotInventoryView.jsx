@@ -73,6 +73,7 @@ export default function DepotInventoryView({
   onCollapse,
   onNavigate,
   onSignOut,
+  permissions,
   user,
 }) {
   const [inventory, setInventory] = useState([]);
@@ -209,6 +210,7 @@ export default function DepotInventoryView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 

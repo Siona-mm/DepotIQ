@@ -69,6 +69,7 @@ export default function ShipmentsView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   user,
 }) {
   const [shipments, setShipments] = useState([]);
@@ -257,6 +258,7 @@ export default function ShipmentsView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 

@@ -223,6 +223,7 @@ export default function DashboardView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   refreshRequest,
   user,
 }) {
@@ -563,6 +564,7 @@ export default function DashboardView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 

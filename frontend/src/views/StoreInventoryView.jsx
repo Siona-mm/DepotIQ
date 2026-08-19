@@ -6,7 +6,7 @@ import AppSidebar from "../components/AppSidebar.jsx";
 const number = (value) => new Intl.NumberFormat("en-US").format(Number(value ?? 0));
 const state = (item) => Number(item.inventoryLevel ?? 0) === 0 ? "OUT" : Number(item.inventoryLevel ?? 0) < 25 ? "LOW" : "HEALTHY";
 
-export default function StoreInventoryView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, user }) {
+export default function StoreInventoryView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, user }) {
   const [inventory, setInventory] = useState([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [query, setQuery] = useState("");
   const [editing, setEditing] = useState(null), [inventoryLevel, setInventoryLevel] = useState(""), [incomingUnits, setIncomingUnits] = useState(""), [saving, setSaving] = useState(false), [message, setMessage] = useState("");
   const load = useCallback(async () => { try { setError(""); setInventory(await loadStoreInventory()); } catch (e) { setError(e.message); } finally { setLoading(false); } }, []);
@@ -15,7 +15,7 @@ export default function StoreInventoryView({ collapsed, onAction, onCollapse, on
   const atRisk = inventory.filter((item) => state(item) !== "HEALTHY").length;
   const openEdit = (item) => { setEditing(item); setInventoryLevel(String(item.inventoryLevel)); setIncomingUnits(String(item.incomingUnits)); setError(""); };
   const save = async (event) => { event.preventDefault(); setSaving(true); setError(""); try { const updated = await updateStoreInventory({ storeId: editing.storeId, productId: editing.productId, inventoryLevel: Number(inventoryLevel), incomingUnits: Number(incomingUnits) }); setInventory((current) => current.map((item) => item.id === updated.id ? updated : item)); setEditing(null); setMessage(`${updated.storeCode} / ${updated.productCode} inventory was updated.`); } catch (requestError) { setError(requestError.message); } finally { setSaving(false); } };
-  return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}><AppSidebar activePage="Store Inventory" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} user={user} />
+  return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}><AppSidebar activePage="Store Inventory" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} user={user} />
     <main className="dashboard store-inventory-page"><header className="topbar"><h1>Store Inventory</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search store inventory</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search store, product, or category..." value={query} /></label></header>
       {(error || message) && <div className={error ? "notice error" : "notice"}>{error || message}</div>}
       <section className="metrics-grid"><article className="metric-card"><Boxes size={20} /><div><span>Inventory Records</span><strong>{inventory.length}</strong><small>Store-product stock levels</small></div></article><article className="metric-card"><CircleAlert size={20} /><div><span>Stock Alerts</span><strong>{atRisk}</strong><small>Low or out of stock</small></div></article><article className="metric-card"><Store size={20} /><div><span>Stores Covered</span><strong>{new Set(inventory.map((item) => item.storeId)).size}</strong><small>Inventory locations</small></div></article></section>

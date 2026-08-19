@@ -50,6 +50,7 @@ export default function SettingsView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   user,
 }) {
   const [settings, setSettings] = useState(readSettings);
@@ -85,6 +86,7 @@ export default function SettingsView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 

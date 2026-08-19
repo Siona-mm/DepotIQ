@@ -33,6 +33,7 @@ export default function AppSidebar({
   onNavigate,
   onAction,
   onSignOut,
+  permissions,
   user,
 }) {
   return (
@@ -44,7 +45,9 @@ export default function AppSidebar({
 
       <nav aria-label="Main navigation">
         {NAVIGATION.map(([Icon, label, routeAvailable, action]) => {
-          const available = routeAvailable || Boolean(action && onAction);
+          const available = routeAvailable || Boolean(
+            action && onAction && permissions?.canImportData,
+          );
 
           return (
             <button

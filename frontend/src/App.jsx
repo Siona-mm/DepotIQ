@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
+import { permissionsFor } from "./auth/permissions.js";
 import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
@@ -59,11 +60,13 @@ export default function App() {
     setPage(destination);
   }, []);
 
+  const permissions = permissionsFor(user);
+
   const handleAction = useCallback((action) => {
-    if (action === "upload") {
+    if (action === "upload" && permissions.canImportData) {
       setUploadOpen(true);
     }
-  }, []);
+  }, [permissions.canImportData]);
 
   const closeUpload = useCallback(() => setUploadOpen(false), []);
   const handleImported = useCallback(
@@ -95,6 +98,7 @@ export default function App() {
     onAction: handleAction,
     onNavigate: navigate,
     onSignOut: handleSignOut,
+    permissions,
     user,
   };
 
@@ -116,11 +120,13 @@ export default function App() {
           refreshRequest={dashboardRefresh}
         />
       )}
-      <UploadDataDialog
-        onClose={closeUpload}
-        onImported={handleImported}
-        open={uploadOpen}
-      />
+      {permissions.canImportData && (
+        <UploadDataDialog
+          onClose={closeUpload}
+          onImported={handleImported}
+          open={uploadOpen}
+        />
+      )}
     </>
   );
 }
