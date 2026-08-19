@@ -49,6 +49,28 @@ export function loadAuthenticatedUser() {
     : Promise.resolve(null);
 }
 
+export function loadProfile() {
+  return request("/api/profile/me");
+}
+
+export function updateProfile(payload) {
+  return request("/api/profile/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loadProfile() {
+  return request("/api/profile/me");
+}
+
+export function updateProfile(payload) {
+  return request("/api/profile/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
 export async function loadDashboardData() {
   const [storeInventory, depotInventory, forecasts, recommendations] =
     await Promise.all([
