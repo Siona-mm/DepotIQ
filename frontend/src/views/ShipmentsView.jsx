@@ -68,6 +68,8 @@ export default function ShipmentsView({
   onCollapse,
   onAction,
   onNavigate,
+  onSignOut,
+  user,
 }) {
   const [shipments, setShipments] = useState([]);
   const [approvedRecommendations, setApprovedRecommendations] = useState([]);
@@ -254,6 +256,8 @@ export default function ShipmentsView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onAction={onAction}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard shipments-page">

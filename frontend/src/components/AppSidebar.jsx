@@ -67,15 +67,17 @@ export default function AppSidebar({
         })}
       </nav>
 
-      <div className="sidebar-user">
-        <div>
-          <strong>{user.username}</strong>
-          <span>{user.roles?.[0]?.replace("ROLE_", "") ?? "User"}</span>
+      {user && (
+        <div className="sidebar-user">
+          <div>
+            <strong>{user.username}</strong>
+            <span>{user.roles?.[0]?.replace("ROLE_", "") ?? "User"}</span>
+          </div>
+          <button onClick={onSignOut} type="button">
+            Sign out
+          </button>
         </div>
-        <button onClick={onSignOut} type="button">
-          Sign out
-        </button>
-      </div>
+      )}
 
       <button
         aria-expanded={!collapsed}
