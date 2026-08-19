@@ -44,10 +44,10 @@ export default function AppSidebar({
       </div>
 
       <nav aria-label="Main navigation">
-        {NAVIGATION.map(([Icon, label, routeAvailable, action]) => {
-          const available = routeAvailable || Boolean(
-            action && onAction && permissions?.canImportData,
-          );
+        {NAVIGATION.filter(([, , , action]) =>
+          action !== "upload" || permissions?.canImportData,
+        ).map(([Icon, label, routeAvailable, action]) => {
+          const available = routeAvailable || Boolean(action && onAction);
 
           return (
             <button
