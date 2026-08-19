@@ -1,6 +1,8 @@
 package com.depotiq.services;
 
 import com.depotiq.dtos.ml.MlHealthResponse;
+import com.depotiq.dtos.ml.MlDataSyncRequest;
+import com.depotiq.dtos.ml.MlDataSyncResponse;
 import com.depotiq.dtos.ml.MlRecommendationBatchResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -54,6 +56,23 @@ public class MlServiceClient {
             return response;
         } catch (RestClientException exception) {
             throw unavailable("Could not retrieve ML recommendations", exception);
+        }
+    }
+
+    public MlDataSyncResponse syncData(MlDataSyncRequest request) {
+        try {
+            MlDataSyncResponse response = restClient.post()
+                    .uri("/data-sync")
+                    .body(request)
+                    .retrieve()
+                    .body(MlDataSyncResponse.class);
+
+            if (response == null) {
+                throw unavailable("ML service returned an empty data sync response", null);
+            }
+            return response;
+        } catch (RestClientException exception) {
+            throw unavailable("Could not sync data to ML service", exception);
         }
     }
 

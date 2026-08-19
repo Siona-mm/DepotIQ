@@ -17,6 +17,8 @@ import com.depotiq.repositories.DemandForecastRepository;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
+import com.depotiq.repositories.SalesRecordRepository;
+import com.depotiq.repositories.StoreInventoryRepository;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -34,6 +36,8 @@ class MlIntegrationServiceTest {
         DemandForecastRepository forecasts = mock(DemandForecastRepository.class);
         ShipmentRecommendationRepository recommendations =
                 mock(ShipmentRecommendationRepository.class);
+        SalesRecordRepository salesRecords = mock(SalesRecordRepository.class);
+        StoreInventoryRepository storeInventory = mock(StoreInventoryRepository.class);
 
         Store store = new Store();
         store.setId(1L);
@@ -67,7 +71,9 @@ class MlIntegrationServiceTest {
                 stores,
                 products,
                 forecasts,
-                recommendations
+                recommendations,
+                salesRecords,
+                storeInventory
         );
 
         MlSyncResponse response = service.syncRecommendations();

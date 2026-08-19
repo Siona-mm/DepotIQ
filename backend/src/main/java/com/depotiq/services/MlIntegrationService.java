@@ -1,6 +1,10 @@
 package com.depotiq.services;
 
 import com.depotiq.dtos.ml.MlRecommendationBatchResponse;
+import com.depotiq.dtos.ml.MlDataSyncRequest;
+import com.depotiq.dtos.ml.MlDataSyncResponse;
+import com.depotiq.dtos.ml.MlSalesRecordPayload;
+import com.depotiq.dtos.ml.MlStoreInventoryPayload;
 import com.depotiq.dtos.ml.MlRecommendationPayload;
 import com.depotiq.dtos.ml.MlSyncResponse;
 import com.depotiq.models.DemandForecast;
@@ -13,6 +17,9 @@ import com.depotiq.repositories.DemandForecastRepository;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
+import com.depotiq.repositories.SalesRecordRepository;
+import com.depotiq.repositories.StoreInventoryRepository;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -26,19 +33,25 @@ public class MlIntegrationService {
     private final ProductRepository productRepository;
     private final DemandForecastRepository demandForecastRepository;
     private final ShipmentRecommendationRepository recommendationRepository;
+    private final SalesRecordRepository salesRecordRepository;
+    private final StoreInventoryRepository storeInventoryRepository;
 
     public MlIntegrationService(
             MlServiceClient mlServiceClient,
             StoreRepository storeRepository,
             ProductRepository productRepository,
             DemandForecastRepository demandForecastRepository,
-            ShipmentRecommendationRepository recommendationRepository
+            ShipmentRecommendationRepository recommendationRepository,
+            SalesRecordRepository salesRecordRepository,
+            StoreInventoryRepository storeInventoryRepository
     ) {
         this.mlServiceClient = mlServiceClient;
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.demandForecastRepository = demandForecastRepository;
         this.recommendationRepository = recommendationRepository;
+        this.salesRecordRepository = salesRecordRepository;
+        this.storeInventoryRepository = storeInventoryRepository;
     }
 
     public MlSyncResponse syncRecommendations() {
@@ -69,6 +82,35 @@ public class MlIntegrationService {
                 recommendationsSynced,
                 skipped
         );
+    }
+
+    public MlDataSyncResponse syncImportedData() {
+        MlDataSyncRequest request = new MlDataSyncRequest(
+                LocalDateTime.now(),
+                salesRecordRepository.findAll().stream()
+                        .map(record -> new MlSalesRecordPayload(
+                                record.getStore().getStoreCode(),
+                                record.getProduct().getProductCode(),
+                                record.getSaleDate(),
+                                record.getUnitsSold(),
+                                record.getPrice(),
+                                record.getDiscount(),
+                                record.getPromotion(),
+                                record.getWeatherCondition(),
+                                record.getHolidayPromotion(),
+                                record.getSeasonality()
+                        ))
+                        .toList(),
+                storeInventoryRepository.findAll().stream()
+                        .map(inventory -> new MlStoreInventoryPayload(
+                                inventory.getStore().getStoreCode(),
+                                inventory.getProduct().getProductCode(),
+                                inventory.getInventoryLevel(),
+                                inventory.getIncomingUnits()
+                        ))
+                        .toList()
+        );
+        return mlServiceClient.syncData(request);
     }
 
     private DemandForecast upsertForecast(
