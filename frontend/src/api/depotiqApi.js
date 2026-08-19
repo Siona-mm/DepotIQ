@@ -1,4 +1,10 @@
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
+const AUTH_STORAGE_KEY = "depotiq-basic-auth";
+
+function authorizationHeader() {
+  const token = globalThis.sessionStorage.getItem(AUTH_STORAGE_KEY);
+  return token ? { Authorization: `Basic ${token}` } : {};
+}
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -6,6 +12,7 @@ async function request(path, options = {}) {
       ...(options.body instanceof globalThis.FormData
         ? {}
         : { "Content-Type": "application/json" }),
+      ...authorizationHeader(),
       ...options.headers,
     },
     ...options,
@@ -21,6 +28,25 @@ async function request(path, options = {}) {
   }
 
   return response.json();
+}
+
+export async function signIn(username, password) {
+  const token = globalThis.btoa(`${username}:${password}`);
+  const user = await request("/api/auth/me", {
+    headers: { Authorization: `Basic ${token}` },
+  });
+  globalThis.sessionStorage.setItem(AUTH_STORAGE_KEY, token);
+  return user;
+}
+
+export function signOut() {
+  globalThis.sessionStorage.removeItem(AUTH_STORAGE_KEY);
+}
+
+export function loadAuthenticatedUser() {
+  return globalThis.sessionStorage.getItem(AUTH_STORAGE_KEY)
+    ? request("/api/auth/me")
+    : Promise.resolve(null);
 }
 
 export async function loadDashboardData() {
