@@ -13,7 +13,7 @@ export default function DemoGuide({ onClose, permissions }) {
       <section aria-labelledby="demo-guide-title" aria-modal="true" className="demo-guide" role="dialog">
         <header>
           <div>
-            <span>Competition demo</span>
+            <span>Guided walkthrough</span>
             <h2 id="demo-guide-title">DepotIQ in four steps</h2>
           </div>
           <button aria-label="Close demo guide" className="icon-button" onClick={onClose} type="button"><X size={16} /></button>
