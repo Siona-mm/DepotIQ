@@ -9,6 +9,8 @@ export function permissionsFor(user) {
   return {
     canImportData: isAdmin,
     canManageCatalog: isAdmin,
+    canViewCatalog: isAdmin,
+    canViewForecasts: true,
     canManageInventory: isAdmin || isManager,
     canManageRecommendations: isAdmin || isManager,
     canManageSettings: isAdmin,

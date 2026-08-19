@@ -4,9 +4,12 @@ import { permissionsFor } from "./auth/permissions.js";
 import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
+import ForecastsView from "./views/ForecastsView.jsx";
+import ProductsView from "./views/ProductsView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
 import StoreInventoryView from "./views/StoreInventoryView.jsx";
+import StoresView from "./views/StoresView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import LoginView from "./views/LoginView.jsx";
 
@@ -17,6 +20,9 @@ function pageFromHash() {
     "#reports": "Reports",
     "#settings": "Settings",
     "#store-inventory": "Store Inventory",
+    "#stores": "Stores",
+    "#products": "Products",
+    "#forecasts": "Forecasts",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -54,6 +60,9 @@ export default function App() {
       Reports: "reports",
       Settings: "settings",
       "Store Inventory": "store-inventory",
+      Stores: "stores",
+      Products: "products",
+      Forecasts: "forecasts",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -101,19 +110,28 @@ export default function App() {
     permissions,
     user,
   };
+  const activePage = ["Stores", "Products"].includes(page) && !permissions.canViewCatalog
+    ? "Dashboard"
+    : page;
 
   return (
     <>
-      {page === "Shipments" ? (
+      {activePage === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
-      ) : page === "Depot Inventory" ? (
+      ) : activePage === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
-      ) : page === "Reports" ? (
+      ) : activePage === "Reports" ? (
         <ReportsView {...sharedProps} />
-      ) : page === "Settings" ? (
+      ) : activePage === "Settings" ? (
         <SettingsView {...sharedProps} />
-      ) : page === "Store Inventory" ? (
+      ) : activePage === "Store Inventory" ? (
         <StoreInventoryView {...sharedProps} />
+      ) : activePage === "Stores" ? (
+        <StoresView {...sharedProps} />
+      ) : activePage === "Products" ? (
+        <ProductsView {...sharedProps} />
+      ) : activePage === "Forecasts" ? (
+        <ForecastsView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
