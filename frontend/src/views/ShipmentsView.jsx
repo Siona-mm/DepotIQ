@@ -287,10 +287,12 @@ export default function ShipmentsView({
             <span>Depot operations</span>
             <h2>Plan and track store deliveries</h2>
           </div>
-          <button className="primary-button" onClick={openPlan} type="button">
-            <Plus aria-hidden="true" size={16} />
-            Plan shipment
-          </button>
+          {permissions.canPlanShipments && (
+            <button className="primary-button" onClick={openPlan} type="button">
+              <Plus aria-hidden="true" size={16} />
+              Plan shipment
+            </button>
+          )}
         </div>
 
         {(error || message) && (
@@ -362,7 +364,7 @@ export default function ShipmentsView({
                   <th>Dispatch</th>
                   <th>Expected Delivery</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  {permissions.canPlanShipments && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -409,8 +411,9 @@ export default function ShipmentsView({
                             shipment.status.slice(1).toLowerCase()}
                         </span>
                       </td>
-                      <td>
-                        <div className="shipment-actions">
+                      {permissions.canPlanShipments && (
+                        <td>
+                          <div className="shipment-actions">
                           {action && (
                             <button
                               className="row-action primary"
@@ -440,8 +443,9 @@ export default function ShipmentsView({
                               <Ban aria-hidden="true" size={14} />
                             </button>
                           )}
-                        </div>
-                      </td>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
