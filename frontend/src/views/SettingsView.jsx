@@ -1,7 +1,5 @@
 import {
   Bell,
-  Database,
-  RefreshCw,
   Save,
   Search,
   ShieldCheck,
@@ -137,12 +135,6 @@ export default function SettingsView({
             </div>
           </section>
 
-          <aside className="settings-status-card">
-            <div><Database aria-hidden="true" size={18} /><span>System status</span></div>
-            <strong>Connected</strong>
-            <p>PostgreSQL, the forecasting service, and the operational dashboard are available in this local environment.</p>
-            <span className="settings-status-note"><RefreshCw aria-hidden="true" size={13} />Changes are saved only in this browser until a shared settings API is added.</span>
-          </aside>
         </section>
       </main>
     </div>
