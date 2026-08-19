@@ -1,6 +1,7 @@
 package com.depotiq.controllers;
 
 import com.depotiq.dtos.ml.MlHealthResponse;
+import com.depotiq.dtos.ml.MlDataSyncResponse;
 import com.depotiq.dtos.ml.MlSyncResponse;
 import com.depotiq.services.MlIntegrationService;
 import com.depotiq.services.MlServiceClient;
@@ -31,5 +32,10 @@ public class MlIntegrationController {
     @PostMapping("/sync")
     public MlSyncResponse syncRecommendations() {
         return mlIntegrationService.syncRecommendations();
+    }
+
+    @PostMapping("/data-sync")
+    public MlDataSyncResponse syncImportedData() {
+        return mlIntegrationService.syncImportedData();
     }
 }
