@@ -6,7 +6,7 @@ import AppSidebar from "../components/AppSidebar.jsx";
 const money = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value ?? 0));
 const EMPTY_PRODUCT = { productCode: "", name: "", category: "", brand: "", supplierCode: "", unitCost: 0, price: 0, weightKg: 0, shelfLifeDays: 0, perishable: false };
 
-export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate }) {
+export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, user }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,7 +20,7 @@ export default function ProductsView({ collapsed, onAction, onCollapse, onNaviga
   const save = async (event) => { event.preventDefault(); setSaving(true); try { const payload = { ...form, unitCost: Number(form.unitCost), price: Number(form.price), weightKg: Number(form.weightKg), shelfLifeDays: Number(form.shelfLifeDays) }; const saved = editing ? await updateProduct(editing.id, (({ productCode, ...value }) => value)(payload)) : await createProduct(payload); setProducts((current) => editing ? current.map((p) => p.id === saved.id ? saved : p) : [...current, saved]); setFormOpen(false); } catch (e) { setError(e.message); } finally { setSaving(false); } };
   const remove = async (product) => { if (!globalThis.confirm(`Delete ${product.productCode}?`)) return; try { await deleteProduct(product.id); setProducts((current) => current.filter((p) => p.id !== product.id)); } catch (e) { setError(e.message); } };
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-    <AppSidebar activePage="Products" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} />
+    <AppSidebar activePage="Products" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} user={user} />
     <main className="dashboard products-page"><header className="topbar"><h1>Products</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search products</span><input onChange={(e) => setQuery(e.target.value)} placeholder="Search product, code, category, or brand..." value={query} /></label></header>
       {error && <div className="notice error">{error}</div>}
       <section className="metrics-grid"><article className="metric-card"><PackageSearch size={20} /><div><span>Total Products</span><strong>{products.length}</strong><small>In product catalog</small></div></article><article className="metric-card"><Tags size={20} /><div><span>Categories</span><strong>{new Set(products.map((p) => p.category)).size}</strong><small>Product groups</small></div></article></section>

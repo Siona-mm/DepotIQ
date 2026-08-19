@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
+import { permissionsFor } from "./auth/permissions.js";
 import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
+import ForecastsView from "./views/ForecastsView.jsx";
+import ProductsView from "./views/ProductsView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
 import StoreInventoryView from "./views/StoreInventoryView.jsx";
+import StoresView from "./views/StoresView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import LoginView from "./views/LoginView.jsx";
 
@@ -16,6 +20,9 @@ function pageFromHash() {
     "#reports": "Reports",
     "#settings": "Settings",
     "#store-inventory": "Store Inventory",
+    "#stores": "Stores",
+    "#products": "Products",
+    "#forecasts": "Forecasts",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -53,17 +60,22 @@ export default function App() {
       Reports: "reports",
       Settings: "settings",
       "Store Inventory": "store-inventory",
+      Stores: "stores",
+      Products: "products",
+      Forecasts: "forecasts",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
     setPage(destination);
   }, []);
 
+  const permissions = permissionsFor(user);
+
   const handleAction = useCallback((action) => {
-    if (action === "upload") {
+    if (action === "upload" && permissions.canImportData) {
       setUploadOpen(true);
     }
-  }, []);
+  }, [permissions.canImportData]);
 
   const closeUpload = useCallback(() => setUploadOpen(false), []);
   const handleImported = useCallback(
@@ -95,32 +107,44 @@ export default function App() {
     onAction: handleAction,
     onNavigate: navigate,
     onSignOut: handleSignOut,
+    permissions,
     user,
   };
+  const activePage = ["Stores", "Products"].includes(page) && !permissions.canViewCatalog
+    ? "Dashboard"
+    : page;
 
   return (
     <>
-      {page === "Shipments" ? (
+      {activePage === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
-      ) : page === "Depot Inventory" ? (
+      ) : activePage === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
-      ) : page === "Reports" ? (
+      ) : activePage === "Reports" ? (
         <ReportsView {...sharedProps} />
-      ) : page === "Settings" ? (
+      ) : activePage === "Settings" ? (
         <SettingsView {...sharedProps} />
-      ) : page === "Store Inventory" ? (
+      ) : activePage === "Store Inventory" ? (
         <StoreInventoryView {...sharedProps} />
+      ) : activePage === "Stores" ? (
+        <StoresView {...sharedProps} />
+      ) : activePage === "Products" ? (
+        <ProductsView {...sharedProps} />
+      ) : activePage === "Forecasts" ? (
+        <ForecastsView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
           refreshRequest={dashboardRefresh}
         />
       )}
-      <UploadDataDialog
-        onClose={closeUpload}
-        onImported={handleImported}
-        open={uploadOpen}
-      />
+      {permissions.canImportData && (
+        <UploadDataDialog
+          onClose={closeUpload}
+          onImported={handleImported}
+          open={uploadOpen}
+        />
+      )}
     </>
   );
 }

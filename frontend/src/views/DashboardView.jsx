@@ -223,6 +223,7 @@ export default function DashboardView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   refreshRequest,
   user,
 }) {
@@ -563,6 +564,7 @@ export default function DashboardView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 
@@ -801,7 +803,7 @@ export default function DashboardView({
                     <th>Recommended Shipment</th>
                     <th>Priority</th>
                     <th>Updated</th>
-                    <th>Actions</th>
+                    {permissions.canManageRecommendations && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -840,8 +842,9 @@ export default function DashboardView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.recommendationDate)}</td>
-                      <td className="recommendation-actions">
-                        <div className="action-buttons">
+                      {permissions.canManageRecommendations && (
+                        <td className="recommendation-actions">
+                          <div className="action-buttons">
                           <button
                             aria-label={`${recommendationActionLabel(
                               item.status,
@@ -896,8 +899,9 @@ export default function DashboardView({
                           >
                             <PencilLine aria-hidden="true" size={14} />
                           </button>
-                        </div>
-                      </td>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

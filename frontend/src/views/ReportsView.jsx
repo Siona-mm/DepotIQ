@@ -74,6 +74,7 @@ export default function ReportsView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
@@ -203,6 +204,7 @@ export default function ReportsView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         user={user}
       />
 

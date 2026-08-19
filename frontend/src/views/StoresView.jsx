@@ -12,7 +12,7 @@ const EMPTY_STORE = {
   storageCapacity: 1, deliveryLeadTimeDays: 1, preferredHorizonDays: 7,
 };
 
-export default function StoresView({ collapsed, onAction, onCollapse, onNavigate }) {
+export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, user }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -90,6 +90,9 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         onAction={onAction}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
+        permissions={permissions}
+        user={user}
       />
 
       <main className="dashboard stores-page">
