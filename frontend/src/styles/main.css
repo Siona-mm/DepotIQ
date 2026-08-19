@@ -2185,6 +2185,115 @@ tbody tr:hover {
   font-size: 11px;
 }
 
+.demo-guide {
+  width: min(540px, calc(100vw - 32px));
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 55px rgb(17 17 17 / 18%);
+}
+
+.demo-guide > header,
+.demo-guide > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.demo-guide > header {
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.demo-guide > header > div {
+  display: grid;
+  gap: 3px;
+}
+
+.demo-guide > header span {
+  color: #6b7280;
+  font-size: 10.5px;
+}
+
+.demo-guide h2 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.demo-guide > p {
+  margin: 18px 20px 14px;
+  color: #4b5563;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.demo-guide ol {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding: 0 20px;
+  list-style: none;
+}
+
+.demo-guide li {
+  display: flex;
+  gap: 11px;
+}
+
+.demo-guide li > span {
+  width: 23px;
+  height: 23px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #111111;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.demo-guide li div {
+  display: grid;
+  gap: 3px;
+}
+
+.demo-guide li strong {
+  font-size: 12px;
+}
+
+.demo-guide li p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.demo-guide-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 18px 20px 0;
+  padding: 11px;
+  border-radius: 6px;
+  color: #2f604c;
+  background: #f0fdf4;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.demo-guide-note svg {
+  flex: 0 0 auto;
+}
+
+.demo-guide > footer {
+  justify-content: flex-end;
+  margin-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
 .plan-dialog {
   width: min(620px, calc(100vw - 32px));
   max-height: calc(100vh - 40px);
