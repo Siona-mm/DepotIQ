@@ -316,7 +316,7 @@ export default function DepotInventoryView({
                   <th>Free Stock</th>
                   <th>Status</th>
                   <th>Last Updated</th>
-                  <th>Actions</th>
+                  {permissions.canManageInventory && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -345,18 +345,20 @@ export default function DepotInventoryView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.lastUpdated)}</td>
-                      <td>
-                        <button
-                          aria-label={`Edit inventory for ${item.productCode}`}
-                          className="row-action inventory-edit"
-                          onClick={() => openEdit(item)}
-                          title="Edit stock quantities"
-                          type="button"
-                        >
-                          <PencilLine aria-hidden="true" size={14} />
-                          Edit
-                        </button>
-                      </td>
+                      {permissions.canManageInventory && (
+                        <td>
+                          <button
+                            aria-label={`Edit inventory for ${item.productCode}`}
+                            className="row-action inventory-edit"
+                            onClick={() => openEdit(item)}
+                            title="Edit stock quantities"
+                            type="button"
+                          >
+                            <PencilLine aria-hidden="true" size={14} />
+                            Edit
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
