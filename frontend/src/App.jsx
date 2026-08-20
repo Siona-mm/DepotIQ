@@ -3,6 +3,7 @@ import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depot
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ForecastsView from "./views/ForecastsView.jsx";
+import HistoryView from "./views/HistoryView.jsx";
 import ProductsView from "./views/ProductsView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
@@ -25,6 +26,7 @@ function pageFromHash() {
     "#stores": "Stores",
     "#products": "Products",
     "#forecasts": "Forecasts",
+    "#history": "History",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -74,6 +76,7 @@ export default function App() {
       Stores: "stores",
       Products: "products",
       Forecasts: "forecasts",
+      History: "history",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -141,6 +144,8 @@ export default function App() {
         <ProductsView {...sharedProps} />
       ) : page === "Forecasts" ? (
         <ForecastsView {...sharedProps} />
+      ) : page === "History" ? (
+        <HistoryView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
