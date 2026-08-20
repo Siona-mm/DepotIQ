@@ -49,6 +49,17 @@ export function loadAuthenticatedUser() {
     : Promise.resolve(null);
 }
 
+export async function updateCredentials(payload) {
+  const user = await request("/api/auth/credentials", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  const password = payload.newPassword || payload.currentPassword;
+  const token = globalThis.btoa(`${user.username}:${password}`);
+  globalThis.sessionStorage.setItem(AUTH_STORAGE_KEY, token);
+  return user;
+}
+
 export function loadProfile() {
   return request("/api/profile/me");
 }
