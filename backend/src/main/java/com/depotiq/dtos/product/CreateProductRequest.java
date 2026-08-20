@@ -9,9 +9,6 @@ import java.math.BigDecimal;
 
 public class CreateProductRequest {
     @NotBlank
-    private String productCode;
-
-    @NotBlank
     private String name;
 
     @NotBlank
@@ -20,6 +17,8 @@ public class CreateProductRequest {
     private String brand;
 
     private String supplierCode;
+
+    private String externalSku;
 
     @DecimalMin(value = "0.00")
     private BigDecimal unitCost;
@@ -35,14 +34,6 @@ public class CreateProductRequest {
 
     @NotNull
     private Boolean perishable;
-
-    public String getProductCode() {
-        return productCode;
-    }
-
-    public void setProductCode(String productCode) {
-        this.productCode = productCode;
-    }
 
     public String getName() {
         return name;
@@ -74,6 +65,14 @@ public class CreateProductRequest {
 
     public void setSupplierCode(String supplierCode) {
         this.supplierCode = supplierCode;
+    }
+
+    public String getExternalSku() {
+        return externalSku;
+    }
+
+    public void setExternalSku(String externalSku) {
+        this.externalSku = externalSku;
     }
 
     public BigDecimal getUnitCost() {
