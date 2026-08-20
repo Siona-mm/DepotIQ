@@ -1502,6 +1502,87 @@ select:focus-visible {
   margin-top: 24px;
 }
 
+.forecast-visuals {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.forecast-chart-panel {
+  min-width: 0;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.forecast-chart-panel > header {
+  min-height: 69px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 17px 18px 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.forecast-chart-panel h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.forecast-chart-panel p,
+.forecast-chart-panel header > span {
+  margin: 4px 0 0;
+  color: #6b7280;
+  font-size: 11.5px;
+}
+
+.forecast-chart-panel header > span {
+  flex: none;
+  margin-top: 1px;
+}
+
+.forecast-chart-canvas {
+  height: 252px;
+  padding: 14px 12px 8px 6px;
+}
+
+.forecast-chart-canvas .recharts-text,
+.forecast-chart-canvas .recharts-tooltip-wrapper {
+  font-family: "Geist Variable", Geist, sans-serif;
+}
+
+.forecast-chart-notes {
+  min-height: 48px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 11px 18px;
+  border-top: 1px solid #e5e7eb;
+  color: #6b7280;
+  font-size: 10.5px;
+}
+
+.forecast-chart-notes span {
+  white-space: nowrap;
+}
+
+.forecast-chart-notes strong {
+  margin-right: 4px;
+  color: #111111;
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .forecast-visuals {
+    grid-template-columns: 1fr;
+  }
+}
+
 .override-dialog {
   max-height: calc(100vh - 40px);
   overflow: auto;
