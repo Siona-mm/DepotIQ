@@ -60,15 +60,19 @@ export function updateProfile(payload) {
   });
 }
 
-export function loadProfile() {
-  return request("/api/profile/me");
+export function loadSettings() {
+  return request("/api/settings/me");
 }
 
-export function updateProfile(payload) {
-  return request("/api/profile/me", {
+export function updateSettings(payload) {
+  return request("/api/settings/me", {
     method: "PUT",
     body: JSON.stringify(payload),
   });
+}
+
+export function resetSettings() {
+  return request("/api/settings/me", { method: "DELETE" });
 }
 
 export async function loadDashboardData() {
