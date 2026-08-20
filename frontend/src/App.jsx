@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
+import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ForecastsView from "./views/ForecastsView.jsx";
@@ -32,15 +32,23 @@ function pageFromHash() {
 
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
   const dashboardRefresh = 0;
 
   useEffect(() => {
     loadAuthenticatedUser()
-      .then(setUser)
+      .then(async (authenticatedUser) => {
+        if (authenticatedUser) {
+          const authenticatedProfile = await loadProfile();
+          setProfile(authenticatedProfile);
+        }
+        setUser(authenticatedUser);
+      })
       .catch(() => {
         signOut();
+        setProfile(null);
         setUser(null);
       });
   }, []);
@@ -80,12 +88,15 @@ export default function App() {
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
+    const authenticatedProfile = await loadProfile();
+    setProfile(authenticatedProfile);
     setUser(authenticatedUser);
   }, []);
 
   const handleSignOut = useCallback(() => {
     signOut();
     globalThis.location.hash = "";
+    setProfile(null);
     setUser(null);
   }, []);
 
@@ -102,7 +113,9 @@ export default function App() {
     onCollapse: () => setCollapsed((current) => !current),
     onAction: handleAction,
     onNavigate: navigate,
+    onProfileUpdated: setProfile,
     onSignOut: handleSignOut,
+    profile,
     user,
   };
 
