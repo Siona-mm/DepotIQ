@@ -17,6 +17,7 @@ import {
   updateShipmentStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const STATUS_ACTIONS = {
   PLANNED: ["READY", "Mark ready", CircleCheckBig],
@@ -69,6 +70,7 @@ export default function ShipmentsView({
   onAction,
   onNavigate,
   onSignOut,
+  profile,
   user,
 }) {
   const [shipments, setShipments] = useState([]);
@@ -257,6 +259,7 @@ export default function ShipmentsView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        profile={profile}
         user={user}
       />
 
@@ -275,9 +278,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">
-            SM
-          </button>
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
