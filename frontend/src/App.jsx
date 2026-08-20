@@ -2,9 +2,12 @@ import { useCallback, useEffect, useState } from "react";
 import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
+import ForecastsView from "./views/ForecastsView.jsx";
+import ProductsView from "./views/ProductsView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
 import StoreInventoryView from "./views/StoreInventoryView.jsx";
+import StoresView from "./views/StoresView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import LoginView from "./views/LoginView.jsx";
 import ProfileView from "./views/ProfileView.jsx";
@@ -19,6 +22,9 @@ function pageFromHash() {
     "#store-inventory": "Store Inventory",
     "#profile": "Profile",
     "#upload-data": "Upload Data",
+    "#stores": "Stores",
+    "#products": "Products",
+    "#forecasts": "Forecasts",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -28,7 +34,7 @@ export default function App() {
   const [user, setUser] = useState(undefined);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [dashboardRefresh, setDashboardRefresh] = useState(0);
+  const dashboardRefresh = 0;
 
   useEffect(() => {
     loadAuthenticatedUser()
@@ -57,6 +63,9 @@ export default function App() {
       "Store Inventory": "store-inventory",
       Profile: "profile",
       "Upload Data": "upload-data",
+      Stores: "stores",
+      Products: "products",
+      Forecasts: "forecasts",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -113,6 +122,12 @@ export default function App() {
         <ProfileView {...sharedProps} />
       ) : page === "Upload Data" ? (
         <UploadDataView {...sharedProps} />
+      ) : page === "Stores" ? (
+        <StoresView {...sharedProps} />
+      ) : page === "Products" ? (
+        <ProductsView {...sharedProps} />
+      ) : page === "Forecasts" ? (
+        <ForecastsView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
