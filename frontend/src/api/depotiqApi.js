@@ -161,6 +161,10 @@ export function updateRecommendationStatus(id, status) {
   });
 }
 
+export function loadRecommendationHistory() {
+  return request("/api/recommendations");
+}
+
 export async function loadShipmentPageData() {
   const [shipments, approvedRecommendations] = await Promise.all([
     request("/api/shipments"),
