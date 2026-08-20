@@ -12,7 +12,7 @@ const EMPTY_STORE = {
   storageCapacity: 1, deliveryLeadTimeDays: 1, preferredHorizonDays: 7,
 };
 
-export default function StoresView({ collapsed, onAction, onCollapse, onNavigate }) {
+export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, user }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,7 +65,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         preferredHorizonDays: Number(form.preferredHorizonDays),
       };
       const saved = editItem
-        ? await updateStore(editItem.id, (({ storeCode, ...update }) => update)(payload))
+        ? await updateStore(editItem.id, (({ storeCode: _storeCode, ...update }) => update)(payload))
         : await createStore(payload);
       setStores((current) => editItem
         ? current.map((store) => store.id === saved.id ? saved : store)
@@ -90,6 +90,8 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         onAction={onAction}
         onCollapse={onCollapse}
         onNavigate={onNavigate}
+        onSignOut={onSignOut}
+        user={user}
       />
 
       <main className="dashboard stores-page">
