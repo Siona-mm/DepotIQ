@@ -363,6 +363,7 @@ input:focus-visible {
   background: #ffffff;
   font-size: 13px;
   font-weight: 500;
+  cursor: pointer;
 }
 
 .notice {
