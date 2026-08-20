@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
@@ -223,6 +224,7 @@ export default function DashboardView({
   onAction,
   onNavigate,
   onSignOut,
+  profile,
   refreshRequest,
   user,
 }) {
@@ -563,6 +565,7 @@ export default function DashboardView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        profile={profile}
         user={user}
       />
 
@@ -581,9 +584,7 @@ export default function DashboardView({
             />
           </label>
 
-          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">
-            SM
-          </button>
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         {(error || syncMessage) && (
