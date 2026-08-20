@@ -2148,6 +2148,117 @@ select:focus-visible {
   gap: 5px;
 }
 
+.history-table-panel {
+  min-height: 520px;
+  margin-top: 25px;
+}
+
+.history-table-panel .panel-toolbar {
+  min-height: 58px;
+  padding-inline: 16px;
+}
+
+.history-table-panel .panel-toolbar > div {
+  display: grid;
+  gap: 3px;
+}
+
+.history-table-panel table {
+  min-width: 1040px;
+}
+
+.history-status {
+  min-width: 82px;
+  min-height: 24px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 8px;
+  border: 1px solid #9ca3af;
+  border-radius: 5px;
+  color: #6b7280;
+  background: #ffffff;
+  font-size: 10px;
+  font-weight: 550;
+  white-space: nowrap;
+}
+
+.history-status.approved {
+  border-color: #059669;
+  color: #047857;
+}
+
+.history-status.rejected,
+.history-status.cancelled {
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
+.history-status.ready_for_transport,
+.history-status.assigned_to_route,
+.history-status.shipped {
+  border-color: #6b7280;
+  color: #111111;
+  background: #f3f4f6;
+}
+
+.history-status.delivered {
+  border-color: #3f6f5a;
+  color: #2f604c;
+  background: #f5faf7;
+}
+
+.history-undo-button {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 9px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  color: #374151;
+  background: #ffffff;
+  cursor: pointer;
+  font-size: 10.5px;
+  font-weight: 550;
+}
+
+.history-undo-button:hover {
+  border-color: #9ca3af;
+  color: #111111;
+  background: #f9fafb;
+}
+
+.history-locked {
+  color: #9ca3af;
+  font-size: 10.5px;
+}
+
+.history-empty {
+  min-height: 300px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: #9ca3af;
+  text-align: center;
+}
+
+.history-empty strong {
+  color: #374151;
+  font-size: 12px;
+}
+
+.history-empty span {
+  font-size: 11px;
+}
+
+.history-page-number {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .reports-search {
   cursor: default;
 }
