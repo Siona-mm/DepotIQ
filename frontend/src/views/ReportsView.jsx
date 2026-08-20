@@ -69,6 +69,7 @@ export default function ReportsView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   profile,
   user,
 }) {
@@ -201,6 +202,7 @@ export default function ReportsView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
+import { permissionsFor } from "./auth/permissions.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ForecastsView from "./views/ForecastsView.jsx";
@@ -83,11 +84,13 @@ export default function App() {
     setPage(destination);
   }, []);
 
+  const permissions = permissionsFor(user);
+
   const handleAction = useCallback((action) => {
-    if (action === "upload") {
+    if (action === "upload" && permissions.canImportData) {
       navigate("Upload Data");
     }
-  }, [navigate]);
+  }, [navigate, permissions.canImportData]);
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
@@ -119,33 +122,42 @@ export default function App() {
     onProfileUpdated: setProfile,
     onUserUpdated: setUser,
     onSignOut: handleSignOut,
+    permissions,
     profile,
     user,
   };
 
+  const protectedPages = {
+    Stores: permissions.canViewCatalog,
+    Products: permissions.canViewCatalog,
+    Forecasts: permissions.canViewForecasts,
+    "Upload Data": permissions.canImportData,
+  };
+  const activePage = protectedPages[page] === false ? "Dashboard" : page;
+
   return (
     <>
-      {page === "Shipments" ? (
+      {activePage === "Shipments" ? (
         <ShipmentsView {...sharedProps} />
-      ) : page === "Depot Inventory" ? (
+      ) : activePage === "Depot Inventory" ? (
         <DepotInventoryView {...sharedProps} />
-      ) : page === "Reports" ? (
+      ) : activePage === "Reports" ? (
         <ReportsView {...sharedProps} />
-      ) : page === "Settings" ? (
+      ) : activePage === "Settings" ? (
         <SettingsView {...sharedProps} />
-      ) : page === "Store Inventory" ? (
+      ) : activePage === "Store Inventory" ? (
         <StoreInventoryView {...sharedProps} />
-      ) : page === "Profile" ? (
+      ) : activePage === "Profile" ? (
         <ProfileView {...sharedProps} />
-      ) : page === "Upload Data" ? (
+      ) : activePage === "Upload Data" ? (
         <UploadDataView {...sharedProps} />
-      ) : page === "Stores" ? (
+      ) : activePage === "Stores" ? (
         <StoresView {...sharedProps} />
-      ) : page === "Products" ? (
+      ) : activePage === "Products" ? (
         <ProductsView {...sharedProps} />
-      ) : page === "Forecasts" ? (
+      ) : activePage === "Forecasts" ? (
         <ForecastsView {...sharedProps} />
-      ) : page === "History" ? (
+      ) : activePage === "History" ? (
         <HistoryView {...sharedProps} />
       ) : (
         <DashboardView

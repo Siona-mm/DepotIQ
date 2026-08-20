@@ -9,7 +9,7 @@ const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFraction
 const formatCompact = (value) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(value ?? 0));
 const CHART_TOOLTIP_STYLE = { border: "1px solid #e5e7eb", borderRadius: "6px", boxShadow: "0 8px 24px rgba(17, 17, 17, 0.08)", fontSize: "12px" };
 
-export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, profile, user }) {
+export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
   const [forecasts, setForecasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -57,7 +57,7 @@ export default function ForecastsView({ collapsed, onAction, onCollapse, onNavig
   }, [visible]);
 
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-    <AppSidebar activePage="Forecasts" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+    <AppSidebar activePage="Forecasts" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} profile={profile} user={user} />
     <main className="dashboard forecasts-page">
       <header className="topbar"><h1>Forecasts</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search forecasts</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search store, product, category, or model..." value={query} /></label><UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} /></header>
       {error && <div className="notice error" role="status">{error}</div>}

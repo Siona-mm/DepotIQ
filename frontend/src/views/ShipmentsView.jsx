@@ -70,6 +70,7 @@ export default function ShipmentsView({
   onAction,
   onNavigate,
   onSignOut,
+  permissions,
   profile,
   user,
 }) {
@@ -259,6 +260,7 @@ export default function ShipmentsView({
         onNavigate={onNavigate}
         onAction={onAction}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />
@@ -286,10 +288,10 @@ export default function ShipmentsView({
             <span>Depot operations</span>
             <h2>Plan and track store deliveries</h2>
           </div>
-          <button className="primary-button" onClick={openPlan} type="button">
+          {permissions.canPlanShipments && <button className="primary-button" onClick={openPlan} type="button">
             <Plus aria-hidden="true" size={16} />
             Plan shipment
-          </button>
+          </button>}
         </div>
 
         {(error || message) && (
@@ -361,7 +363,7 @@ export default function ShipmentsView({
                   <th>Dispatch</th>
                   <th>Expected Delivery</th>
                   <th>Status</th>
-                  <th>Actions</th>
+                  {permissions.canPlanShipments && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -374,11 +376,11 @@ export default function ShipmentsView({
 
                   return (
                     <tr key={shipment.id}>
-                      <td>
+                      {permissions.canPlanShipments && <td>
                         <strong className="shipment-number">
                           {shipment.shipmentNumber}
                         </strong>
-                      </td>
+                      </td>}
                       <td>
                         <div className="table-primary">
                           <strong>{shipment.storeCode}</strong>

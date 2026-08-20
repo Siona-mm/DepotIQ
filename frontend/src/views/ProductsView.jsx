@@ -12,7 +12,7 @@ const FIELDS = [
   ["price", "Price", "number"], ["weightKg", "Weight (kg)", "number"], ["shelfLifeDays", "Shelf life (days)", "number"],
 ];
 
-export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, profile, user }) {
+export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
   const [products, setProducts] = useState([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false), [editing, setEditing] = useState(null), [form, setForm] = useState(EMPTY_PRODUCT), [saving, setSaving] = useState(false);
   const load = useCallback(async () => { try { setError(""); setProducts(await loadProducts()); } catch (requestError) { setError(requestError.message); } finally { setLoading(false); } }, []);
@@ -25,7 +25,7 @@ export default function ProductsView({ collapsed, onAction, onCollapse, onNaviga
   const remove = async (product) => { if (!globalThis.confirm(`Delete ${product.productCode}?`)) return; try { await deleteProduct(product.id); setProducts((current) => current.filter((item) => item.id !== product.id)); } catch (requestError) { setError(requestError.message); } };
 
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-    <AppSidebar activePage="Products" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+    <AppSidebar activePage="Products" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} profile={profile} user={user} />
     <main className="dashboard products-page">
       <header className="topbar"><h1>Products</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search products</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search product, code, category, or brand..." value={query} /></label><UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} /></header>
       {error && <div className="notice error">{error}</div>}

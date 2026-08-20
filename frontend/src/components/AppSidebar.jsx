@@ -18,12 +18,12 @@ const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
   [Boxes, "Store Inventory", true],
-  [Store, "Stores", true],
-  [PackageSearch, "Products", true],
-  [ChartNoAxesCombined, "Forecasts", true],
+  [Store, "Stores", true, undefined, "catalog"],
+  [PackageSearch, "Products", true, undefined, "catalog"],
+  [ChartNoAxesCombined, "Forecasts", true, undefined, "forecasts"],
   [Truck, "Shipments", true],
   [History, "History", true],
-  [Upload, "Upload Data", false, "upload"],
+  [Upload, "Upload Data", false, "upload", "import"],
   [FileChartColumn, "Reports", true],
   [Settings, "Settings", true],
 ];
@@ -35,6 +35,7 @@ export default function AppSidebar({
   onNavigate,
   onAction,
   onSignOut,
+  permissions,
   profile,
   user,
 }) {
@@ -46,7 +47,12 @@ export default function AppSidebar({
       </div>
 
       <nav aria-label="Main navigation">
-        {NAVIGATION.map(([Icon, label, routeAvailable, action]) => {
+        {NAVIGATION.filter(([, , , , access]) => {
+          if (access === "catalog") return permissions?.canViewCatalog;
+          if (access === "forecasts") return permissions?.canViewForecasts;
+          if (access === "import") return permissions?.canImportData;
+          return true;
+        }).map(([Icon, label, routeAvailable, action]) => {
           const available = routeAvailable || Boolean(action && onAction);
 
           return (

@@ -17,7 +17,7 @@ function formatStoreType(value) {
   return String(value || "").toLowerCase().replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
 
-export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, profile, user }) {
+export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -98,6 +98,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />

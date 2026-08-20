@@ -78,6 +78,7 @@ export default function HistoryView({
   onCollapse,
   onNavigate,
   onSignOut,
+  permissions,
   profile,
   user,
 }) {
@@ -217,6 +218,7 @@ export default function HistoryView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />

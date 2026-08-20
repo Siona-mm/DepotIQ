@@ -74,6 +74,7 @@ export default function DepotInventoryView({
   onCollapse,
   onNavigate,
   onSignOut,
+  permissions,
   profile,
   user,
 }) {
@@ -211,6 +212,7 @@ export default function DepotInventoryView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />
@@ -315,7 +317,7 @@ export default function DepotInventoryView({
                   <th>Free Stock</th>
                   <th>Status</th>
                   <th>Last Updated</th>
-                  <th>Actions</th>
+                  {permissions.canManageInventory && <th>Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -323,12 +325,12 @@ export default function DepotInventoryView({
                   const itemStatus = stockState(item);
                   return (
                     <tr key={item.id}>
-                      <td>
+                      {permissions.canManageInventory && <td>
                         <div className="table-primary">
                           <strong>{item.productCode}</strong>
                           <span>{item.productName}</span>
                         </div>
-                      </td>
+                      </td>}
                       <td>{item.category}</td>
                       <td>{formatNumber(item.availableUnits)}</td>
                       <td>{formatNumber(item.reservedUnits)}</td>

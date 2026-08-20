@@ -36,6 +36,7 @@ export default function ProfileView({
   onProfileUpdated,
   onSignOut,
   onUserUpdated,
+  permissions,
   profile: initialProfile,
   user,
 }) {
@@ -143,6 +144,7 @@ export default function ProfileView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        permissions={permissions}
         profile={profile}
         user={user}
       />
