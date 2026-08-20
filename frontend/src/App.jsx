@@ -117,6 +117,7 @@ export default function App() {
     onAction: handleAction,
     onNavigate: navigate,
     onProfileUpdated: setProfile,
+    onUserUpdated: setUser,
     onSignOut: handleSignOut,
     profile,
     user,
