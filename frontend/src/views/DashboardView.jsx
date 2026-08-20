@@ -350,7 +350,7 @@ export default function DashboardView({
     () =>
       data.recommendations.filter(
         (item) =>
-          item.status !== "DELIVERED" &&
+          isActionable(item.status) &&
           Number(item.recommendedShipment) > 0,
       ),
     [data.recommendations],
@@ -360,9 +360,7 @@ export default function DashboardView({
     const urgent = dashboardRecommendations.filter(
       (item) => item.priority === "URGENT",
     ).length;
-    const pending = dashboardRecommendations.filter(
-      (item) => item.status === "PENDING",
-    ).length;
+    const pending = dashboardRecommendations.length;
     const stores = new Set(data.storeInventory.map((item) => item.storeId)).size;
     const meanAccuracy =
       data.forecasts.length === 0
