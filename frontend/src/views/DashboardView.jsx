@@ -21,6 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
 import DemoGuide from "../components/DemoGuide.jsx";
+import ProfileMenu from "../components/ProfileMenu.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
@@ -586,9 +587,7 @@ export default function DashboardView({
             />
           </label>
 
-          <div className="avatar" aria-label="Signed in as SM">
-            SM
-          </div>
+          <ProfileMenu onSignOut={onSignOut} user={user} />
         </header>
 
         {(error || syncMessage) && (

@@ -9,6 +9,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadDashboardData } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import ProfileMenu from "../components/ProfileMenu.jsx";
 
 const EMPTY_DATA = { forecasts: [], recommendations: [] };
 
@@ -215,7 +216,7 @@ export default function ReportsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Forecast and inventory reporting</span>
           </label>
-          <div className="avatar" aria-label="Signed in as SM">SM</div>
+          <ProfileMenu onSignOut={onSignOut} user={user} />
         </header>
 
         <div className="page-heading">

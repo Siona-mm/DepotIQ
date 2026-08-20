@@ -17,6 +17,7 @@ import {
   updateShipmentStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import ProfileMenu from "../components/ProfileMenu.jsx";
 
 const STATUS_ACTIONS = {
   PLANNED: ["READY", "Mark ready", CircleCheckBig],
@@ -277,9 +278,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <div className="avatar" aria-label="Signed in as SM">
-            SM
-          </div>
+          <ProfileMenu onSignOut={onSignOut} user={user} />
         </header>
 
         <div className="page-heading">

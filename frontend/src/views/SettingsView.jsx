@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
+import ProfileMenu from "../components/ProfileMenu.jsx";
 
 const SETTINGS_KEY = "depotiq-operations-settings";
 
@@ -101,7 +102,7 @@ export default function SettingsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Depot operating preferences</span>
           </label>
-          <div className="avatar" aria-label="Signed in as SM">SM</div>
+          <ProfileMenu onSignOut={onSignOut} user={user} />
         </header>
 
         <div className="page-heading">
