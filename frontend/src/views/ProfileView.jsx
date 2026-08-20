@@ -27,7 +27,7 @@ export default function ProfileView({ collapsed, onAction, onCollapse, onNavigat
     if (!file) return;
     if (!file.type.startsWith("image/")) { setError("Choose an image file for your profile photo."); return; }
     if (file.size > 1_000_000) { setError("Use an image smaller than 1 MB."); return; }
-    const reader = new FileReader();
+    const reader = new globalThis.FileReader();
     reader.onload = () => updateField("avatarData", String(reader.result));
     reader.readAsDataURL(file);
   };
