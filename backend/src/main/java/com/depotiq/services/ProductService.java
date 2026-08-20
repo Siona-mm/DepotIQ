@@ -16,10 +16,16 @@ import java.util.List;
 public class ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
+    private final BusinessCodeGenerator businessCodeGenerator;
 
-    public ProductService(ProductRepository productRepository, ProductMapper productMapper) {
+    public ProductService(
+            ProductRepository productRepository,
+            ProductMapper productMapper,
+            BusinessCodeGenerator businessCodeGenerator
+    ) {
         this.productRepository = productRepository;
         this.productMapper = productMapper;
+        this.businessCodeGenerator = businessCodeGenerator;
     }
 
     public List<ProductResponse> getAllProducts() {
@@ -35,11 +41,10 @@ public class ProductService {
     }
 
     public ProductResponse createProduct(CreateProductRequest request) {
-        if (productRepository.existsByProductCode(request.getProductCode())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Product code already exists");
-        }
-
-        Product product = productMapper.toEntity(request);
+        Product product = productMapper.toEntity(
+                request,
+                businessCodeGenerator.nextProductCode()
+        );
         Product savedProduct = productRepository.save(product);
 
         return productMapper.toResponse(savedProduct);
