@@ -18,11 +18,9 @@ import com.depotiq.repositories.ShipmentRepository;
 import com.depotiq.repositories.StoreInventoryRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +35,7 @@ public class ShipmentService {
     private final DepotInventoryRepository depotInventoryRepository;
     private final StoreInventoryRepository storeInventoryRepository;
     private final ShipmentMapper shipmentMapper;
+    private final BusinessCodeGenerator businessCodeGenerator;
 
     public ShipmentService(
             ShipmentRepository shipmentRepository,
@@ -44,7 +43,8 @@ public class ShipmentService {
             ShipmentRecommendationRepository recommendationRepository,
             DepotInventoryRepository depotInventoryRepository,
             StoreInventoryRepository storeInventoryRepository,
-            ShipmentMapper shipmentMapper
+            ShipmentMapper shipmentMapper,
+            BusinessCodeGenerator businessCodeGenerator
     ) {
         this.shipmentRepository = shipmentRepository;
         this.shipmentItemRepository = shipmentItemRepository;
@@ -52,6 +52,7 @@ public class ShipmentService {
         this.depotInventoryRepository = depotInventoryRepository;
         this.storeInventoryRepository = storeInventoryRepository;
         this.shipmentMapper = shipmentMapper;
+        this.businessCodeGenerator = businessCodeGenerator;
     }
 
     @Transactional(readOnly = true)
@@ -110,7 +111,7 @@ public class ShipmentService {
         validateRecommendations(recommendations);
 
         Shipment shipment = new Shipment();
-        shipment.setShipmentNumber(generateShipmentNumber());
+        shipment.setShipmentNumber(businessCodeGenerator.nextShipmentNumber());
         shipment.setStore(recommendations.get(0).getStore());
         shipment.setStatus(ShipmentStatus.PLANNED);
         shipment.setPlannedDispatchDate(request.getPlannedDispatchDate());
@@ -380,16 +381,6 @@ public class ShipmentService {
                         HttpStatus.NOT_FOUND,
                         "Shipment not found"
                 ));
-    }
-
-    private String generateShipmentNumber() {
-        String date = LocalDate.now()
-                .format(DateTimeFormatter.BASIC_ISO_DATE);
-        String suffix = UUID.randomUUID()
-                .toString()
-                .substring(0, 8)
-                .toUpperCase();
-        return "SHP-" + date + "-" + suffix;
     }
 
     private String normalizeNotes(String notes) {
