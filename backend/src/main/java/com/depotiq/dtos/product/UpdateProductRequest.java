@@ -18,6 +18,8 @@ public class UpdateProductRequest {
 
     private String supplierCode;
 
+    private String externalSku;
+
     @DecimalMin(value = "0.00")
     private BigDecimal unitCost;
 
@@ -63,6 +65,14 @@ public class UpdateProductRequest {
 
     public void setSupplierCode(String supplierCode) {
         this.supplierCode = supplierCode;
+    }
+
+    public String getExternalSku() {
+        return externalSku;
+    }
+
+    public void setExternalSku(String externalSku) {
+        this.externalSku = externalSku;
     }
 
     public BigDecimal getUnitCost() {
