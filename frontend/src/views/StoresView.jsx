@@ -9,7 +9,7 @@ function formatNumber(value) {
 }
 
 const EMPTY_STORE = {
-  storeCode: "", name: "", storeType: "MEDIUM", region: "", hasWarehouse: false,
+  name: "", storeType: "MEDIUM", region: "", hasWarehouse: false,
   storageCapacity: 1, deliveryLeadTimeDays: 1, preferredHorizonDays: 7,
 };
 
@@ -69,9 +69,11 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         deliveryLeadTimeDays: Number(form.deliveryLeadTimeDays),
         preferredHorizonDays: Number(form.preferredHorizonDays),
       };
+      const editableFields = { ...payload };
+      delete editableFields.storeCode;
       const saved = editItem
-        ? await updateStore(editItem.id, (({ storeCode: _storeCode, ...update }) => update)(payload))
-        : await createStore(payload);
+        ? await updateStore(editItem.id, editableFields)
+        : await createStore(editableFields);
       setStores((current) => editItem
         ? current.map((store) => store.id === saved.id ? saved : store)
         : [...current, saved]);
@@ -148,7 +150,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         <section aria-modal="true" className="override-dialog store-form-dialog" role="dialog">
           <header><div><span>Store directory</span><h2>{editItem ? "Edit store" : "Add store"}</h2></div><button aria-label="Close store dialog" className="icon-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></button></header>
           <form onSubmit={saveStore}>
-            <label>Store code<input disabled={Boolean(editItem)} onChange={(event) => updateForm("storeCode", event.target.value.toUpperCase())} required value={form.storeCode} /></label>
+            <label className="generated-code-field">Store code<input disabled value={editItem?.storeCode || "Generated automatically"} /><small>Assigned by DepotIQ when the store is created.</small></label>
             <label>Name<input onChange={(event) => updateForm("name", event.target.value)} required value={form.name} /></label>
             <label>Store type<select onChange={(event) => updateForm("storeType", event.target.value)} value={form.storeType}>{["SMALL", "MEDIUM", "LARGE", "WAREHOUSE_STORE"].map((type) => <option key={type} value={type}>{formatStoreType(type)}</option>)}</select></label>
             <label>Region<input onChange={(event) => updateForm("region", event.target.value)} required value={form.region} /></label>
