@@ -6,8 +6,9 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { loadSettings, resetSettings, updateSettings } from "../api/depotiqApi.js";
+import { loadSettings, updateSettings } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const DEFAULTS = {
   defaultHorizon: "7",
@@ -38,6 +39,7 @@ export default function SettingsView({
   onAction,
   onNavigate,
   onSignOut,
+  profile,
   user,
 }) {
   const [settings, setSettings] = useState(DEFAULTS);
@@ -80,19 +82,6 @@ export default function SettingsView({
     }
   };
 
-  const reset = async () => {
-    setSaving(true);
-    setError("");
-    try {
-      setSettings(await resetSettings());
-      setMessage("Default settings restored.");
-    } catch (requestError) {
-      setError(requestError.message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <AppSidebar
@@ -102,6 +91,7 @@ export default function SettingsView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        profile={profile}
         user={user}
       />
 
@@ -112,17 +102,13 @@ export default function SettingsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Depot operating preferences</span>
           </label>
-          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">SM</button>
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
           <div>
             <span>Operations workspace</span>
             <h2>Planning preferences and workflow controls</h2>
-          </div>
-          <div className="settings-page-actions">
-            <button className="secondary-button" disabled={saving} onClick={reset} type="button">Restore defaults</button>
-            <button className="primary-button" disabled={saving} onClick={save} type="button"><Save aria-hidden="true" size={16} />{saving ? "Saving..." : "Save settings"}</button>
           </div>
         </div>
 
@@ -155,6 +141,7 @@ export default function SettingsView({
           </section>
 
         </section>
+        <footer className="settings-save-footer"><div><strong>Save operating preferences</strong><span>Changes apply to your DepotIQ account.</span></div><button className="primary-button" disabled={saving} onClick={save} type="button"><Save aria-hidden="true" size={16} />{saving ? "Saving..." : "Save settings"}</button></footer>
       </main>
     </div>
   );
