@@ -2,7 +2,6 @@ package com.depotiq.config;
 
 import com.depotiq.models.AppUser;
 import com.depotiq.repositories.AppUserRepository;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
@@ -33,15 +32,15 @@ public class AccountBootstrap implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (repository.count() > 0) {
-            return;
-        }
+        ensureAccount("admin", adminPassword, "ADMIN");
+        ensureAccount("manager", managerPassword, "MANAGER");
+        ensureAccount("viewer", viewerPassword, "VIEWER");
+    }
 
-        repository.saveAll(List.of(
-                account("admin", adminPassword, "ADMIN"),
-                account("manager", managerPassword, "MANAGER"),
-                account("viewer", viewerPassword, "VIEWER")
-        ));
+    private void ensureAccount(String username, String password, String role) {
+        if (!repository.existsByUsernameIgnoreCase(username)) {
+            repository.save(account(username, password, role));
+        }
     }
 
     private AppUser account(String username, String password, String role) {
