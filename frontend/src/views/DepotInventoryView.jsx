@@ -14,6 +14,7 @@ import {
   updateDepotInventory,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import ProfileMenu from "../components/ProfileMenu.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -227,9 +228,7 @@ export default function DepotInventoryView({
               value={query}
             />
           </label>
-          <div className="avatar" aria-label="Signed in as SM">
-            SM
-          </div>
+          <ProfileMenu onSignOut={onSignOut} user={user} />
         </header>
 
         {(error || message) && (
