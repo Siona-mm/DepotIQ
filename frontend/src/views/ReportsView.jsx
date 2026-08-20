@@ -213,7 +213,7 @@ export default function ReportsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Forecast and inventory reporting</span>
           </label>
-          <div className="avatar" aria-label="Signed in as SM">SM</div>
+          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">SM</button>
         </header>
 
         <div className="page-heading">
