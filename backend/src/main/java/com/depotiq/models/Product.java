@@ -25,6 +25,9 @@ public class Product extends BaseEntity {
     @Column(name = "supplier_code", length = 100)
     private String supplierCode;
 
+    @Column(name = "external_sku", length = 100)
+    private String externalSku;
+
     @Column(name = "unit_cost", precision = 12, scale = 2)
     private BigDecimal unitCost;
 
@@ -78,6 +81,14 @@ public class Product extends BaseEntity {
 
     public void setSupplierCode(String supplierCode) {
         this.supplierCode = supplierCode;
+    }
+
+    public String getExternalSku() {
+        return externalSku;
+    }
+
+    public void setExternalSku(String externalSku) {
+        this.externalSku = externalSku;
     }
 
     public BigDecimal getUnitCost() {
