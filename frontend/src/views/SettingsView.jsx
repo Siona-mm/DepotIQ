@@ -6,9 +6,8 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { loadSettings, resetSettings, updateSettings } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-
-const SETTINGS_KEY = "depotiq-operations-settings";
 
 const DEFAULTS = {
   defaultHorizon: "7",
@@ -19,15 +18,6 @@ const DEFAULTS = {
   allowOverrides: true,
   emailAlerts: false,
 };
-
-function readSettings() {
-  try {
-    const saved = globalThis.localStorage.getItem(SETTINGS_KEY);
-    return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : DEFAULTS;
-  } catch {
-    return DEFAULTS;
-  }
-}
 
 function Toggle({ checked, description, label, onChange }) {
   return (
@@ -50,8 +40,16 @@ export default function SettingsView({
   onSignOut,
   user,
 }) {
-  const [settings, setSettings] = useState(readSettings);
+  const [settings, setSettings] = useState(DEFAULTS);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    loadSettings()
+      .then((saved) => setSettings(saved))
+      .catch((requestError) => setError(requestError.message));
+  }, []);
 
   useEffect(() => {
     const clearMessage = globalThis.setTimeout(() => setMessage(""), 3500);
@@ -63,15 +61,36 @@ export default function SettingsView({
     setMessage("");
   };
 
-  const save = () => {
-    globalThis.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    setMessage("Settings saved for this browser.");
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const saved = await updateSettings({
+        ...settings,
+        defaultHorizon: Number(settings.defaultHorizon),
+        safetyStockDays: Number(settings.safetyStockDays),
+        alertThreshold: Number(settings.alertThreshold),
+      });
+      setSettings(saved);
+      setMessage("Settings saved to your DepotIQ account.");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const reset = () => {
-    globalThis.localStorage.removeItem(SETTINGS_KEY);
-    setSettings(DEFAULTS);
-    setMessage("Default settings restored.");
+  const reset = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      setSettings(await resetSettings());
+      setMessage("Default settings restored.");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -93,7 +112,7 @@ export default function SettingsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Depot operating preferences</span>
           </label>
-          <div className="avatar" aria-label="Signed in as SM">SM</div>
+          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">SM</button>
         </header>
 
         <div className="page-heading">
@@ -102,12 +121,12 @@ export default function SettingsView({
             <h2>Planning preferences and workflow controls</h2>
           </div>
           <div className="settings-page-actions">
-            <button className="secondary-button" onClick={reset} type="button">Restore defaults</button>
-            <button className="primary-button" onClick={save} type="button"><Save aria-hidden="true" size={16} />Save settings</button>
+            <button className="secondary-button" disabled={saving} onClick={reset} type="button">Restore defaults</button>
+            <button className="primary-button" disabled={saving} onClick={save} type="button"><Save aria-hidden="true" size={16} />{saving ? "Saving..." : "Save settings"}</button>
           </div>
         </div>
 
-        {message && <div className="notice" role="status">{message}</div>}
+        {(message || error) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}
 
         <section className="settings-layout">
           <section className="settings-section">
