@@ -581,9 +581,9 @@ export default function DashboardView({
             />
           </label>
 
-          <div className="avatar" aria-label="Signed in as SM">
+          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">
             SM
-          </div>
+          </button>
         </header>
 
         {(error || syncMessage) && (
