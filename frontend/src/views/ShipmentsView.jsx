@@ -275,9 +275,9 @@ export default function ShipmentsView({
             />
           </label>
 
-          <div className="avatar" aria-label="Signed in as SM">
+          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">
             SM
-          </div>
+          </button>
         </header>
 
         <div className="page-heading">
