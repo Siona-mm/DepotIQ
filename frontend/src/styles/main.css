@@ -1535,6 +1535,10 @@ select:focus-visible {
   margin-top: 18px;
 }
 
+.store-form-dialog select {
+  padding-left: 11px;
+}
+
 .store-form-dialog form > footer,
 .store-form-dialog form > .checkbox-field {
   grid-column: 1 / -1;
