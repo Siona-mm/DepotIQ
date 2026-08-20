@@ -14,6 +14,7 @@ import {
   updateDepotInventory,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -73,6 +74,7 @@ export default function DepotInventoryView({
   onCollapse,
   onNavigate,
   onSignOut,
+  profile,
   user,
 }) {
   const [inventory, setInventory] = useState([]);
@@ -209,6 +211,7 @@ export default function DepotInventoryView({
         onCollapse={onCollapse}
         onNavigate={onNavigate}
         onSignOut={onSignOut}
+        profile={profile}
         user={user}
       />
 
@@ -225,9 +228,7 @@ export default function DepotInventoryView({
               value={query}
             />
           </label>
-          <button className="avatar" aria-label="Open profile" onClick={() => onNavigate("Profile")} type="button">
-            SM
-          </button>
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         {(error || message) && (
