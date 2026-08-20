@@ -21,6 +21,12 @@ It helps a central depot predict store-level product demand, track depot invento
 - `docs/`: project and API documentation
 - `reports/`: market research and presentation material
 
+## Key Documentation
+
+- [Solution architecture](docs/solution_architecture.md): problem, workflow, system design, roles, and technology decisions.
+- [Local setup guide](docs/local_setup.md): Windows/PowerShell setup, services, environment variables, and test accounts.
+- [Demo runbook](docs/demo_runbook.md): a guided end-to-end application walkthrough.
+
 ## Dataset
 
 DepotIQ uses the **Retail Store Inventory Forecasting Dataset** from Kaggle.
@@ -281,7 +287,7 @@ Backend URL:
 http://localhost:8080
 ```
 
-The backend currently allows local development access to `/api/**` endpoints without login.
+The backend requires authentication for API access. For local testing, use the accounts documented in the [local setup guide](docs/local_setup.md).
 
 ## Store API
 
