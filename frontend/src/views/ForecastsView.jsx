@@ -5,7 +5,7 @@ import AppSidebar from "../components/AppSidebar.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value ?? 0));
 
-export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate }) {
+export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, user }) {
   const [forecasts, setForecasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -31,7 +31,7 @@ export default function ForecastsView({ collapsed, onAction, onCollapse, onNavig
     : 0;
 
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
-    <AppSidebar activePage="Forecasts" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} />
+    <AppSidebar activePage="Forecasts" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} user={user} />
     <main className="dashboard forecasts-page">
       <header className="topbar"><h1>Forecasts</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search forecasts</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search store, product, category, or model..." value={query} /></label></header>
       {error && <div className="notice error" role="status">{error}</div>}
