@@ -8,11 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
@@ -34,6 +31,7 @@ public class SecurityConfig {
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
+                        .requestMatchers("/api/auth/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "MANAGER", "VIEWER")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
                         .requestMatchers("/api/profile/**", "/api/settings/**").authenticated()
@@ -49,20 +47,6 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public UserDetailsService userDetailsService(
-            PasswordEncoder passwordEncoder,
-            @Value("${depotiq.security.admin-password:admin123}") String adminPassword,
-            @Value("${depotiq.security.manager-password:manager123}") String managerPassword,
-            @Value("${depotiq.security.viewer-password:viewer123}") String viewerPassword
-    ) {
-        return new InMemoryUserDetailsManager(
-                User.withUsername("admin").password(passwordEncoder.encode(adminPassword)).roles("ADMIN").build(),
-                User.withUsername("manager").password(passwordEncoder.encode(managerPassword)).roles("MANAGER").build(),
-                User.withUsername("viewer").password(passwordEncoder.encode(viewerPassword)).roles("VIEWER").build()
-        );
     }
 
     @Bean
