@@ -26,10 +26,10 @@ public class StoreMapper {
         return response;
     }
 
-    public Store toEntity(CreateStoreRequest request) {
+    public Store toEntity(CreateStoreRequest request, String storeCode) {
         Store store = new Store();
 
-        store.setStoreCode(request.getStoreCode());
+        store.setStoreCode(storeCode);
         store.setName(request.getName());
         store.setStoreType(request.getStoreType());
         store.setRegion(request.getRegion());
