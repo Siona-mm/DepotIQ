@@ -880,6 +880,12 @@ tbody tr:hover {
   background: #ffffff;
 }
 
+.approve-button.approved.undoable:hover {
+  border-color: #047857;
+  color: #047857;
+  background: #ecfdf5;
+}
+
 .approve-button.rejected {
   border-color: #dc2626;
   color: #dc2626;
@@ -914,10 +920,20 @@ tbody tr:hover {
   background: #f3f4f6;
 }
 
-.reject-dialog footer {
+.reject-dialog footer,
+.confirmation-dialog footer {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
+}
+
+.reject-dialog footer button,
+.confirmation-dialog footer button {
+  min-height: 34px;
+  padding: 0 13px;
+  font-size: 11.5px;
+  line-height: 1.2;
+  white-space: nowrap;
 }
 
 .reject-confirm-button {
@@ -928,7 +944,15 @@ tbody tr:hover {
   color: #ffffff;
   background: #dc2626;
   cursor: pointer;
+  font-size: 11.5px;
   font-weight: 600;
+}
+
+.undo-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
 }
 
 .reject-confirm-button:disabled {
