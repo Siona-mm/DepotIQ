@@ -9,6 +9,7 @@ import {
   ChevronRight,
   PencilLine,
   RefreshCw,
+  RotateCcw,
   Search,
   Settings,
   ShieldCheck,
@@ -166,9 +167,13 @@ function isActionable(status) {
   return status === "PENDING" || status === "EDITED";
 }
 
+function canUndoApproval(status) {
+  return status === "APPROVED";
+}
+
 function recommendationActionLabel(status) {
   const labels = {
-    APPROVED: "Approved",
+    APPROVED: "Undo",
     REJECTED: "Rejected",
     READY_FOR_TRANSPORT: "Ready",
     ASSIGNED_TO_ROUTE: "Assigned",
@@ -182,7 +187,7 @@ function recommendationActionLabel(status) {
 
 function recommendationActionClass(status) {
   if (status === "APPROVED") {
-    return "approve-button approved";
+    return "approve-button approved undoable";
   }
 
   if (status === "REJECTED" || status === "CANCELLED") {
@@ -202,7 +207,7 @@ function recommendationActionTitle(status) {
   }
 
   if (status === "APPROVED") {
-    return "Approved and ready to be added to a shipment";
+    return "Return this recommendation to pending review";
   }
 
   if (status === "REJECTED" || status === "CANCELLED") {
@@ -245,6 +250,7 @@ export default function DashboardView({
   const [overrideReason, setOverrideReason] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
   const [rejectItem, setRejectItem] = useState(null);
+  const [undoItem, setUndoItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
@@ -316,6 +322,7 @@ export default function DashboardView({
       }
       if (!statusUpdate) {
         setRejectItem(null);
+        setUndoItem(null);
       }
       if (!uploading) {
         setUploadOpen(false);
@@ -514,7 +521,11 @@ export default function DashboardView({
       }));
       setSyncMessage(
         `Shipment for ${updated.storeCode} / ${updated.productCode} was ${
-          status === "APPROVED" ? "approved" : "rejected"
+          status === "APPROVED"
+            ? "approved"
+            : status === "PENDING"
+              ? "returned to pending review"
+              : "rejected"
         }.`,
       );
       return true;
@@ -530,6 +541,13 @@ export default function DashboardView({
     const rejected = await changeRecommendationStatus(rejectItem, "REJECTED");
     if (rejected) {
       setRejectItem(null);
+    }
+  };
+
+  const undoApproval = async () => {
+    const reopened = await changeRecommendationStatus(undoItem, "PENDING");
+    if (reopened) {
+      setUndoItem(null);
     }
   };
 
@@ -849,16 +867,23 @@ export default function DashboardView({
                             )} shipment for ${item.storeCode} ${item.productCode}`}
                             className={recommendationActionClass(item.status)}
                             disabled={
-                              !isActionable(item.status) ||
+                              (!isActionable(item.status) &&
+                                !canUndoApproval(item.status)) ||
                               statusUpdate?.id === item.id
                             }
-                            onClick={() =>
-                              changeRecommendationStatus(item, "APPROVED")
-                            }
+                            onClick={() => {
+                              if (canUndoApproval(item.status)) {
+                                setUndoItem(item);
+                                return;
+                              }
+                              changeRecommendationStatus(item, "APPROVED");
+                            }}
                             title={recommendationActionTitle(item.status)}
                             type="button"
                           >
-                            {item.status === "REJECTED" ||
+                            {canUndoApproval(item.status) ? (
+                              <RotateCcw aria-hidden="true" size={13} />
+                            ) : item.status === "REJECTED" ||
                             item.status === "CANCELLED" ? (
                               <Ban aria-hidden="true" size={13} />
                             ) : !isActionable(item.status) &&
@@ -1219,6 +1244,64 @@ export default function DashboardView({
                 type="button"
               >
                 Reject recommendation
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+      {undoItem && (
+        <div
+          className="modal-backdrop"
+          onClick={(event) => {
+            if (!statusUpdate) {
+              closeFromBackdrop(event, () => setUndoItem(null));
+            }
+          }}
+        >
+          <section
+            aria-labelledby="undo-dialog-title"
+            aria-modal="true"
+            className="override-dialog confirmation-dialog"
+            role="dialog"
+          >
+            <header>
+              <div>
+                <span>Admin action</span>
+                <h2 id="undo-dialog-title">Undo approval</h2>
+              </div>
+              <button
+                aria-label="Close undo approval dialog"
+                className="icon-button"
+                onClick={() => setUndoItem(null)}
+                type="button"
+              >
+                <X aria-hidden="true" size={17} />
+              </button>
+            </header>
+            <p>
+              Return the shipment of {formatNumber(undoItem.recommendedShipment)}
+              {" "}units for {undoItem.storeCode} / {undoItem.productCode} to
+              pending review? You can approve or edit it again afterward.
+            </p>
+            <footer>
+              <button
+                className="secondary-button"
+                onClick={() => setUndoItem(null)}
+                type="button"
+              >
+                Keep approved
+              </button>
+              <button
+                className="save-button undo-confirm-button"
+                disabled={
+                  statusUpdate?.id === undoItem.id &&
+                  statusUpdate?.status === "PENDING"
+                }
+                onClick={undoApproval}
+                type="button"
+              >
+                <RotateCcw aria-hidden="true" size={13} />
+                Undo approval
               </button>
             </footer>
           </section>
