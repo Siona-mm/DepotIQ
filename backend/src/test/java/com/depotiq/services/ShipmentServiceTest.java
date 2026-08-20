@@ -97,6 +97,7 @@ class ShipmentServiceTest {
         verify(depotInventory).save(depot);
         verify(storeInventory).save(destination);
         verify(recommendations).saveAll(List.of(recommendation));
+        verify(businessCodeGenerator).nextShipmentNumber();
     }
 
     @Test
