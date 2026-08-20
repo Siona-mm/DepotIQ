@@ -49,6 +49,43 @@ export function loadAuthenticatedUser() {
     : Promise.resolve(null);
 }
 
+export async function updateCredentials(payload) {
+  const user = await request("/api/auth/credentials", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  const password = payload.newPassword || payload.currentPassword;
+  const token = globalThis.btoa(`${user.username}:${password}`);
+  globalThis.sessionStorage.setItem(AUTH_STORAGE_KEY, token);
+  return user;
+}
+
+export function loadProfile() {
+  return request("/api/profile/me");
+}
+
+export function updateProfile(payload) {
+  return request("/api/profile/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function loadSettings() {
+  return request("/api/settings/me");
+}
+
+export function updateSettings(payload) {
+  return request("/api/settings/me", {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export function resetSettings() {
+  return request("/api/settings/me", { method: "DELETE" });
+}
+
 export async function loadDashboardData() {
   const [storeInventory, depotInventory, forecasts, recommendations] =
     await Promise.all([
@@ -133,6 +170,10 @@ export function updateRecommendationStatus(id, status) {
     method: "PATCH",
     body: JSON.stringify({ status }),
   });
+}
+
+export function loadRecommendationHistory() {
+  return request("/api/recommendations");
 }
 
 export async function loadShipmentPageData() {

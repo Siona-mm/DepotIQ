@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
-import { loadAuthenticatedUser, signIn, signOut } from "./api/depotiqApi.js";
+import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
 import { permissionsFor } from "./auth/permissions.js";
-import UploadDataDialog from "./components/UploadDataDialog.jsx";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
 import ForecastsView from "./views/ForecastsView.jsx";
+import HistoryView from "./views/HistoryView.jsx";
 import ProductsView from "./views/ProductsView.jsx";
 import ReportsView from "./views/ReportsView.jsx";
 import SettingsView from "./views/SettingsView.jsx";
@@ -12,6 +12,8 @@ import StoreInventoryView from "./views/StoreInventoryView.jsx";
 import StoresView from "./views/StoresView.jsx";
 import ShipmentsView from "./views/ShipmentsView.jsx";
 import LoginView from "./views/LoginView.jsx";
+import ProfileView from "./views/ProfileView.jsx";
+import UploadDataView from "./views/UploadDataView.jsx";
 
 function pageFromHash() {
   const routes = {
@@ -20,9 +22,12 @@ function pageFromHash() {
     "#reports": "Reports",
     "#settings": "Settings",
     "#store-inventory": "Store Inventory",
+    "#profile": "Profile",
+    "#upload-data": "Upload Data",
     "#stores": "Stores",
     "#products": "Products",
     "#forecasts": "Forecasts",
+    "#history": "History",
   };
 
   return routes[globalThis.location.hash] ?? "Dashboard";
@@ -30,16 +35,23 @@ function pageFromHash() {
 
 export default function App() {
   const [user, setUser] = useState(undefined);
+  const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [uploadOpen, setUploadOpen] = useState(false);
-  const [dashboardRefresh, setDashboardRefresh] = useState(0);
+  const dashboardRefresh = 0;
 
   useEffect(() => {
     loadAuthenticatedUser()
-      .then(setUser)
+      .then(async (authenticatedUser) => {
+        if (authenticatedUser) {
+          const authenticatedProfile = await loadProfile();
+          setProfile(authenticatedProfile);
+        }
+        setUser(authenticatedUser);
+      })
       .catch(() => {
         signOut();
+        setProfile(null);
         setUser(null);
       });
   }, []);
@@ -60,9 +72,12 @@ export default function App() {
       Reports: "reports",
       Settings: "settings",
       "Store Inventory": "store-inventory",
+      Profile: "profile",
+      "Upload Data": "upload-data",
       Stores: "stores",
       Products: "products",
       Forecasts: "forecasts",
+      History: "history",
     };
 
     globalThis.location.hash = hashes[destination] ?? "";
@@ -73,23 +88,21 @@ export default function App() {
 
   const handleAction = useCallback((action) => {
     if (action === "upload" && permissions.canImportData) {
-      setUploadOpen(true);
+      navigate("Upload Data");
     }
-  }, [permissions.canImportData]);
-
-  const closeUpload = useCallback(() => setUploadOpen(false), []);
-  const handleImported = useCallback(
-    () => setDashboardRefresh((current) => current + 1),
-    [],
-  );
+  }, [navigate, permissions.canImportData]);
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
+    const authenticatedProfile = await loadProfile();
+    setProfile(authenticatedProfile);
     setUser(authenticatedUser);
   }, []);
 
   const handleSignOut = useCallback(() => {
     signOut();
+    globalThis.location.hash = "";
+    setProfile(null);
     setUser(null);
   }, []);
 
@@ -106,13 +119,21 @@ export default function App() {
     onCollapse: () => setCollapsed((current) => !current),
     onAction: handleAction,
     onNavigate: navigate,
+    onProfileUpdated: setProfile,
+    onUserUpdated: setUser,
     onSignOut: handleSignOut,
     permissions,
+    profile,
     user,
   };
-  const activePage = ["Stores", "Products"].includes(page) && !permissions.canViewCatalog
-    ? "Dashboard"
-    : page;
+
+  const protectedPages = {
+    Stores: permissions.canViewCatalog,
+    Products: permissions.canViewCatalog,
+    Forecasts: permissions.canViewForecasts,
+    "Upload Data": permissions.canImportData,
+  };
+  const activePage = protectedPages[page] === false ? "Dashboard" : page;
 
   return (
     <>
@@ -126,23 +147,22 @@ export default function App() {
         <SettingsView {...sharedProps} />
       ) : activePage === "Store Inventory" ? (
         <StoreInventoryView {...sharedProps} />
+      ) : activePage === "Profile" ? (
+        <ProfileView {...sharedProps} />
+      ) : activePage === "Upload Data" ? (
+        <UploadDataView {...sharedProps} />
       ) : activePage === "Stores" ? (
         <StoresView {...sharedProps} />
       ) : activePage === "Products" ? (
         <ProductsView {...sharedProps} />
       ) : activePage === "Forecasts" ? (
         <ForecastsView {...sharedProps} />
+      ) : activePage === "History" ? (
+        <HistoryView {...sharedProps} />
       ) : (
         <DashboardView
           {...sharedProps}
           refreshRequest={dashboardRefresh}
-        />
-      )}
-      {permissions.canImportData && (
-        <UploadDataDialog
-          onClose={closeUpload}
-          onImported={handleImported}
-          open={uploadOpen}
         />
       )}
     </>

@@ -17,7 +17,7 @@ import {
   updateShipmentStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import ProfileMenu from "../components/ProfileMenu.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const STATUS_ACTIONS = {
   PLANNED: ["READY", "Mark ready", CircleCheckBig],
@@ -71,6 +71,7 @@ export default function ShipmentsView({
   onNavigate,
   onSignOut,
   permissions,
+  profile,
   user,
 }) {
   const [shipments, setShipments] = useState([]);
@@ -260,6 +261,7 @@ export default function ShipmentsView({
         onAction={onAction}
         onSignOut={onSignOut}
         permissions={permissions}
+        profile={profile}
         user={user}
       />
 
@@ -278,7 +280,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <ProfileMenu onSignOut={onSignOut} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
@@ -286,12 +288,10 @@ export default function ShipmentsView({
             <span>Depot operations</span>
             <h2>Plan and track store deliveries</h2>
           </div>
-          {permissions.canPlanShipments && (
-            <button className="primary-button" onClick={openPlan} type="button">
-              <Plus aria-hidden="true" size={16} />
-              Plan shipment
-            </button>
-          )}
+          {permissions.canPlanShipments && <button className="primary-button" onClick={openPlan} type="button">
+            <Plus aria-hidden="true" size={16} />
+            Plan shipment
+          </button>}
         </div>
 
         {(error || message) && (
@@ -376,11 +376,11 @@ export default function ShipmentsView({
 
                   return (
                     <tr key={shipment.id}>
-                      <td>
+                      {permissions.canPlanShipments && <td>
                         <strong className="shipment-number">
                           {shipment.shipmentNumber}
                         </strong>
-                      </td>
+                      </td>}
                       <td>
                         <div className="table-primary">
                           <strong>{shipment.storeCode}</strong>
@@ -410,9 +410,8 @@ export default function ShipmentsView({
                             shipment.status.slice(1).toLowerCase()}
                         </span>
                       </td>
-                      {permissions.canPlanShipments && (
-                        <td>
-                          <div className="shipment-actions">
+                      <td>
+                        <div className="shipment-actions">
                           {action && (
                             <button
                               className="row-action primary"
@@ -442,9 +441,8 @@ export default function ShipmentsView({
                               <Ban aria-hidden="true" size={14} />
                             </button>
                           )}
-                          </div>
-                        </td>
-                      )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })}

@@ -10,6 +10,7 @@ public class ProductResponse {
     private String category;
     private String brand;
     private String supplierCode;
+    private String externalSku;
     private BigDecimal unitCost;
     private BigDecimal price;
     private BigDecimal weightKg;
@@ -64,6 +65,14 @@ public class ProductResponse {
 
     public void setSupplierCode(String supplierCode) {
         this.supplierCode = supplierCode;
+    }
+
+    public String getExternalSku() {
+        return externalSku;
+    }
+
+    public void setExternalSku(String externalSku) {
+        this.externalSku = externalSku;
     }
 
     public BigDecimal getUnitCost() {

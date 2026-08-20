@@ -14,7 +14,7 @@ import {
   updateDepotInventory,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import ProfileMenu from "../components/ProfileMenu.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -75,6 +75,7 @@ export default function DepotInventoryView({
   onNavigate,
   onSignOut,
   permissions,
+  profile,
   user,
 }) {
   const [inventory, setInventory] = useState([]);
@@ -212,6 +213,7 @@ export default function DepotInventoryView({
         onNavigate={onNavigate}
         onSignOut={onSignOut}
         permissions={permissions}
+        profile={profile}
         user={user}
       />
 
@@ -228,7 +230,7 @@ export default function DepotInventoryView({
               value={query}
             />
           </label>
-          <ProfileMenu onSignOut={onSignOut} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         {(error || message) && (
@@ -323,12 +325,12 @@ export default function DepotInventoryView({
                   const itemStatus = stockState(item);
                   return (
                     <tr key={item.id}>
-                      <td>
+                      {permissions.canManageInventory && <td>
                         <div className="table-primary">
                           <strong>{item.productCode}</strong>
                           <span>{item.productName}</span>
                         </div>
-                      </td>
+                      </td>}
                       <td>{item.category}</td>
                       <td>{formatNumber(item.availableUnits)}</td>
                       <td>{formatNumber(item.reservedUnits)}</td>
@@ -344,20 +346,18 @@ export default function DepotInventoryView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.lastUpdated)}</td>
-                      {permissions.canManageInventory && (
-                        <td>
-                          <button
-                            aria-label={`Edit inventory for ${item.productCode}`}
-                            className="row-action inventory-edit"
-                            onClick={() => openEdit(item)}
-                            title="Edit stock quantities"
-                            type="button"
-                          >
-                            <PencilLine aria-hidden="true" size={14} />
-                            Edit
-                          </button>
-                        </td>
-                      )}
+                      <td>
+                        <button
+                          aria-label={`Edit inventory for ${item.productCode}`}
+                          className="row-action inventory-edit"
+                          onClick={() => openEdit(item)}
+                          title="Edit stock quantities"
+                          type="button"
+                        >
+                          <PencilLine aria-hidden="true" size={14} />
+                          Edit
+                        </button>
+                      </td>
                     </tr>
                   );
                 })}

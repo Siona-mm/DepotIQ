@@ -16,10 +16,16 @@ import java.util.List;
 public class StoreService {
     private final StoreRepository storeRepository;
     private final StoreMapper storeMapper;
+    private final BusinessCodeGenerator businessCodeGenerator;
 
-    public StoreService(StoreRepository storeRepository, StoreMapper storeMapper) {
+    public StoreService(
+            StoreRepository storeRepository,
+            StoreMapper storeMapper,
+            BusinessCodeGenerator businessCodeGenerator
+    ) {
         this.storeRepository = storeRepository;
         this.storeMapper = storeMapper;
+        this.businessCodeGenerator = businessCodeGenerator;
     }
 
     public List<StoreResponse> getAllStores() {
@@ -35,11 +41,10 @@ public class StoreService {
     }
 
     public StoreResponse createStore(CreateStoreRequest request) {
-        if (storeRepository.existsByStoreCode(request.getStoreCode())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Store code already exists");
-        }
-
-        Store store = storeMapper.toEntity(request);
+        Store store = storeMapper.toEntity(
+                request,
+                businessCodeGenerator.nextStoreCode()
+        );
         Store savedStore = storeRepository.save(store);
 
         return storeMapper.toResponse(savedStore);

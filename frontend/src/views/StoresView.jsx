@@ -2,18 +2,22 @@ import { Building2, MapPin, PencilLine, Plus, Search, Store, Trash2, X } from "l
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createStore, deleteStore, loadStores, updateStore } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import ProfileMenu from "../components/ProfileMenu.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
 }
 
 const EMPTY_STORE = {
-  storeCode: "", name: "", storeType: "MEDIUM", region: "", hasWarehouse: false,
+  name: "", storeType: "MEDIUM", region: "", hasWarehouse: false,
   storageCapacity: 1, deliveryLeadTimeDays: 1, preferredHorizonDays: 7,
 };
 
-export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, user }) {
+function formatStoreType(value) {
+  return String(value || "").toLowerCase().replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
+}
+
+export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -65,9 +69,11 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         deliveryLeadTimeDays: Number(form.deliveryLeadTimeDays),
         preferredHorizonDays: Number(form.preferredHorizonDays),
       };
+      const editableFields = { ...payload };
+      delete editableFields.storeCode;
       const saved = editItem
-        ? await updateStore(editItem.id, (({ storeCode, ...update }) => update)(payload))
-        : await createStore(payload);
+        ? await updateStore(editItem.id, editableFields)
+        : await createStore(editableFields);
       setStores((current) => editItem
         ? current.map((store) => store.id === saved.id ? saved : store)
         : [...current, saved]);
@@ -93,6 +99,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         onNavigate={onNavigate}
         onSignOut={onSignOut}
         permissions={permissions}
+        profile={profile}
         user={user}
       />
 
@@ -109,7 +116,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
               value={query}
             />
           </label>
-          <ProfileMenu onSignOut={onSignOut} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         {(error || message) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}
@@ -121,14 +128,14 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         </section>
 
         <section className="table-panel stores-table-panel">
-          <div className="panel-toolbar"><h2>Store directory</h2><div className="table-actions"><span>{visibleStores.length} shown</span><button className="tool-button" onClick={openCreate} type="button"><Plus size={14} />Add store</button></div></div>
+          <div className="panel-toolbar"><h2>Store directory</h2><div className="table-actions"><button className="tool-button" onClick={openCreate} type="button"><Plus size={14} />Add store</button></div></div>
           <div className="table-scroll">
             <table>
               <thead><tr><th>Code</th><th>Store</th><th>Type</th><th>Region</th><th>Capacity</th><th>Lead time</th><th>Horizon</th><th>Actions</th></tr></thead>
               <tbody>
                 {visibleStores.map((store) => (
                   <tr key={store.id}>
-                    <td>{store.storeCode}</td><td>{store.name}</td><td>{store.storeType}</td><td>{store.region}</td>
+                    <td>{store.storeCode}</td><td>{store.name}</td><td>{formatStoreType(store.storeType)}</td><td>{store.region}</td>
                     <td>{formatNumber(store.storageCapacity)}</td><td>{store.deliveryLeadTimeDays} days</td><td>{store.preferredHorizonDays} days</td><td><div className="action-buttons"><button aria-label={`Edit ${store.storeCode}`} className="icon-button" onClick={() => openEdit(store)} type="button"><PencilLine size={14} /></button><button aria-label={`Delete ${store.storeCode}`} className="reject-button" onClick={() => removeStore(store)} type="button"><Trash2 size={14} /></button></div></td>
                   </tr>
                 ))}
@@ -144,9 +151,9 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
         <section aria-modal="true" className="override-dialog store-form-dialog" role="dialog">
           <header><div><span>Store directory</span><h2>{editItem ? "Edit store" : "Add store"}</h2></div><button aria-label="Close store dialog" className="icon-button" disabled={saving} onClick={() => setCreateOpen(false)} type="button"><X size={16} /></button></header>
           <form onSubmit={saveStore}>
-            <label>Store code<input disabled={Boolean(editItem)} onChange={(event) => updateForm("storeCode", event.target.value.toUpperCase())} required value={form.storeCode} /></label>
+            <label className="generated-code-field">Store code<input disabled value={editItem?.storeCode || "Generated automatically"} /><small>Assigned by DepotIQ when the store is created.</small></label>
             <label>Name<input onChange={(event) => updateForm("name", event.target.value)} required value={form.name} /></label>
-            <label>Store type<select onChange={(event) => updateForm("storeType", event.target.value)} value={form.storeType}>{["SMALL", "MEDIUM", "LARGE", "WAREHOUSE_STORE"].map((type) => <option key={type}>{type}</option>)}</select></label>
+            <label>Store type<select onChange={(event) => updateForm("storeType", event.target.value)} value={form.storeType}>{["SMALL", "MEDIUM", "LARGE", "WAREHOUSE_STORE"].map((type) => <option key={type} value={type}>{formatStoreType(type)}</option>)}</select></label>
             <label>Region<input onChange={(event) => updateForm("region", event.target.value)} required value={form.region} /></label>
             <label>Storage capacity<input min="1" onChange={(event) => updateForm("storageCapacity", event.target.value)} required type="number" value={form.storageCapacity} /></label>
             <label>Delivery lead time (days)<input min="1" onChange={(event) => updateForm("deliveryLeadTimeDays", event.target.value)} required type="number" value={form.deliveryLeadTimeDays} /></label>

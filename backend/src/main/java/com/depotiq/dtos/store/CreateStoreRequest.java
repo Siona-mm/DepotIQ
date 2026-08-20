@@ -7,9 +7,6 @@ import jakarta.validation.constraints.NotNull;
 
 public class CreateStoreRequest {
     @NotBlank
-    private String storeCode;
-
-    @NotBlank
     private String name;
 
     @NotNull
@@ -32,14 +29,6 @@ public class CreateStoreRequest {
     @NotNull
     @Min(1)
     private Integer preferredHorizonDays;
-
-    public String getStoreCode() {
-        return storeCode;
-    }
-
-    public void setStoreCode(String storeCode) {
-        this.storeCode = storeCode;
-    }
 
     public String getName() {
         return name;

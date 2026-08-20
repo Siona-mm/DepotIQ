@@ -3,6 +3,7 @@ import {
   ChartNoAxesCombined,
   ChevronsLeft,
   FileChartColumn,
+  History,
   LayoutDashboard,
   PackageOpen,
   PackageSearch,
@@ -17,11 +18,12 @@ const NAVIGATION = [
   [LayoutDashboard, "Dashboard", true],
   [Warehouse, "Depot Inventory", true],
   [Boxes, "Store Inventory", true],
-  [Store, "Stores", "catalog"],
-  [PackageSearch, "Products", "catalog"],
-  [ChartNoAxesCombined, "Forecasts", "forecasts"],
+  [Store, "Stores", true, undefined, "catalog"],
+  [PackageSearch, "Products", true, undefined, "catalog"],
+  [ChartNoAxesCombined, "Forecasts", true, undefined, "forecasts"],
   [Truck, "Shipments", true],
-  [Upload, "Upload Data", false, "upload"],
+  [History, "History", true],
+  [Upload, "Upload Data", false, "upload", "import"],
   [FileChartColumn, "Reports", true],
   [Settings, "Settings", true],
 ];
@@ -32,7 +34,10 @@ export default function AppSidebar({
   onCollapse,
   onNavigate,
   onAction,
+  onSignOut,
   permissions,
+  profile,
+  user,
 }) {
   return (
     <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -42,12 +47,13 @@ export default function AppSidebar({
       </div>
 
       <nav aria-label="Main navigation">
-        {NAVIGATION.filter(([, , access, action]) =>
-          (access !== "catalog" || permissions?.canViewCatalog) &&
-          (access !== "forecasts" || permissions?.canViewForecasts) &&
-          (action !== "upload" || permissions?.canImportData),
-        ).map(([Icon, label, access, action]) => {
-          const available = access === "catalog" || access === "forecasts" || Boolean(action && onAction) || access;
+        {NAVIGATION.filter(([, , , , access]) => {
+          if (access === "catalog") return permissions?.canViewCatalog;
+          if (access === "forecasts") return permissions?.canViewForecasts;
+          if (access === "import") return permissions?.canImportData;
+          return true;
+        }).map(([Icon, label, routeAvailable, action]) => {
+          const available = routeAvailable || Boolean(action && onAction);
 
           return (
             <button
@@ -69,6 +75,18 @@ export default function AppSidebar({
           );
         })}
       </nav>
+
+      {user && (
+        <div className="sidebar-user">
+          <button className="sidebar-profile" onClick={() => onNavigate("Profile")} type="button">
+            <strong>{profile?.displayName || user.username}</strong>
+            <span>{profile?.jobTitle || user.roles?.[0]?.replace("ROLE_", "") || "User"}</span>
+          </button>
+          <button onClick={onSignOut} type="button">
+            Sign out
+          </button>
+        </div>
+      )}
 
       <button
         aria-expanded={!collapsed}

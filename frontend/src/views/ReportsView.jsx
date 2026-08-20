@@ -5,11 +5,12 @@ import {
   PackageCheck,
   Search,
   TrendingUp,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadDashboardData } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import ProfileMenu from "../components/ProfileMenu.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const EMPTY_DATA = { forecasts: [], recommendations: [] };
 
@@ -32,30 +33,23 @@ function ReportMetric({ icon: Icon, label, value, note }) {
   );
 }
 
-function exportForecastCsv(forecasts) {
+const EXPORT_COLUMNS = [
+  ["storeCode", "Store"],
+  ["productCode", "Product"],
+  ["category", "Category"],
+  ["forecastDate", "Forecast date"],
+  ["horizonDays", "Horizon days"],
+  ["predictedDemand", "Predicted demand"],
+  ["confidenceLower", "Confidence lower"],
+  ["confidenceUpper", "Confidence upper"],
+  ["modelName", "Model"],
+];
+
+function exportForecastCsv(forecasts, selectedColumns) {
+  const columns = EXPORT_COLUMNS.filter(([key]) => selectedColumns.includes(key));
   const rows = [
-    [
-      "Store",
-      "Product",
-      "Category",
-      "Forecast date",
-      "Horizon days",
-      "Predicted demand",
-      "Confidence lower",
-      "Confidence upper",
-      "Model",
-    ],
-    ...forecasts.map((forecast) => [
-      forecast.storeCode,
-      forecast.productCode,
-      forecast.category,
-      forecast.forecastDate,
-      forecast.horizonDays,
-      forecast.predictedDemand,
-      forecast.confidenceLower,
-      forecast.confidenceUpper,
-      forecast.modelName,
-    ]),
+    columns.map(([, label]) => label),
+    ...forecasts.map((forecast) => columns.map(([key]) => forecast[key])),
   ];
   const csv = rows
     .map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(","))
@@ -76,6 +70,7 @@ export default function ReportsView({
   onNavigate,
   onSignOut,
   permissions,
+  profile,
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
@@ -83,6 +78,8 @@ export default function ReportsView({
   const [error, setError] = useState("");
   const [horizon, setHorizon] = useState("ALL");
   const [store, setStore] = useState("ALL");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportColumns, setExportColumns] = useState(EXPORT_COLUMNS.map(([key]) => key));
 
   const load = useCallback(async () => {
     setError("");
@@ -206,6 +203,7 @@ export default function ReportsView({
         onNavigate={onNavigate}
         onSignOut={onSignOut}
         permissions={permissions}
+        profile={profile}
         user={user}
       />
 
@@ -216,7 +214,7 @@ export default function ReportsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Forecast and inventory reporting</span>
           </label>
-          <ProfileMenu onSignOut={onSignOut} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
@@ -227,7 +225,7 @@ export default function ReportsView({
           <button
             className="primary-button"
             disabled={filteredForecasts.length === 0}
-            onClick={() => exportForecastCsv(filteredForecasts)}
+            onClick={() => setExportOpen(true)}
             type="button"
           >
             <Download aria-hidden="true" size={16} />
@@ -292,6 +290,20 @@ export default function ReportsView({
           </section>
         </section>
       </main>
+      {exportOpen && (
+        <div className="modal-backdrop" onClick={(event) => { if (event.target === event.currentTarget) setExportOpen(false); }}>
+          <section aria-modal="true" className="override-dialog export-dialog" role="dialog">
+            <header><div><span>Report export</span><h2>Choose CSV columns</h2></div><button aria-label="Close export options" className="icon-button" onClick={() => setExportOpen(false)} type="button"><X size={16} /></button></header>
+            <p>Export the currently filtered {formatNumber(filteredForecasts.length)} forecast records.</p>
+            <div className="export-column-grid">
+              {EXPORT_COLUMNS.map(([key, label]) => (
+                <label key={key}><input checked={exportColumns.includes(key)} onChange={(event) => setExportColumns((current) => event.target.checked ? [...current, key] : current.filter((column) => column !== key))} type="checkbox" /><span>{label}</span></label>
+              ))}
+            </div>
+            <footer><button className="secondary-button" onClick={() => setExportOpen(false)} type="button">Cancel</button><button className="save-button" disabled={exportColumns.length === 0} onClick={() => { exportForecastCsv(filteredForecasts, exportColumns); setExportOpen(false); }} type="button"><Download size={15} />Export CSV</button></footer>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -39,6 +39,7 @@ class ShipmentServiceTest {
     private DepotInventoryRepository depotInventory;
     private StoreInventoryRepository storeInventory;
     private ShipmentMapper mapper;
+    private BusinessCodeGenerator businessCodeGenerator;
     private ShipmentService service;
 
     @BeforeEach
@@ -49,13 +50,17 @@ class ShipmentServiceTest {
         depotInventory = mock(DepotInventoryRepository.class);
         storeInventory = mock(StoreInventoryRepository.class);
         mapper = mock(ShipmentMapper.class);
+        businessCodeGenerator = mock(BusinessCodeGenerator.class);
+        when(businessCodeGenerator.nextShipmentNumber())
+                .thenReturn("SHP-2026-0001");
         service = new ShipmentService(
                 shipments,
                 shipmentItems,
                 recommendations,
                 depotInventory,
                 storeInventory,
-                mapper
+                mapper,
+                businessCodeGenerator
         );
     }
 
@@ -92,6 +97,7 @@ class ShipmentServiceTest {
         verify(depotInventory).save(depot);
         verify(storeInventory).save(destination);
         verify(recommendations).saveAll(List.of(recommendation));
+        verify(businessCodeGenerator).nextShipmentNumber();
     }
 
     @Test

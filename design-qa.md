@@ -1,33 +1,46 @@
-# DepotIQ Dashboard Design QA
+# DepotIQ Workspace Design QA
 
 ## Source
 
-- Reference: supplied DepotIQ dashboard screenshot.
-- Comparison viewport: desktop dashboard at approximately 1175 x 763.
-- Responsive viewport: 390 x 844.
+- References: the supplied Dashboard, Store Inventory, Stores, Forecasts,
+  Upload Data, Reports, Profile, and Settings screenshots.
+- Comparison viewport: desktop at 1264 x 720.
+- Design language: Geist, monochrome surfaces, compact controls, dense tables,
+  and restrained 5-8px radii.
 
 ## Verification
 
-- Layout matches the reference hierarchy: fixed sidebar, compact top bar, four
-  metric cards, dense recommendation table, pagination, and right-side panels.
-- Geist Variable is loaded locally and is the computed body font.
-- The interface uses only the approved monochrome palette: `#FAFAFA`,
-  `#FFFFFF`, `#111111`, `#6B7280`, `#9CA3AF`, `#E5E7EB`, and `#F3F4F6`.
-- Search filters recommendations by store, product, category, and priority.
-- Filter limits the table to urgent recommendations.
-- Sort reverses recommended-shipment order.
-- Settings triggers the existing ML synchronization flow.
-- Desktop columns fit without page-level horizontal overflow.
-- Mobile has no page-level horizontal overflow; the dense table scrolls inside
-  its own panel.
-- Lint and production build pass.
+- The authenticated profile is shared by every page and uses the saved display
+  name, job title, initials, and profile photo.
+- Profile is removed from the navigation list and remains available through the
+  top avatar and sidebar account block.
+- Store and product dialogs use compact multi-column layouts and remain inside
+  the desktop viewport.
+- Clicking outside store, product, inventory, recommendation, shipment, upload,
+  and report dialogs dismisses them when no save is running.
+- Store type labels are readable title case rather than database enum values.
+- Store Inventory includes store and status filters, product/store names,
+  available-soon stock, and plain-language stock states without the old
+  `HEALTHY` pill.
+- Stores, Products, Store Inventory, and Forecasts have consistent space between
+  their metric cards and tables. All `shown` labels are removed.
+- Report export opens a column selector and exports the current filtered rows
+  using only the selected columns.
+- Upload Data is a full-width workspace without the Expected Columns side card.
+- Settings has no Restore Defaults action. Its database-backed Save Settings
+  action is positioned after all settings sections.
+- The collapse control stays anchored near the bottom in expanded and collapsed
+  sidebar states.
+- Dropdowns use consistent borders, radii, spacing, and chevrons.
+- ESLint and the Vite production build pass.
 
-## Intentional Differences
+## Interaction Checks
 
-- The empty reference panels contain live model-coverage and depot-inventory
-  information.
-- Dashboard values come from the Spring Boot API instead of static mock data.
-- Priority labels remain monochrome to respect the approved color palette.
+- Store dialog opens from Add Store and closes on backdrop click.
+- Profile and Settings links remain reachable from the account surfaces.
+- Settings toggles remain interactive and the save action remains enabled.
+- The authenticated route guard remains unchanged; signing out clears the
+  session and returns to the login screen.
 
 ## Result
 

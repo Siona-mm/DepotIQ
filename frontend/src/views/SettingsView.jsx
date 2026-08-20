@@ -1,17 +1,14 @@
 import {
   Bell,
-  Database,
-  RefreshCw,
   Save,
   Search,
   ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { loadSettings, updateSettings } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import ProfileMenu from "../components/ProfileMenu.jsx";
-
-const SETTINGS_KEY = "depotiq-operations-settings";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const DEFAULTS = {
   defaultHorizon: "7",
@@ -22,15 +19,6 @@ const DEFAULTS = {
   allowOverrides: true,
   emailAlerts: false,
 };
-
-function readSettings() {
-  try {
-    const saved = globalThis.localStorage.getItem(SETTINGS_KEY);
-    return saved ? { ...DEFAULTS, ...JSON.parse(saved) } : DEFAULTS;
-  } catch {
-    return DEFAULTS;
-  }
-}
 
 function Toggle({ checked, description, disabled, label, onChange }) {
   return (
@@ -52,11 +40,20 @@ export default function SettingsView({
   onNavigate,
   onSignOut,
   permissions,
+  profile,
   user,
 }) {
-  const [settings, setSettings] = useState(readSettings);
+  const [settings, setSettings] = useState(DEFAULTS);
   const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
   const canManageSettings = permissions.canManageSettings;
+
+  useEffect(() => {
+    loadSettings()
+      .then((saved) => setSettings(saved))
+      .catch((requestError) => setError(requestError.message));
+  }, []);
 
   useEffect(() => {
     const clearMessage = globalThis.setTimeout(() => setMessage(""), 3500);
@@ -69,17 +66,24 @@ export default function SettingsView({
     setMessage("");
   };
 
-  const save = () => {
+  const save = async () => {
     if (!canManageSettings) return;
-    globalThis.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    setMessage("Settings saved for this browser.");
-  };
-
-  const reset = () => {
-    if (!canManageSettings) return;
-    globalThis.localStorage.removeItem(SETTINGS_KEY);
-    setSettings(DEFAULTS);
-    setMessage("Default settings restored.");
+    setSaving(true);
+    setError("");
+    try {
+      const saved = await updateSettings({
+        ...settings,
+        defaultHorizon: Number(settings.defaultHorizon),
+        safetyStockDays: Number(settings.safetyStockDays),
+        alertThreshold: Number(settings.alertThreshold),
+      });
+      setSettings(saved);
+      setMessage("Settings saved to your DepotIQ account.");
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -92,6 +96,7 @@ export default function SettingsView({
         onNavigate={onNavigate}
         onSignOut={onSignOut}
         permissions={permissions}
+        profile={profile}
         user={user}
       />
 
@@ -102,7 +107,7 @@ export default function SettingsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Depot operating preferences</span>
           </label>
-          <ProfileMenu onSignOut={onSignOut} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
@@ -110,12 +115,9 @@ export default function SettingsView({
             <span>Operations workspace</span>
             <h2>Planning preferences and workflow controls</h2>
           </div>
-          <div className="settings-page-actions">
-            {canManageSettings && <><button className="secondary-button" onClick={reset} type="button">Restore defaults</button><button className="primary-button" onClick={save} type="button"><Save aria-hidden="true" size={16} />Save settings</button></>}
-          </div>
         </div>
 
-        {message && <div className="notice" role="status">{message}</div>}
+        {(message || error) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}
         {!canManageSettings && <div className="notice" role="status">Your role has read-only access to settings.</div>}
 
         <section className="settings-layout">
@@ -144,13 +146,8 @@ export default function SettingsView({
             </div>
           </section>
 
-          <aside className="settings-status-card">
-            <div><Database aria-hidden="true" size={18} /><span>System status</span></div>
-            <strong>Connected</strong>
-            <p>PostgreSQL, the forecasting service, and the operational dashboard are available in this local environment.</p>
-            <span className="settings-status-note"><RefreshCw aria-hidden="true" size={13} />Changes are saved only in this browser until a shared settings API is added.</span>
-          </aside>
         </section>
+        {canManageSettings && <footer className="settings-save-footer"><div><strong>Save operating preferences</strong><span>Changes apply to your DepotIQ account.</span></div><button className="primary-button" disabled={saving} onClick={save} type="button"><Save aria-hidden="true" size={16} />{saving ? "Saving..." : "Save settings"}</button></footer>}
       </main>
     </div>
   );
