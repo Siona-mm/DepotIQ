@@ -440,6 +440,107 @@ input:focus-visible {
   white-space: nowrap;
 }
 
+.ml-status-panel {
+  margin-top: 22px;
+  padding: 19px 20px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.ml-status-heading,
+.ml-status-footer,
+.ml-status-unavailable,
+.ml-status-model {
+  display: flex;
+  align-items: center;
+}
+
+.ml-status-heading {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eyebrow {
+  display: block;
+  color: #6b7280;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ml-status-heading h2 {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.ml-status-badge {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.ml-status-badge.available { color: #166534; background: #dcfce7; }
+.ml-status-badge.unavailable { color: #991b1b; background: #fee2e2; }
+.ml-status-badge.checking { color: #475569; background: #e2e8f0; }
+
+.ml-status-message {
+  margin: 18px 0 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.ml-status-model {
+  gap: 10px;
+  margin-top: 18px;
+  color: #111111;
+}
+
+.ml-status-model > div { display: grid; gap: 3px; }
+.ml-status-model strong { font-size: 12px; text-transform: capitalize; }
+.ml-status-model span { color: #6b7280; font-size: 11px; }
+
+.ml-status-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin: 18px 0;
+}
+
+.ml-status-metrics div {
+  min-width: 0;
+  padding-left: 12px;
+  border-left: 1px solid #e5e7eb;
+}
+
+.ml-status-metrics dt { color: #6b7280; font-size: 10px; }
+.ml-status-metrics dd { margin: 5px 0 0; color: #111111; font-size: 12px; font-weight: 600; }
+
+.ml-status-footer {
+  gap: 7px;
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+  color: #6b7280;
+  font-size: 10.5px;
+}
+
+.ml-status-footer span + span::before { content: "·"; margin: 0 7px; }
+.ml-status-footer strong { color: #374151; font-weight: 500; }
+
+.ml-status-unavailable {
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+  color: #991b1b;
+}
+
+.ml-status-unavailable p { flex: 1 1 260px; margin: 0; font-size: 12px; line-height: 1.45; }
+.ml-status-retry { display: inline-flex; align-items: center; gap: 6px; }
+
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 255px;
@@ -1337,6 +1438,8 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
+  .ml-status-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
   .right-rail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-template-rows: auto;
@@ -1443,6 +1546,9 @@ tbody tr:hover {
     min-height: 82px;
     padding: 16px;
   }
+
+  .ml-status-panel { margin-top: 14px; }
+  .ml-status-metrics { grid-template-columns: 1fr; gap: 10px; }
 
   .dashboard-grid {
     gap: 10px;
