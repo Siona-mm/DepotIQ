@@ -19,7 +19,7 @@ function formatMae(value) {
 
 export default function MlStatusPanel({ loading, onRetry, status }) {
   const model = status?.models?.find((item) => item.artifactAvailable) ?? status?.models?.[0];
-  const unavailable = status && !status.serviceAvailable;
+  const unavailable = !status || !status.serviceAvailable;
 
   return (
     <section className="ml-status-panel" aria-label="ML model status">

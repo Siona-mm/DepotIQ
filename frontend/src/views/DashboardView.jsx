@@ -269,14 +269,23 @@ export default function DashboardView({
 
   const load = useCallback(async () => {
     setError("");
+    setLoading(true);
+    setMlStatusLoading(true);
 
     try {
-      const [dashboardData, status] = await Promise.all([
+      const [dashboardResult, statusResult] = await Promise.allSettled([
         loadDashboardData(),
         loadMlStatus(),
       ]);
-      setData(dashboardData);
-      setMlStatus(status);
+
+      if (dashboardResult.status === "rejected") {
+        throw dashboardResult.reason;
+      }
+
+      setData(dashboardResult.value);
+      setMlStatus(
+        statusResult.status === "fulfilled" ? statusResult.value : null,
+      );
     } catch (requestError) {
       setError(requestError.message);
     } finally {
