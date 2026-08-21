@@ -116,7 +116,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
               value={query}
             />
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         {(error || message) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}

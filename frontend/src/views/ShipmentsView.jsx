@@ -280,7 +280,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">

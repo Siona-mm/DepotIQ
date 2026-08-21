@@ -238,6 +238,7 @@ export default function HistoryView({
           </label>
           <UserAvatar
             onClick={() => onNavigate("Profile")}
+            onSignOut={onSignOut}
             profile={profile}
             user={user}
           />

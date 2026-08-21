@@ -624,7 +624,7 @@ export default function DashboardView({
             />
           </label>
 
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         {error ? (
