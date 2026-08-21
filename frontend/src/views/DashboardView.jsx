@@ -822,7 +822,6 @@ export default function DashboardView({
                     <th>Recommended Shipment</th>
                     <th>Priority</th>
                     <th>Updated</th>
-                    <th>Insight</th>
                     {permissions.canManageRecommendations && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -830,7 +829,18 @@ export default function DashboardView({
                   {visibleRecommendations.map((item) => (
                     <tr key={item.id}>
                       <td>{item.storeCode}</td>
-                      <td>{item.productCode}</td>
+                      <td>
+                        <div className="recommendation-product">
+                          <span>{item.productCode}</span>
+                          <button
+                            aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
+                            onClick={() => setInsightItem(item)}
+                            type="button"
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </td>
                       <td>{formatNumber(item.currentInventory)}</td>
                       <td>
                         {formatNumber(
@@ -862,16 +872,6 @@ export default function DashboardView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.recommendationDate)}</td>
-                      <td>
-                        <button
-                          aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
-                          className="row-action"
-                          onClick={() => setInsightItem(item)}
-                          type="button"
-                        >
-                          Details
-                        </button>
-                      </td>
                       {permissions.canManageRecommendations && <td className="recommendation-actions">
                         <div className="action-buttons">
                           <button
