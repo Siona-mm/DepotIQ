@@ -34,12 +34,18 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/api/**").permitAll()
                         .requestMatchers("/api/auth/**").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "MANAGER", "VIEWER")
                         .requestMatchers("/api/imports/**").hasRole("ADMIN")
                         .requestMatchers("/api/profile/**", "/api/settings/**").authenticated()
                         .requestMatchers("/api/stores/**", "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers("/api/inventory/**", "/api/shipments/**", "/api/recommendations/**", "/api/ml/**")
+                        .requestMatchers(HttpMethod.POST, "/api/inventory/**", "/api/shipments/**", "/api/recommendations/**", "/api/ml/**")
                         .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PUT, "/api/inventory/**", "/api/shipments/**", "/api/recommendations/**", "/api/ml/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.PATCH, "/api/inventory/**", "/api/shipments/**", "/api/recommendations/**", "/api/ml/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.DELETE, "/api/inventory/**", "/api/shipments/**", "/api/recommendations/**", "/api/ml/**")
+                        .hasAnyRole("ADMIN", "MANAGER")
+                        .requestMatchers(HttpMethod.GET, "/api/**").hasAnyRole("ADMIN", "MANAGER", "VIEWER")
                         .anyRequest().permitAll()
                 );
 
