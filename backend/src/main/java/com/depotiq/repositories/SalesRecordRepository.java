@@ -15,4 +15,9 @@ public interface SalesRecordRepository extends JpaRepository<SalesRecord, Long> 
         Long productId,
         LocalDate saleDate
     );
+
+    Optional<SalesRecord> findBySourceSystemAndExternalRecordId(
+        String sourceSystem,
+        String externalRecordId
+    );
 }
