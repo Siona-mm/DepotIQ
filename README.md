@@ -25,6 +25,7 @@ It helps a central depot predict store-level product demand, track depot invento
 
 - [Solution architecture](docs/solution_architecture.md): problem, workflow, system design, roles, and technology decisions.
 - [Local setup guide](docs/local_setup.md): Windows/PowerShell setup, services, environment variables, and test accounts.
+- [Docker local setup](docs/docker_setup.md): start the complete stack with Docker Compose.
 - [Demo runbook](docs/demo_runbook.md): a guided end-to-end application walkthrough.
 
 ## Dataset
@@ -80,6 +81,8 @@ Install these before running the project:
 - Node.js + npm
 - Python 3
 - PostgreSQL
+
+Docker Desktop is optional. If it is installed, use the [Docker local setup](docs/docker_setup.md) guide to run the complete stack with one command.
 
 Check installed versions:
 

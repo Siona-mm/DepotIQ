@@ -7,6 +7,8 @@
 - Python 3.10+ for the ML service
 - PostgreSQL
 
+If Docker Desktop is available, the [Docker local setup](docker_setup.md) guide starts all four services together and removes the need to create PostgreSQL manually.
+
 Verify the Java and Maven installation:
 
 ```powershell
