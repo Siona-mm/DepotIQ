@@ -22,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
 import MlStatusPanel from "../components/MlStatusPanel.jsx";
 import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
+import RetryNotice from "../components/RetryNotice.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 import {
   loadDashboardData,
@@ -617,11 +618,11 @@ export default function DashboardView({
           <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
-        {(error || syncMessage) && (
-          <div className={error ? "notice error" : "notice"} role="status">
-            {error || syncMessage}
-          </div>
-        )}
+        {error ? (
+          <RetryNotice message={error} onRetry={load} />
+        ) : syncMessage ? (
+          <div className="notice" role="status">{syncMessage}</div>
+        ) : null}
 
         <section className="metrics-grid" aria-label="Depot summary">
           <Metric
