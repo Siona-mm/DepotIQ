@@ -40,7 +40,7 @@ export default function UserAvatar({ className = "avatar", onClick, onSignOut, p
 
   return (
     <div className="profile-control" ref={menuRef}>
-      <span className="profile-role">{role}</span>
+      <span className="profile-name">{displayName}</span>
       <button
         aria-expanded={open}
         aria-haspopup="menu"
