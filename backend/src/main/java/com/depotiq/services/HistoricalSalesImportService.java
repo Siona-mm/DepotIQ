@@ -4,15 +4,11 @@ import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
 import com.depotiq.dtos.importing.ImportAuditLogResponse;
 import com.depotiq.models.Product;
 import com.depotiq.models.ImportAuditLog;
-import com.depotiq.models.SalesRecord;
 import com.depotiq.models.Store;
-import com.depotiq.models.StoreInventory;
 import com.depotiq.models.StoreType;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.ImportAuditLogRepository;
-import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreRepository;
-import com.depotiq.repositories.StoreInventoryRepository;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -22,12 +18,15 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -42,25 +41,57 @@ public class HistoricalSalesImportService {
             "Holiday/Promotion", "Seasonality"
     };
     private static final String DEFAULT_SOURCE_SYSTEM = "CSV_UPLOAD";
+    private static final int BATCH_SIZE = 1_000;
+
+    private static final String SALES_UPSERT_SQL = """
+            INSERT INTO sales_records (
+                store_id, product_id, sale_date, units_sold, price, discount,
+                promotion, weather_condition, temperature, holiday_promotion,
+                seasonality, source_system, external_record_id, imported_at,
+                created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (store_id, product_id, sale_date) DO UPDATE SET
+                units_sold = EXCLUDED.units_sold,
+                price = EXCLUDED.price,
+                discount = EXCLUDED.discount,
+                promotion = EXCLUDED.promotion,
+                weather_condition = EXCLUDED.weather_condition,
+                temperature = EXCLUDED.temperature,
+                holiday_promotion = EXCLUDED.holiday_promotion,
+                seasonality = EXCLUDED.seasonality,
+                source_system = EXCLUDED.source_system,
+                external_record_id = EXCLUDED.external_record_id,
+                imported_at = EXCLUDED.imported_at,
+                updated_at = CURRENT_TIMESTAMP
+            """;
+
+    private static final String INVENTORY_UPSERT_SQL = """
+            INSERT INTO store_inventory (
+                store_id, product_id, inventory_level, incoming_units,
+                last_updated, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (store_id, product_id) DO UPDATE SET
+                inventory_level = EXCLUDED.inventory_level,
+                incoming_units = EXCLUDED.incoming_units,
+                last_updated = EXCLUDED.last_updated,
+                updated_at = CURRENT_TIMESTAMP
+            """;
 
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
-    private final SalesRecordRepository salesRecordRepository;
-    private final StoreInventoryRepository storeInventoryRepository;
     private final ImportAuditLogRepository importAuditLogRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public HistoricalSalesImportService(
             StoreRepository storeRepository,
             ProductRepository productRepository,
-            SalesRecordRepository salesRecordRepository,
-            StoreInventoryRepository storeInventoryRepository,
-            ImportAuditLogRepository importAuditLogRepository
+            ImportAuditLogRepository importAuditLogRepository,
+            JdbcTemplate jdbcTemplate
     ) {
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
-        this.salesRecordRepository = salesRecordRepository;
-        this.storeInventoryRepository = storeInventoryRepository;
         this.importAuditLogRepository = importAuditLogRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public HistoricalSalesImportResponse importCsv(MultipartFile file) {
@@ -85,25 +116,50 @@ public class HistoricalSalesImportService {
             int createdStores = 0;
             int createdProducts = 0;
             List<String> errors = new ArrayList<>();
+            List<ImportedRow> pendingRows = new ArrayList<>(BATCH_SIZE);
+            Map<InventoryKey, ImportedRow> latestInventoryRows = new HashMap<>();
+            Map<String, Store> storesByCode = loadStores();
+            Map<String, Product> productsByCode = loadProducts();
+            Set<SalesKey> existingSalesKeys = loadExistingSalesKeys();
+            LocalDateTime importedAt = LocalDateTime.now();
             try (CSVParser parser = format.parse(reader)) {
                 validateHeader(parser.getHeaderMap().keySet());
 
                 for (CSVRecord csvRecord : parser) {
                     processed++;
                     try {
-                        ImportRowResult result = importRow(csvRecord);
-                        if (result.salesRecordCreated()) {
+                        ImportRowResult result = importRow(
+                                csvRecord,
+                                storesByCode,
+                                productsByCode,
+                                importedAt
+                        );
+                        if (existingSalesKeys.add(result.row().salesKey())) {
                             created++;
                         } else {
                             updated++;
                         }
                         createdStores += result.storeCreated() ? 1 : 0;
                         createdProducts += result.productCreated() ? 1 : 0;
+                        pendingRows.add(result.row());
+                        latestInventoryRows.merge(
+                                result.row().inventoryKey(),
+                                result.row(),
+                                (current, candidate) -> candidate.saleDate().isAfter(current.saleDate())
+                                        ? candidate
+                                        : current
+                        );
+                        if (pendingRows.size() == BATCH_SIZE) {
+                            writeSalesBatch(pendingRows);
+                            pendingRows.clear();
+                        }
                     } catch (IllegalArgumentException exception) {
                         errors.add("Line " + (csvRecord.getRecordNumber() + 1) + ": " + exception.getMessage());
                     }
                 }
             }
+            writeSalesBatch(pendingRows);
+            writeInventoryBatch(new ArrayList<>(latestInventoryRows.values()));
 
             HistoricalSalesImportResponse response = new HistoricalSalesImportResponse(
                     processed,
@@ -154,13 +210,23 @@ public class HistoricalSalesImportService {
         importAuditLogRepository.save(auditLog);
     }
 
-    private ImportRowResult importRow(CSVRecord row) {
+    private ImportRowResult importRow(
+            CSVRecord row,
+            Map<String, Store> storesByCode,
+            Map<String, Product> productsByCode,
+            LocalDateTime importedAt
+    ) {
         LocalDate saleDate = parseDate(value(row, "Date"));
         String storeCode = requiredValue(value(row, "Store ID"), "Store ID");
         String productCode = requiredValue(value(row, "Product ID"), "Product ID");
-        CatalogUpsertResult<Store> storeResult = upsertStore(storeCode, value(row, "Region"));
+        CatalogUpsertResult<Store> storeResult = upsertStore(
+                storesByCode,
+                storeCode,
+                value(row, "Region")
+        );
         BigDecimal price = parseDecimal(value(row, "Price"), "Price");
         CatalogUpsertResult<Product> productResult = upsertProduct(
+                productsByCode,
                 productCode,
                 value(row, "Category"),
                 price
@@ -176,70 +242,63 @@ public class HistoricalSalesImportService {
             externalRecordId = storeCode + "-" + productCode + "-" + saleDate;
         }
 
-        Optional<SalesRecord> existing = salesRecordRepository
-                .findBySourceSystemAndExternalRecordId(sourceSystem, externalRecordId)
-                .or(() -> salesRecordRepository.findByStoreIdAndProductIdAndSaleDate(
-                        store.getId(),
-                        product.getId(),
-                        saleDate
-                ));
-        SalesRecord record = existing.orElseGet(SalesRecord::new);
-        record.setStore(store);
-        record.setProduct(product);
-        record.setSaleDate(saleDate);
-        record.setUnitsSold(parseNonNegativeInteger(value(row, "Units Sold"), "Units Sold"));
-        record.setPrice(price);
-        record.setDiscount(parseDecimal(value(row, "Discount"), "Discount"));
-        record.setWeatherCondition(blankToNull(value(row, "Weather Condition")));
         boolean holidayPromotion = parseBoolean(
                 value(row, "Holiday/Promotion"),
                 "Holiday/Promotion"
         );
-        record.setPromotion(holidayPromotion);
-        record.setHolidayPromotion(holidayPromotion);
-        record.setSeasonality(blankToNull(value(row, "Seasonality")));
-        record.setSourceSystem(sourceSystem);
-        record.setExternalRecordId(externalRecordId);
-        record.setImportedAt(LocalDateTime.now());
-        salesRecordRepository.save(record);
-
-        updateStoreInventory(
-                store,
-                product,
+        ImportedRow importedRow = new ImportedRow(
+                store.getId(),
+                product.getId(),
+                saleDate,
+                parseNonNegativeInteger(value(row, "Units Sold"), "Units Sold"),
+                price,
+                parseDecimal(value(row, "Discount"), "Discount"),
+                optionalBoolean(row, "Promotion", holidayPromotion),
+                blankToNull(value(row, "Weather Condition")),
+                optionalDecimal(row, "Temperature"),
+                holidayPromotion,
+                blankToNull(value(row, "Seasonality")),
+                sourceSystem,
+                externalRecordId,
+                importedAt,
                 parseNonNegativeInteger(value(row, "Inventory Level"), "Inventory Level"),
                 parseNonNegativeInteger(value(row, "Units Ordered"), "Units Ordered")
         );
 
-        return new ImportRowResult(existing.isEmpty(), storeResult.created(), productResult.created());
+        return new ImportRowResult(importedRow, storeResult.created(), productResult.created());
     }
 
-    private void updateStoreInventory(
-            Store store,
-            Product product,
-            int inventoryLevel,
-            int incomingUnits
+    private void writeSalesBatch(List<ImportedRow> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        List<Object[]> salesParameters = rows.stream().map(ImportedRow::salesParameters).toList();
+        jdbcTemplate.batchUpdate(SALES_UPSERT_SQL, salesParameters);
+    }
+
+    private void writeInventoryBatch(List<ImportedRow> rows) {
+        if (rows.isEmpty()) {
+            return;
+        }
+
+        List<Object[]> inventoryParameters = rows.stream().map(ImportedRow::inventoryParameters).toList();
+        jdbcTemplate.batchUpdate(INVENTORY_UPSERT_SQL, inventoryParameters);
+    }
+
+    private CatalogUpsertResult<Store> upsertStore(
+            Map<String, Store> storesByCode,
+            String storeCode,
+            String regionValue
     ) {
-        StoreInventory inventory = storeInventoryRepository
-                .findByStoreIdAndProductId(store.getId(), product.getId())
-                .orElseGet(StoreInventory::new);
-        inventory.setStore(store);
-        inventory.setProduct(product);
-        inventory.setInventoryLevel(inventoryLevel);
-        inventory.setIncomingUnits(incomingUnits);
-        inventory.setLastUpdated(LocalDateTime.now());
-        storeInventoryRepository.save(inventory);
-    }
-
-    private CatalogUpsertResult<Store> upsertStore(String storeCode, String regionValue) {
         String region = blankToNull(regionValue);
-        Optional<Store> existing = storeRepository.findByStoreCode(storeCode);
-        if (existing.isPresent()) {
-            Store store = existing.get();
-            if (region != null && !region.equals(store.getRegion())) {
-                store.setRegion(region);
-                storeRepository.save(store);
+        Store existing = storesByCode.get(storeCode);
+        if (existing != null) {
+            if (existing.getRegion() == null && region != null) {
+                existing.setRegion(region);
+                storeRepository.save(existing);
             }
-            return new CatalogUpsertResult<>(store, false);
+            return new CatalogUpsertResult<>(existing, false);
         }
 
         Store store = new Store();
@@ -251,24 +310,26 @@ public class HistoricalSalesImportService {
         store.setStorageCapacity(0);
         store.setDeliveryLeadTimeDays(0);
         store.setPreferredHorizonDays(7);
-        return new CatalogUpsertResult<>(storeRepository.save(store), true);
+        Store saved = storeRepository.save(store);
+        storesByCode.put(storeCode, saved);
+        return new CatalogUpsertResult<>(saved, true);
     }
 
     private CatalogUpsertResult<Product> upsertProduct(
+            Map<String, Product> productsByCode,
             String productCode,
             String categoryValue,
             BigDecimal price
     ) {
         String category = requiredValue(categoryValue, "Category");
-        Optional<Product> existing = productRepository.findByProductCode(productCode);
-        if (existing.isPresent()) {
-            Product product = existing.get();
-            if (!category.equals(product.getCategory()) || hasDifferentValue(product.getPrice(), price)) {
-                product.setCategory(category);
-                product.setPrice(price);
-                productRepository.save(product);
+        Product existing = productsByCode.get(productCode);
+        if (existing != null) {
+            if (existing.getCategory() == null || existing.getPrice() == null) {
+                existing.setCategory(category);
+                existing.setPrice(price);
+                productRepository.save(existing);
             }
-            return new CatalogUpsertResult<>(product, false);
+            return new CatalogUpsertResult<>(existing, false);
         }
 
         Product product = new Product();
@@ -277,11 +338,32 @@ public class HistoricalSalesImportService {
         product.setCategory(category);
         product.setPrice(price);
         product.setPerishable(false);
-        return new CatalogUpsertResult<>(productRepository.save(product), true);
+        Product saved = productRepository.save(product);
+        productsByCode.put(productCode, saved);
+        return new CatalogUpsertResult<>(saved, true);
     }
 
-    private boolean hasDifferentValue(BigDecimal current, BigDecimal updated) {
-        return current == null || current.compareTo(updated) != 0;
+    private Map<String, Store> loadStores() {
+        Map<String, Store> stores = new HashMap<>();
+        storeRepository.findAll().forEach(store -> stores.put(store.getStoreCode(), store));
+        return stores;
+    }
+
+    private Map<String, Product> loadProducts() {
+        Map<String, Product> products = new HashMap<>();
+        productRepository.findAll().forEach(product -> products.put(product.getProductCode(), product));
+        return products;
+    }
+
+    private Set<SalesKey> loadExistingSalesKeys() {
+        return new HashSet<>(jdbcTemplate.query(
+                "SELECT store_id, product_id, sale_date FROM sales_records",
+                (resultSet, rowNumber) -> new SalesKey(
+                        resultSet.getLong("store_id"),
+                        resultSet.getLong("product_id"),
+                        resultSet.getObject("sale_date", LocalDate.class)
+                )
+        ));
     }
 
     private void validateHeader(Set<String> columns) {
@@ -316,6 +398,16 @@ public class HistoricalSalesImportService {
             return null;
         }
         return blankToNull(row.get(column));
+    }
+
+    private BigDecimal optionalDecimal(CSVRecord row, String column) {
+        String value = optionalValue(row, column);
+        return value == null ? null : parseDecimal(value, column);
+    }
+
+    private boolean optionalBoolean(CSVRecord row, String column, boolean defaultValue) {
+        String value = optionalValue(row, column);
+        return value == null ? defaultValue : parseBoolean(value, column);
     }
 
     private LocalDate parseDate(String value) {
@@ -373,8 +465,55 @@ public class HistoricalSalesImportService {
     private record CatalogUpsertResult<T>(T entity, boolean created) {
     }
 
+    private record SalesKey(Long storeId, Long productId, LocalDate saleDate) {
+    }
+
+    private record InventoryKey(Long storeId, Long productId) {
+    }
+
+    private record ImportedRow(
+            Long storeId,
+            Long productId,
+            LocalDate saleDate,
+            Integer unitsSold,
+            BigDecimal price,
+            BigDecimal discount,
+            Boolean promotion,
+            String weatherCondition,
+            BigDecimal temperature,
+            Boolean holidayPromotion,
+            String seasonality,
+            String sourceSystem,
+            String externalRecordId,
+            LocalDateTime importedAt,
+            Integer inventoryLevel,
+            Integer incomingUnits
+    ) {
+        SalesKey salesKey() {
+            return new SalesKey(storeId, productId, saleDate);
+        }
+
+        InventoryKey inventoryKey() {
+            return new InventoryKey(storeId, productId);
+        }
+
+        Object[] salesParameters() {
+            return new Object[] {
+                    storeId, productId, saleDate, unitsSold, price, discount, promotion,
+                    weatherCondition, temperature, holidayPromotion, seasonality,
+                    sourceSystem, externalRecordId, importedAt
+            };
+        }
+
+        Object[] inventoryParameters() {
+            return new Object[] {
+                    storeId, productId, inventoryLevel, incomingUnits, importedAt
+            };
+        }
+    }
+
     private record ImportRowResult(
-            boolean salesRecordCreated,
+            ImportedRow row,
             boolean storeCreated,
             boolean productCreated
     ) {
