@@ -20,11 +20,13 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
+import MlStatusPanel from "../components/MlStatusPanel.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
   overrideRecommendationAmount,
+  loadMlStatus,
   syncMlRecommendations,
   updateRecommendationStatus,
 } from "../api/depotiqApi.js";
@@ -235,6 +237,8 @@ export default function DashboardView({
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
+  const [mlStatus, setMlStatus] = useState(null);
+  const [mlStatusLoading, setMlStatusLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState("");
@@ -264,11 +268,17 @@ export default function DashboardView({
     setError("");
 
     try {
-      setData(await loadDashboardData());
+      const [dashboardData, status] = await Promise.all([
+        loadDashboardData(),
+        loadMlStatus(),
+      ]);
+      setData(dashboardData);
+      setMlStatus(status);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
       setLoading(false);
+      setMlStatusLoading(false);
     }
   }, []);
 
@@ -637,6 +647,12 @@ export default function DashboardView({
             value={summary.stores}
           />
         </section>
+
+        <MlStatusPanel
+          loading={mlStatusLoading}
+          onRetry={load}
+          status={mlStatus}
+        />
 
         <section className="dashboard-grid">
           <section className="table-panel">
