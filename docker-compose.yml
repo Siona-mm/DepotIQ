@@ -1,7 +1,8 @@
+name: depotiq
+
 services:
   postgres:
     image: postgres:16
-    container_name: depotiq-postgres
     environment:
       POSTGRES_DB: depotiq
       POSTGRES_USER: depotiq
@@ -10,7 +11,78 @@ services:
       - "5432:5432"
     volumes:
       - depotiq-postgres-data:/var/lib/postgresql/data
+    networks:
+      - depotiq-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U depotiq -d depotiq"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  ml-service:
+    build:
+      context: .
+      dockerfile: ml-service/Dockerfile
+    environment:
+      PYTHONPATH: /app/ml-service
+    ports:
+      - "8000:8000"
+    networks:
+      - depotiq-network
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - import urllib.request; urllib.request.urlopen('http://localhost:8000/health')
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      DEPOTIQ_DB_URL: jdbc:postgresql://postgres:5432/depotiq
+      DEPOTIQ_DB_USERNAME: depotiq
+      DEPOTIQ_DB_PASSWORD: depotiq
+      DEPOTIQ_ML_SERVICE_URL: http://ml-service:8000
+      DEPOTIQ_CORS_ALLOWED_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ml-service:
+        condition: service_started
+    ports:
+      - "8081:8080"
+    networks:
+      - depotiq-network
+    restart: on-failure
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: ""
+      VITE_API_PROXY_TARGET: http://backend:8080
+    depends_on:
+      backend:
+        condition: service_started
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend-node-modules:/app/node_modules
+    networks:
+      - depotiq-network
+    restart: unless-stopped
 
 volumes:
   depotiq-postgres-data:
+  frontend-node-modules:
 
+networks:
+  depotiq-network:
+    driver: bridge
