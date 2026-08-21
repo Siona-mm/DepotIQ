@@ -10,6 +10,7 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadDashboardData } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import RetryNotice from "../components/RetryNotice.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 
 const EMPTY_DATA = { forecasts: [], recommendations: [] };
@@ -233,7 +234,7 @@ export default function ReportsView({
           </button>
         </div>
 
-        {error && <div className="notice error" role="status">{error}</div>}
+        {error && <RetryNotice message={error} onRetry={load} />}
 
         <section className="metrics-grid reports-metrics" aria-label="Report summary">
           <ReportMetric icon={BarChart3} label="Forecast Coverage" note="Current filtered forecasts" value={formatNumber(filteredForecasts.length)} />

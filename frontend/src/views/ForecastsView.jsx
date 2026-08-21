@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { loadForecasts } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
+import RetryNotice from "../components/RetryNotice.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 
 const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(Number(value ?? 0));
@@ -60,7 +61,7 @@ export default function ForecastsView({ collapsed, onAction, onCollapse, onNavig
     <AppSidebar activePage="Forecasts" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} profile={profile} user={user} />
     <main className="dashboard forecasts-page">
       <header className="topbar"><h1>Forecasts</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search forecasts</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search store, product, category, or model..." value={query} /></label><UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} /></header>
-      {error && <div className="notice error" role="status">{error}</div>}
+      {error && <RetryNotice message={error} onRetry={load} />}
       <section className="metrics-grid"><article className="metric-card"><ChartNoAxesCombined size={20} /><div><span>Active Forecasts</span><strong>{forecasts.length}</strong><small>Store-product predictions</small></div></article><article className="metric-card"><Target size={20} /><div><span>Average Model MAE</span><strong>{averageMae.toFixed(1)}</strong><small>Across all forecasts</small></div></article></section>
       <section className="forecast-visuals" aria-label="Forecast charts">
         <article className="forecast-chart-panel">
