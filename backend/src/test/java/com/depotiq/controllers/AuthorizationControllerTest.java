@@ -6,6 +6,7 @@ import com.depotiq.dtos.settings.SettingsResponse;
 import com.depotiq.services.AccountService;
 import com.depotiq.services.InventoryService;
 import com.depotiq.services.StoreService;
+import com.depotiq.services.HistoricalSalesImportService;
 import com.depotiq.services.UserProfileService;
 import com.depotiq.services.UserSettingsService;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 AuthController.class,
                 StoreController.class,
                 InventoryController.class,
+                HistoricalDataImportController.class,
                 UserProfileController.class,
                 UserSettingsController.class
         },
@@ -54,6 +56,9 @@ class AuthorizationControllerTest {
 
     @MockBean
     private InventoryService inventoryService;
+
+    @MockBean
+    private HistoricalSalesImportService historicalSalesImportService;
 
     @MockBean
     private JpaMetamodelMappingContext jpaMappingContext;
@@ -93,6 +98,15 @@ class AuthorizationControllerTest {
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(get("/api/stores").with(basic("admin", "admin123")))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void limitsImportHistoryToAdministrators() throws Exception {
+        mockMvc.perform(get("/api/imports").with(basic("manager", "manager123")))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/imports").with(basic("admin", "admin123")))
                 .andExpect(status().isOk());
     }
 
