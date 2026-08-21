@@ -635,7 +635,7 @@ input:focus-visible {
 .profile-form footer, .upload-page-card footer { display: flex; justify-content: flex-end; padding: 15px 18px; border-top: 1px solid #e5e7eb; }
 .credentials-form { margin-top: 18px; }
 .credentials-fields input::placeholder { color: #9ca3af; font-size: 10.5px; }
-.upload-page-grid { grid-template-columns: minmax(0, 1fr); }
+.upload-page-grid { grid-template-columns: minmax(0, 1fr) minmax(280px, 0.42fr); }
 .upload-dropzone { min-height: 210px; display: grid; place-content: center; justify-items: center; gap: 8px; margin: 18px; padding: 18px; border: 1px dashed #9ca3af; border-radius: 7px; color: #6b7280; text-align: center; cursor: pointer; }
 .upload-dropzone strong { color: #111111; font-size: 13px; }
 .upload-dropzone span { font-size: 11px; }
