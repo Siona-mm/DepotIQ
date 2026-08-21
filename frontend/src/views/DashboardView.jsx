@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
+import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 import {
   loadDashboardData,
@@ -247,6 +248,7 @@ export default function DashboardView({
   const [sortBy, setSortBy] = useState("PRIORITY_ASC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
+  const [insightItem, setInsightItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
@@ -820,6 +822,7 @@ export default function DashboardView({
                     <th>Recommended Shipment</th>
                     <th>Priority</th>
                     <th>Updated</th>
+                    <th>Insight</th>
                     {permissions.canManageRecommendations && <th>Actions</th>}
                   </tr>
                 </thead>
@@ -859,6 +862,16 @@ export default function DashboardView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.recommendationDate)}</td>
+                      <td>
+                        <button
+                          aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
+                          className="row-action"
+                          onClick={() => setInsightItem(item)}
+                          type="button"
+                        >
+                          Details
+                        </button>
+                      </td>
                       {permissions.canManageRecommendations && <td className="recommendation-actions">
                         <div className="action-buttons">
                           <button
@@ -1116,6 +1129,7 @@ export default function DashboardView({
           </section>
         </div>
       )}
+      {insightItem && <RecommendationInsightsDialog depotAvailableUnits={depotInventoryByProduct.get(insightItem.productId)} onClose={() => setInsightItem(null)} recommendation={insightItem} />}
       {overrideItem && (
         <div
           className="modal-backdrop"
