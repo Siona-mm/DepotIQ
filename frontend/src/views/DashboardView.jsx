@@ -250,7 +250,7 @@ export default function DashboardView({
   const [sortOpen, setSortOpen] = useState(false);
   const [storeFilter, setStoreFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
-  const [sortBy, setSortBy] = useState("PRIORITY_ASC");
+  const [sortBy, setSortBy] = useState("UPDATED_DESC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
   const [insightItem, setInsightItem] = useState(null);
@@ -759,7 +759,7 @@ export default function DashboardView({
                     aria-expanded={sortOpen}
                     aria-haspopup="dialog"
                     className={
-                      sortBy === "PRIORITY_ASC"
+                      sortBy === "UPDATED_DESC"
                         ? "tool-button"
                         : "tool-button active"
                     }
