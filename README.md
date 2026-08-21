@@ -21,13 +21,6 @@ It helps a central depot predict store-level product demand, track depot invento
 - `docs/`: project and API documentation
 - `reports/`: market research and presentation material
 
-## Key Documentation
-
-- [Solution architecture](docs/solution_architecture.md): problem, workflow, system design, roles, and technology decisions.
-- [Local setup guide](docs/local_setup.md): Windows/PowerShell setup, services, environment variables, and test accounts.
-- [Docker local setup](docs/docker_setup.md): start the complete stack with Docker Compose.
-- [Demo runbook](docs/demo_runbook.md): a guided end-to-end application walkthrough.
-
 ## Dataset
 
 DepotIQ uses the **Retail Store Inventory Forecasting Dataset** from Kaggle.
@@ -81,8 +74,6 @@ Install these before running the project:
 - Node.js + npm
 - Python 3
 - PostgreSQL
-
-Docker Desktop is optional. If it is installed, use the [Docker local setup](docs/docker_setup.md) guide to run the complete stack with one command.
 
 Check installed versions:
 
@@ -290,7 +281,7 @@ Backend URL:
 http://localhost:8080
 ```
 
-The backend requires authentication for API access. For local testing, use the accounts documented in the [local setup guide](docs/local_setup.md).
+The backend currently allows local development access to `/api/**` endpoints without login.
 
 ## Store API
 
@@ -650,9 +641,58 @@ CREATE DATABASE depotiq OWNER depotiq;
 \q
 ```
 
+## Run The Full Stack With Docker
+
+Docker Compose starts PostgreSQL, the Python ML service, the Spring Boot API,
+and the React frontend on one shared network.
+
+```bash
+cd ~/DepotIQ
+docker compose down --remove-orphans
+docker compose up --build -d
+docker compose ps
+```
+
+Open the application at:
+
+```text
+http://localhost:5173
+```
+
+The services are exposed at:
+
+```text
+Frontend:    http://localhost:5173
+Backend API: http://localhost:8081
+ML service:  http://localhost:8000
+PostgreSQL:  localhost:5432
+```
+
+The backend uses host port `8081` so another local application can continue
+using port `8080`. Inside Docker, the frontend still proxies API requests to
+`backend:8080` and the backend connects to PostgreSQL at `postgres:5432`.
+
+Check the running services:
+
+```bash
+docker compose logs --tail=100 backend
+curl -u admin:admin123 http://localhost:8081/api/auth/me
+curl http://localhost:8000/health
+```
+
+Stop the stack without deleting database data:
+
+```bash
+docker compose down
+```
+
+Do not add `-v` unless you intentionally want to delete the Docker database
+volume.
+
 ### Docker is not running
 
-Docker is optional for now. If Docker is unavailable, use the local PostgreSQL setup above.
+If Docker is unavailable, use the local PostgreSQL setup above and run each
+application separately.
 
 ## Git Workflow
 
