@@ -3124,3 +3124,111 @@ select {
   background-position: right 10px center !important;
   background-size: 14px !important;
 }
+
+.insights-dialog {
+  width: min(620px, calc(100vw - 32px));
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 20px 55px rgb(17 17 17 / 18%);
+}
+
+.insights-dialog > header,
+.insights-dialog > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+}
+
+.insights-dialog > header,
+.insights-dialog > footer {
+  border-color: #e5e7eb;
+  border-style: solid;
+}
+
+.insights-dialog > header { border-width: 0 0 1px; }
+.insights-dialog > footer { border-width: 1px 0 0; margin-top: 16px; justify-content: flex-end; }
+.insights-dialog > header > div { display: grid; gap: 3px; }
+.insights-dialog > header span, .insights-product { color: #6b7280; font-size: 11px; }
+.insights-dialog h2, .insight-explanation h3 { margin: 0; color: #111111; font-weight: 600; }
+.insights-dialog h2 { font-size: 16px; }
+.insights-product { margin: 16px 20px 0; }
+
+.insight-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 14px 20px;
+  padding: 14px;
+  border-radius: 6px;
+  background: #f9fafb;
+}
+
+.insight-summary > div { display: grid; gap: 3px; }
+.insight-summary > div span, .insight-metric span { color: #6b7280; font-size: 10.5px; }
+.insight-summary > div strong { font-size: 18px; }
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 20px;
+}
+
+.insight-metric {
+  display: grid;
+  gap: 5px;
+  min-height: 92px;
+  padding: 11px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.insight-metric svg { color: #6b7280; }
+.insight-metric strong { font-size: 12px; }
+
+.insight-explanation {
+  margin: 16px 20px 0;
+  padding: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.insight-explanation h3 { font-size: 12px; }
+.insight-explanation p { margin: 8px 0 13px; color: #4b5563; font-size: 11px; line-height: 1.55; }
+.insight-explanation div { display: flex; justify-content: space-between; gap: 12px; padding-top: 11px; border-top: 1px solid #e5e7eb; color: #6b7280; font-size: 10.5px; }
+.insight-explanation strong { color: #111111; font-size: 11px; }
+
+.recommendation-product {
+  display: grid;
+  justify-items: start;
+  gap: 3px;
+}
+
+.recommendation-product > span {
+  color: #374151;
+}
+
+.recommendation-product button {
+  padding: 0;
+  border: 0;
+  color: #6b7280;
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.recommendation-product button:hover {
+  color: #111111;
+}
+
+@media (max-width: 520px) {
+  .insight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

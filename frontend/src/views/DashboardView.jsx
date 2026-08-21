@@ -21,6 +21,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
 import MlStatusPanel from "../components/MlStatusPanel.jsx";
+import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
 import UserAvatar from "../components/UserAvatar.jsx";
 import {
   loadDashboardData,
@@ -251,6 +252,7 @@ export default function DashboardView({
   const [sortBy, setSortBy] = useState("PRIORITY_ASC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
+  const [insightItem, setInsightItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
@@ -843,7 +845,18 @@ export default function DashboardView({
                   {visibleRecommendations.map((item) => (
                     <tr key={item.id}>
                       <td>{item.storeCode}</td>
-                      <td>{item.productCode}</td>
+                      <td>
+                        <div className="recommendation-product">
+                          <span>{item.productCode}</span>
+                          <button
+                            aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
+                            onClick={() => setInsightItem(item)}
+                            type="button"
+                          >
+                            Details
+                          </button>
+                        </div>
+                      </td>
                       <td>{formatNumber(item.currentInventory)}</td>
                       <td>
                         {formatNumber(
@@ -1132,6 +1145,7 @@ export default function DashboardView({
           </section>
         </div>
       )}
+      {insightItem && <RecommendationInsightsDialog depotAvailableUnits={depotInventoryByProduct.get(insightItem.productId)} onClose={() => setInsightItem(null)} recommendation={insightItem} />}
       {overrideItem && (
         <div
           className="modal-backdrop"
