@@ -1,9 +1,13 @@
 package com.depotiq.controllers;
 
 import com.depotiq.config.SecurityConfig;
+import com.depotiq.dtos.profile.ProfileResponse;
+import com.depotiq.dtos.settings.SettingsResponse;
 import com.depotiq.services.AccountService;
 import com.depotiq.services.InventoryService;
 import com.depotiq.services.StoreService;
+import com.depotiq.services.UserProfileService;
+import com.depotiq.services.UserSettingsService;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -21,13 +25,20 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(
-        controllers = {AuthController.class, StoreController.class, InventoryController.class},
+        controllers = {
+                AuthController.class,
+                StoreController.class,
+                InventoryController.class,
+                UserProfileController.class,
+                UserSettingsController.class
+        },
         properties = "depotiq.cors.allowed-origins=http://localhost:*"
 )
 @Import({SecurityConfig.class, AuthorizationControllerTest.TestUsers.class})
@@ -46,6 +57,12 @@ class AuthorizationControllerTest {
 
     @MockBean
     private JpaMetamodelMappingContext jpaMappingContext;
+
+    @MockBean
+    private UserProfileService userProfileService;
+
+    @MockBean
+    private UserSettingsService userSettingsService;
 
     @Test
     void returnsCurrentAuthenticatedUser() throws Exception {
@@ -77,6 +94,22 @@ class AuthorizationControllerTest {
 
         mockMvc.perform(get("/api/stores").with(basic("admin", "admin123")))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsAllAuthenticatedRolesToReadTheirProfileAndSettings() throws Exception {
+        when(userProfileService.getProfile("viewer"))
+                .thenReturn(new ProfileResponse("viewer", "Viewer", null, null, null));
+        when(userSettingsService.get("viewer"))
+                .thenReturn(new SettingsResponse(7, 3, 250, true, true, true, false));
+
+        mockMvc.perform(get("/api/profile/me").with(basic("viewer", "viewer123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("viewer"));
+
+        mockMvc.perform(get("/api/settings/me").with(basic("viewer", "viewer123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.defaultHorizon").value(7));
     }
 
     private static RequestPostProcessor basic(
