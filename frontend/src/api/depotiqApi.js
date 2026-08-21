@@ -158,6 +158,10 @@ export function syncMlRecommendations() {
   return request("/api/ml/sync", { method: "POST" });
 }
 
+export function loadMlStatus() {
+  return request("/api/ml/status");
+}
+
 export function overrideRecommendationAmount(id, recommendedShipment, reason) {
   return request(`/api/recommendations/${id}/override`, {
     method: "PATCH",
