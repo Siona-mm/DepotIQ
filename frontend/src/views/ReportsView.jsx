@@ -215,7 +215,7 @@ export default function ReportsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Forecast and inventory reporting</span>
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">

@@ -34,10 +34,7 @@ export default function AppSidebar({
   onCollapse,
   onNavigate,
   onAction,
-  onSignOut,
   permissions,
-  profile,
-  user,
 }) {
   return (
     <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
@@ -75,18 +72,6 @@ export default function AppSidebar({
           );
         })}
       </nav>
-
-      {user && (
-        <div className="sidebar-user">
-          <button className="sidebar-profile" onClick={() => onNavigate("Profile")} type="button">
-            <strong>{profile?.displayName || user.username}</strong>
-            <span>{profile?.jobTitle || user.roles?.[0]?.replace("ROLE_", "") || "User"}</span>
-          </button>
-          <button onClick={onSignOut} type="button">
-            Sign out
-          </button>
-        </div>
-      )}
 
       <button
         aria-expanded={!collapsed}
