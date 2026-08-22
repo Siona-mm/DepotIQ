@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadDashboardData } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 import RetryNotice from "../components/RetryNotice.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 const EMPTY_DATA = { forecasts: [], recommendations: [] };
 
@@ -215,7 +215,7 @@ export default function ReportsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Forecast and inventory reporting</span>
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">

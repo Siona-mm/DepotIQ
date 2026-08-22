@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { loadSettings, updateSettings } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 const DEFAULTS = {
   defaultHorizon: "7",
@@ -107,7 +107,7 @@ export default function SettingsView({
             <Search aria-hidden="true" size={15} strokeWidth={2} />
             <span>Depot operating preferences</span>
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">

@@ -23,7 +23,7 @@ import AppSidebar from "../components/AppSidebar.jsx";
 import MlStatusPanel from "../components/MlStatusPanel.jsx";
 import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
 import RetryNotice from "../components/RetryNotice.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 import {
   loadDashboardData,
   importHistoricalSalesCsv,
@@ -624,7 +624,7 @@ export default function DashboardView({
             />
           </label>
 
-          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         {error ? (

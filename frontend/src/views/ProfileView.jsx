@@ -9,7 +9,7 @@ import {
 import { useRef, useState } from "react";
 import { updateCredentials, updateProfile } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 const EMPTY_PROFILE = {
   displayName: "",
@@ -151,7 +151,7 @@ export default function ProfileView({
         <header className="topbar">
           <h1>Profile</h1>
           <div />
-          <UserAvatar onClick={() => onNavigate("Profile")} onSignOut={onSignOut} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
