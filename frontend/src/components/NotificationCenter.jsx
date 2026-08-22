@@ -14,6 +14,7 @@ export default function NotificationCenter({ onNavigate, user }) {
   const [readIds, setReadIds] = useState([]);
   const [data, setData] = useState({ recommendations: [], shipments: [] });
   const popoverRef = useRef(null);
+  const readStorageKey = `depotiq-read-notifications-${user?.username || "anonymous"}`;
   const notifications = useMemo(
     () => buildOperationalNotifications(data, user),
     [data, user],
@@ -23,32 +24,55 @@ export default function NotificationCenter({ onNavigate, user }) {
   useEffect(() => {
     let active = true;
 
-    Promise.all([loadDashboardData(), loadShipmentPageData()])
-      .then(([dashboard, shipmentData]) => {
+    Promise.allSettled([loadDashboardData(), loadShipmentPageData()])
+      .then(([dashboardResult, shipmentResult]) => {
         if (active) {
           setData({
-            recommendations: dashboard.recommendations,
-            shipments: shipmentData.shipments,
+            recommendations: dashboardResult.status === "fulfilled"
+              ? dashboardResult.value.recommendations
+              : [],
+            shipments: shipmentResult.status === "fulfilled"
+              ? shipmentResult.value.shipments
+              : [],
           });
         }
       })
-      .catch(() => {
-        if (active) setData({ recommendations: [], shipments: [] });
-      });
 
     return () => { active = false; };
   }, []);
 
   useEffect(() => {
+    try {
+      const stored = JSON.parse(globalThis.sessionStorage.getItem(readStorageKey) || "[]");
+      setReadIds(Array.isArray(stored) ? stored : []);
+    } catch {
+      setReadIds([]);
+    }
+  }, [readStorageKey]);
+
+  useEffect(() => {
     const closeFromOutside = (event) => {
       if (!popoverRef.current?.contains(event.target)) setOpen(false);
     };
+    const closeFromEscape = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
 
     document.addEventListener("pointerdown", closeFromOutside);
-    return () => document.removeEventListener("pointerdown", closeFromOutside);
+    document.addEventListener("keydown", closeFromEscape);
+    return () => {
+      document.removeEventListener("pointerdown", closeFromOutside);
+      document.removeEventListener("keydown", closeFromEscape);
+    };
   }, []);
 
-  const markRead = (id) => setReadIds((current) => current.includes(id) ? current : [...current, id]);
+  const saveReadIds = (next) => {
+    setReadIds(next);
+    globalThis.sessionStorage.setItem(readStorageKey, JSON.stringify(next));
+  };
+  const markRead = (id) => {
+    if (!readIds.includes(id)) saveReadIds([...readIds, id]);
+  };
 
   return (
     <div className="notification-center" ref={popoverRef}>
@@ -72,7 +96,7 @@ export default function NotificationCenter({ onNavigate, user }) {
               <h2>Notifications</h2>
             </div>
             {unreadCount > 0 && (
-              <button className="notification-mark-all" onClick={() => setReadIds(notifications.map((item) => item.id))} type="button">
+              <button className="notification-mark-all" onClick={() => saveReadIds(notifications.map((item) => item.id))} type="button">
                 <CheckCheck aria-hidden="true" size={14} />
                 Mark all read
               </button>
