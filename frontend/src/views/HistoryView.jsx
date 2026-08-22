@@ -15,7 +15,7 @@ import {
   updateRecommendationStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 const PAGE_SIZE = 12;
 const ACTIVE_STATUSES = new Set([
@@ -236,12 +236,7 @@ export default function HistoryView({
               value={query}
             />
           </label>
-          <UserAvatar
-            onClick={() => onNavigate("Profile")}
-            onSignOut={onSignOut}
-            profile={profile}
-            user={user}
-          />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
