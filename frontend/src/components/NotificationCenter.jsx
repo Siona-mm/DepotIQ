@@ -1,6 +1,6 @@
 import { Bell, CheckCheck, CircleAlert, PackageCheck, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { loadDashboardData, loadShipmentPageData } from "../api/depotiqApi.js";
+import { loadDashboardData, loadSettings, loadShipmentPageData } from "../api/depotiqApi.js";
 import { buildOperationalNotifications } from "../notifications/operationalNotifications.js";
 
 function iconFor(tone) {
@@ -12,11 +12,16 @@ function iconFor(tone) {
 export default function NotificationCenter({ onNavigate, user }) {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState([]);
-  const [data, setData] = useState({ recommendations: [], shipments: [] });
+  const [data, setData] = useState({
+    recommendations: [],
+    shipments: [],
+    storeInventory: [],
+    settings: { alertThreshold: 250, emailAlerts: false },
+  });
   const popoverRef = useRef(null);
   const readStorageKey = `depotiq-read-notifications-${user?.username || "anonymous"}`;
   const notifications = useMemo(
-    () => buildOperationalNotifications(data, user),
+    () => buildOperationalNotifications(data, user, data.settings),
     [data, user],
   );
   const unreadCount = notifications.filter((item) => !readIds.includes(item.id)).length;
@@ -24,21 +29,35 @@ export default function NotificationCenter({ onNavigate, user }) {
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([loadDashboardData(), loadShipmentPageData()])
-      .then(([dashboardResult, shipmentResult]) => {
-        if (active) {
-          setData({
-            recommendations: dashboardResult.status === "fulfilled"
-              ? dashboardResult.value.recommendations
-              : [],
-            shipments: shipmentResult.status === "fulfilled"
-              ? shipmentResult.value.shipments
-              : [],
-          });
-        }
-      })
+    const refreshNotifications = () => {
+      Promise.allSettled([loadDashboardData(), loadShipmentPageData(), loadSettings()])
+        .then(([dashboardResult, shipmentResult, settingsResult]) => {
+          if (active) {
+            setData({
+              recommendations: dashboardResult.status === "fulfilled"
+                ? dashboardResult.value.recommendations
+                : [],
+              shipments: shipmentResult.status === "fulfilled"
+                ? shipmentResult.value.shipments
+                : [],
+              storeInventory: dashboardResult.status === "fulfilled"
+                ? dashboardResult.value.storeInventory
+                : [],
+              settings: settingsResult.status === "fulfilled"
+                ? settingsResult.value
+                : { alertThreshold: 250, emailAlerts: false },
+            });
+          }
+        });
+    };
 
-    return () => { active = false; };
+    refreshNotifications();
+    globalThis.addEventListener("depotiq-settings-updated", refreshNotifications);
+
+    return () => {
+      active = false;
+      globalThis.removeEventListener("depotiq-settings-updated", refreshNotifications);
+    };
   }, []);
 
   useEffect(() => {
