@@ -29,27 +29,35 @@ export default function NotificationCenter({ onNavigate, user }) {
   useEffect(() => {
     let active = true;
 
-    Promise.allSettled([loadDashboardData(), loadShipmentPageData(), loadSettings()])
-      .then(([dashboardResult, shipmentResult, settingsResult]) => {
-        if (active) {
-          setData({
-            recommendations: dashboardResult.status === "fulfilled"
-              ? dashboardResult.value.recommendations
-              : [],
-            shipments: shipmentResult.status === "fulfilled"
-              ? shipmentResult.value.shipments
-              : [],
-            storeInventory: dashboardResult.status === "fulfilled"
-              ? dashboardResult.value.storeInventory
-              : [],
-            settings: settingsResult.status === "fulfilled"
-              ? settingsResult.value
-              : { alertThreshold: 250, emailAlerts: false },
-          });
-        }
-      })
+    const refreshNotifications = () => {
+      Promise.allSettled([loadDashboardData(), loadShipmentPageData(), loadSettings()])
+        .then(([dashboardResult, shipmentResult, settingsResult]) => {
+          if (active) {
+            setData({
+              recommendations: dashboardResult.status === "fulfilled"
+                ? dashboardResult.value.recommendations
+                : [],
+              shipments: shipmentResult.status === "fulfilled"
+                ? shipmentResult.value.shipments
+                : [],
+              storeInventory: dashboardResult.status === "fulfilled"
+                ? dashboardResult.value.storeInventory
+                : [],
+              settings: settingsResult.status === "fulfilled"
+                ? settingsResult.value
+                : { alertThreshold: 250, emailAlerts: false },
+            });
+          }
+        });
+    };
 
-    return () => { active = false; };
+    refreshNotifications();
+    globalThis.addEventListener("depotiq-settings-updated", refreshNotifications);
+
+    return () => {
+      active = false;
+      globalThis.removeEventListener("depotiq-settings-updated", refreshNotifications);
+    };
   }, []);
 
   useEffect(() => {

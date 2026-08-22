@@ -79,6 +79,7 @@ export default function SettingsView({
       });
       setSettings(saved);
       setMessage("Settings saved to your DepotIQ account.");
+      globalThis.dispatchEvent(new globalThis.Event("depotiq-settings-updated"));
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -142,7 +143,7 @@ export default function SettingsView({
             <header><Bell aria-hidden="true" size={18} /><div><h2>Alerts and refresh</h2><p>Choose what the operations team sees while monitoring the depot.</p></div></header>
             <div className="settings-toggles">
               <Toggle checked={settings.autoRefresh} description="Refresh dashboard data when the page is opened." disabled={!canManageSettings} label="Refresh live dashboard data" onChange={(value) => update("autoRefresh", value)} />
-              <Toggle checked={settings.emailAlerts} description="Reserved for a future email or Slack notification integration." disabled={!canManageSettings} label="Send low-stock notifications" onChange={(value) => update("emailAlerts", value)} />
+              <Toggle checked={settings.emailAlerts} description="Show a notification when store stock reaches your configured threshold." disabled={!canManageSettings} label="Show low-stock alerts in the app" onChange={(value) => update("emailAlerts", value)} />
             </div>
           </section>
 
