@@ -510,6 +510,20 @@ input:focus-visible {
   cursor: pointer;
 }
 
+.notification-refresh {
+  display: grid;
+  place-items: center;
+  padding: 5px;
+  border: 0;
+  border-radius: 4px;
+  color: #475569;
+  background: transparent;
+  cursor: pointer;
+}
+
+.notification-refresh:hover { background: #f1f5f9; color: #111827; }
+.notification-updated { margin: 0; padding: 7px 14px; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 10px; }
+
 .notification-list { max-height: 360px; overflow-y: auto; padding: 6px; }
 
 .notification-item {
