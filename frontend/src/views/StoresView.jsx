@@ -17,7 +17,7 @@ function formatStoreType(value) {
   return String(value || "").toLowerCase().replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
 
-export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
+export default function StoresView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, dataRevision = 0 }) {
   const [stores, setStores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -41,7 +41,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   const visibleStores = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
