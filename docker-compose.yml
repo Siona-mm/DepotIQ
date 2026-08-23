@@ -79,9 +79,83 @@ services:
       - depotiq-network
     restart: unless-stopped
 
+  airflow-postgres:
+    image: postgres:16
+    profiles: ["airflow"]
+    environment:
+      POSTGRES_DB: airflow
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+    volumes:
+      - airflow-postgres-data:/var/lib/postgresql/data
+    networks:
+      - depotiq-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow -d airflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  airflow-init:
+    image: apache/airflow:2.10.5-python3.12
+    profiles: ["airflow"]
+    environment: &airflow-environment
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      DEPOTIQ_BACKEND_URL: http://backend:8080
+      DEPOTIQ_IMPORT_USERNAME: admin
+      DEPOTIQ_IMPORT_PASSWORD: admin123
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./data/imports:/opt/airflow/imports
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    networks:
+      - depotiq-network
+    command: >
+      bash -c "airflow db migrate &&
+      (airflow users create --username admin --password admin123 --firstname DepotIQ --lastname Admin --role Admin --email admin@depotiq.local || true)"
+
+  airflow-webserver:
+    image: apache/airflow:2.10.5-python3.12
+    profiles: ["airflow"]
+    environment: *airflow-environment
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./data/imports:/opt/airflow/imports
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+    ports:
+      - "8082:8080"
+    networks:
+      - depotiq-network
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.10.5-python3.12
+    profiles: ["airflow"]
+    environment: *airflow-environment
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./data/imports:/opt/airflow/imports
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+      backend:
+        condition: service_started
+    networks:
+      - depotiq-network
+    command: scheduler
+
 volumes:
   depotiq-postgres-data:
   frontend-node-modules:
+  airflow-postgres-data:
 
 networks:
   depotiq-network:
