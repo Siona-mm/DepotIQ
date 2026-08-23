@@ -199,7 +199,7 @@ export default function App() {
       ) : (
         <DashboardView
           {...sharedProps}
-          refreshRequest={dashboardRefresh}
+          refreshRequest={operationalDataRevision}
         />
       )}
     </>
