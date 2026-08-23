@@ -12,11 +12,11 @@ const FIELDS = [
   ["price", "Price", "number"], ["weightKg", "Weight (kg)", "number"], ["shelfLifeDays", "Shelf life (days)", "number"],
 ];
 
-export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
+export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, dataRevision = 0 }) {
   const [products, setProducts] = useState([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false), [editing, setEditing] = useState(null), [form, setForm] = useState(EMPTY_PRODUCT), [saving, setSaving] = useState(false);
   const load = useCallback(async () => { try { setError(""); setProducts(await loadProducts()); } catch (requestError) { setError(requestError.message); } finally { setLoading(false); } }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [dataRevision, load]);
   const visible = useMemo(() => { const normalized = query.toLowerCase().trim(); return !normalized ? products : products.filter((product) => [product.productCode, product.externalSku, product.name, product.category, product.brand].some((value) => String(value ?? "").toLowerCase().includes(normalized))); }, [products, query]);
   const openForm = (product = null) => { setEditing(product); setForm(product ? { ...product } : EMPTY_PRODUCT); setError(""); setFormOpen(true); };
   const closeForm = () => { if (!saving) setFormOpen(false); };
