@@ -871,8 +871,8 @@ input:focus-visible {
 .clear-file-button { justify-self: center; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .notice-action { flex: 0 0 auto; padding: 0; border: 0; color: #111111; background: transparent; cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
-.recent-import-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; border-bottom: 1px solid #bfdbfe; color: #1d4ed8; background: #eff6ff; font-size: 11px; }
-.recent-import-banner strong { color: #1d4ed8; font-size: 12px; }
+.recent-import-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; border-bottom: 1px solid #bfdbfe; color: #111111; background: #eff6ff; font-size: 11px; }
+.recent-import-banner strong { color: #111111; font-size: 12px; }
 .recently-imported-row { cursor: pointer; }
 .recently-imported-row td { background: #eff6ff; }
 .recently-imported-row td:first-child { box-shadow: inset 3px 0 0 #111111; }
