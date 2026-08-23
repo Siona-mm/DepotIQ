@@ -39,6 +39,7 @@ export default function App() {
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
   const [recentImportKeys, setRecentImportKeys] = useState([]);
+  const [lastImport, setLastImport] = useState(null);
   const [operationalDataRevision, setOperationalDataRevision] = useState(0);
 
   useEffect(() => {
@@ -111,8 +112,9 @@ export default function App() {
     setRecentImportKeys((current) => current.filter((item) => item !== key));
   }, []);
 
-  const handleImportCompleted = useCallback((keys) => {
+  const handleImportCompleted = useCallback(({ keys, result }) => {
     setRecentImportKeys(keys);
+    setLastImport(result);
     setOperationalDataRevision((current) => current + 1);
   }, []);
 
@@ -136,6 +138,7 @@ export default function App() {
     profile,
     user,
     dataRevision: operationalDataRevision,
+    lastImport,
     recentlyImportedKeys: recentImportKeys,
     onImportCompleted: handleImportCompleted,
     onDismissImportedRow: dismissImportedRow,
