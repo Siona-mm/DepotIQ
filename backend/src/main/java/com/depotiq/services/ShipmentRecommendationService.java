@@ -33,8 +33,8 @@ public class ShipmentRecommendationService {
     private final DemandForecastRepository demandForecastRepository;
     private final ShipmentRecommendationMapper shipmentRecommendationMapper;
     private final UserSettingsService userSettingsService;
+    private final OperationalActivityService operationalActivityService;
 
-    @Autowired
     public ShipmentRecommendationService(
             ShipmentRecommendationRepository shipmentRecommendationRepository,
             StoreRepository storeRepository,
@@ -43,7 +43,7 @@ public class ShipmentRecommendationService {
             ShipmentRecommendationMapper shipmentRecommendationMapper
     ) {
         this(shipmentRecommendationRepository, storeRepository, productRepository,
-                demandForecastRepository, shipmentRecommendationMapper, null);
+                demandForecastRepository, shipmentRecommendationMapper, null, null);
     }
 
     public ShipmentRecommendationService(
@@ -54,12 +54,27 @@ public class ShipmentRecommendationService {
             ShipmentRecommendationMapper shipmentRecommendationMapper,
             UserSettingsService userSettingsService
     ) {
+        this(shipmentRecommendationRepository, storeRepository, productRepository,
+                demandForecastRepository, shipmentRecommendationMapper, userSettingsService, null);
+    }
+
+    @Autowired
+    public ShipmentRecommendationService(
+            ShipmentRecommendationRepository shipmentRecommendationRepository,
+            StoreRepository storeRepository,
+            ProductRepository productRepository,
+            DemandForecastRepository demandForecastRepository,
+            ShipmentRecommendationMapper shipmentRecommendationMapper,
+            UserSettingsService userSettingsService,
+            OperationalActivityService operationalActivityService
+    ) {
         this.shipmentRecommendationRepository = shipmentRecommendationRepository;
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.demandForecastRepository = demandForecastRepository;
         this.shipmentRecommendationMapper = shipmentRecommendationMapper;
         this.userSettingsService = userSettingsService;
+        this.operationalActivityService = operationalActivityService;
     }
 
     public List<ShipmentRecommendationResponse> getAllRecommendations() {
@@ -117,7 +132,9 @@ public class ShipmentRecommendationService {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
         recommendation.setStatus(request.getStatus());
 
-        return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
+        ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
+        if (operationalActivityService != null) operationalActivityService.record("RECOMMENDATION_OVERRIDDEN", username, "RECOMMENDATION", saved.getId(), saved.getStore().getStoreCode() + " / " + saved.getProduct().getProductCode(), request.getReason().trim());
+        return shipmentRecommendationMapper.toResponse(saved);
     }
 
     public ShipmentRecommendationResponse overrideRecommendedShipment(

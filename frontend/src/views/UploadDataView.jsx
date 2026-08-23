@@ -1,15 +1,20 @@
-import { FileSpreadsheet, FileUp, Upload } from "lucide-react";
-import { useState } from "react";
-import { importHistoricalSalesCsv } from "../api/depotiqApi.js";
+import { FileSpreadsheet, FileUp, History, Upload } from "lucide-react";
+import { useEffect, useState } from "react";
+import { importHistoricalSalesCsv, loadImportHistory } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 export default function UploadDataView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
-  const [file, setFile] = useState(null), [uploading, setUploading] = useState(false), [result, setResult] = useState(null), [error, setError] = useState("");
-  const submit = async (event) => { event.preventDefault(); if (!file) return; setUploading(true); setError(""); setResult(null); try { setResult(await importHistoricalSalesCsv(file)); } catch (requestError) { setError(requestError.message); } finally { setUploading(false); } };
+  const [file, setFile] = useState(null), [uploading, setUploading] = useState(false), [result, setResult] = useState(null), [error, setError] = useState(""), [history, setHistory] = useState([]);
+  const refreshHistory = () => loadImportHistory().then(setHistory).catch(() => setHistory([]));
+  useEffect(() => { refreshHistory(); }, []);
+  const submit = async (event) => { event.preventDefault(); if (!file) return; setUploading(true); setError(""); setResult(null); try { setResult(await importHistoricalSalesCsv(file)); refreshHistory(); } catch (requestError) { setError(requestError.message); } finally { setUploading(false); } };
+  const formatDate = (value) => value ? new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—";
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}><AppSidebar activePage="Upload Data" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} profile={profile} user={user} />
     <main className="dashboard upload-page"><header className="topbar"><h1>Upload Data</h1><div /><HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} /></header><div className="page-heading"><div><span>Historical data</span><h2>Import store sales records</h2></div></div>
-      {(error || result) && <div className={error ? "notice error" : "notice"}>{error || `Import complete: ${result.processedRows} processed, ${result.createdRecords} created, ${result.updatedRecords} updated, ${result.skippedRows} skipped.`}</div>}
+      {error && <div className="notice error" role="alert">{error}</div>}
       <section className="upload-page-grid"><form className="upload-page-card" onSubmit={submit}><header><FileUp size={20} /><div><h2>Sales CSV file</h2><p>Rows are matched by store, product, and date. Existing sales records are updated.</p></div></header><label className="upload-dropzone"><FileSpreadsheet size={28} /><strong>{file ? file.name : "Select a CSV file"}</strong><span>{file ? `${Math.ceil(file.size / 1024)} KB selected` : "CSV files only"}</span><input accept=".csv,text/csv" disabled={uploading} onChange={(event) => setFile(event.target.files?.[0] ?? null)} type="file" /></label><footer><button className="primary-button" disabled={!file || uploading} type="submit"><Upload size={16} />{uploading ? "Importing..." : "Import data"}</button></footer></form></section>
+      {result && <section className="import-feedback" role="status"><header><FileSpreadsheet aria-hidden="true" size={19} /><div><span>Import completed</span><h2>{result.processedRows} rows reviewed</h2></div></header><div className="import-feedback-metrics"><div><strong>{result.createdRecords}</strong><span>New records</span></div><div><strong>{result.updatedRecords}</strong><span>Updated records</span></div><div><strong>{result.skippedRows}</strong><span>Rows skipped</span></div><div><strong>{result.createdStores + result.createdProducts}</strong><span>Catalog entries added</span></div></div></section>}
+      <section className="table-panel import-history"><header className="panel-toolbar"><div><h2><History aria-hidden="true" size={16} /> Import history</h2><span className="panel-subtitle">Most recent sales data uploads</span></div></header><div className="table-scroll"><table><thead><tr><th>File</th><th>Imported</th><th>Processed</th><th>Created</th><th>Updated</th><th>Skipped</th><th>Issues</th></tr></thead><tbody>{history.map((item) => <tr key={item.id}><td><strong>{item.fileName}</strong></td><td>{formatDate(item.createdAt)}</td><td>{item.processedRows}</td><td>{item.createdRecords}</td><td>{item.updatedRecords}</td><td>{item.skippedRows}</td><td>{item.errorSummary ? <span className="import-issue" title={item.errorSummary}>Review errors</span> : <span className="import-clean">No issues</span>}</td></tr>)}</tbody></table></div>{!history.length && <div className="panel-empty">No import history is available yet.</div>}</section>
     </main></div>;
 }

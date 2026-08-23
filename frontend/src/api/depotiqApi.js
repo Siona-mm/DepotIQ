@@ -249,3 +249,11 @@ export function importHistoricalSalesCsv(file) {
     body: formData,
   });
 }
+
+export function loadImportHistory() {
+  return request("/api/imports");
+}
+
+export function loadOperationalActivity() {
+  return request("/api/activity");
+}
