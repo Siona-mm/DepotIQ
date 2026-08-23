@@ -6,6 +6,7 @@ import {
   Clock3,
   PackageCheck,
   Plus,
+  ClipboardCheck,
   Search,
   Truck,
   X,
@@ -73,9 +74,11 @@ export default function ShipmentsView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [shipments, setShipments] = useState([]);
   const [approvedRecommendations, setApprovedRecommendations] = useState([]);
+  const [pendingRecommendations, setPendingRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -97,6 +100,7 @@ export default function ShipmentsView({
       const result = await loadShipmentPageData();
       setShipments(result.shipments);
       setApprovedRecommendations(result.approvedRecommendations);
+      setPendingRecommendations(result.pendingRecommendations);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -106,7 +110,7 @@ export default function ShipmentsView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!planOpen) {
@@ -178,8 +182,11 @@ export default function ShipmentsView({
       ).length,
       transit: shipments.filter((item) => item.status === "DISPATCHED").length,
       delivered: shipments.filter((item) => item.status === "DELIVERED").length,
+      pendingApproval: pendingRecommendations.filter(
+        (item) => Number(item.recommendedShipment) > 0,
+      ).length,
     }),
-    [shipments],
+    [pendingRecommendations, shipments],
   );
 
   const resetPlan = () => {
@@ -324,6 +331,12 @@ export default function ShipmentsView({
             label="Delivered"
             note="Received by stores"
             value={summary.delivered}
+          />
+          <ShipmentMetric
+            icon={ClipboardCheck}
+            label="Awaiting Approval"
+            note="Recommendations ready to review"
+            value={summary.pendingApproval}
           />
         </section>
 
