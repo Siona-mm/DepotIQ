@@ -21,12 +21,11 @@ import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreInventoryRepository;
-import java.time.LocalDateTime;
-import java.time.LocalDate;
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.util.Comparator;
 import java.util.List;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -96,6 +95,7 @@ public class MlIntegrationService {
         MlDataSyncRequest request = new MlDataSyncRequest(
                 LocalDateTime.now(),
                 salesRecordRepository.findAll().stream()
+                        .sorted(Comparator.comparing(record -> record.getSaleDate()))
                         .map(record -> new MlSalesRecordPayload(
                                 record.getStore().getStoreCode(),
                                 record.getProduct().getProductCode(),

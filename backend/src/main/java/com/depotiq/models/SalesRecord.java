@@ -10,6 +10,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(
@@ -55,6 +56,15 @@ public class SalesRecord extends BaseEntity {
 
     @Column(length = 100)
     private String seasonality;
+
+    @Column(name = "source_system", length = 100)
+    private String sourceSystem;
+
+    @Column(name = "external_record_id", length = 200)
+    private String externalRecordId;
+
+    @Column(name = "imported_at")
+    private LocalDateTime importedAt;
 
     public Store getStore() {
         return store;
@@ -142,5 +152,29 @@ public class SalesRecord extends BaseEntity {
 
     public void setSeasonality(String seasonality) {
         this.seasonality = seasonality;
+    }
+
+    public String getSourceSystem() {
+        return sourceSystem;
+    }
+
+    public void setSourceSystem(String sourceSystem) {
+        this.sourceSystem = sourceSystem;
+    }
+
+    public String getExternalRecordId() {
+        return externalRecordId;
+    }
+
+    public void setExternalRecordId(String externalRecordId) {
+        this.externalRecordId = externalRecordId;
+    }
+
+    public LocalDateTime getImportedAt() {
+        return importedAt;
+    }
+
+    public void setImportedAt(LocalDateTime importedAt) {
+        this.importedAt = importedAt;
     }
 }

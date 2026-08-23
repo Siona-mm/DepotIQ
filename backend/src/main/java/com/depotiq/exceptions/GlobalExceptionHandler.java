@@ -12,6 +12,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
@@ -69,6 +70,34 @@ public class GlobalExceptionHandler {
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Request body is missing or contains invalid values",
+                request.getRequestURI(),
+                Map.of()
+        ));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiErrorResponse> handleInvalidArgument(
+            IllegalArgumentException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.badRequest().body(error(
+                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.BAD_REQUEST.getReasonPhrase(),
+                exception.getMessage(),
+                request.getRequestURI(),
+                Map.of()
+        ));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorResponse> handleMaximumUploadSize(
+            MaxUploadSizeExceededException exception,
+            HttpServletRequest request
+    ) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(error(
+                HttpStatus.PAYLOAD_TOO_LARGE.value(),
+                HttpStatus.PAYLOAD_TOO_LARGE.getReasonPhrase(),
+                "The CSV file exceeds the maximum upload size of 50 MB",
                 request.getRequestURI(),
                 Map.of()
         ));

@@ -38,6 +38,7 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
+  const [recentImportKeys, setRecentImportKeys] = useState([]);
   const dashboardRefresh = 0;
 
   useEffect(() => {
@@ -106,6 +107,10 @@ export default function App() {
     setUser(null);
   }, []);
 
+  const dismissImportedRow = useCallback((key) => {
+    setRecentImportKeys((current) => current.filter((item) => item !== key));
+  }, []);
+
   if (user === undefined) {
     return <main className="auth-loading">Checking your session...</main>;
   }
@@ -125,6 +130,9 @@ export default function App() {
     permissions,
     profile,
     user,
+    recentlyImportedKeys: recentImportKeys,
+    onImportCompleted: setRecentImportKeys,
+    onDismissImportedRow: dismissImportedRow,
   };
 
   const protectedPages = {
