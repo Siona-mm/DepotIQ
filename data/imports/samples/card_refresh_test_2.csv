@@ -1,0 +1,4 @@
+Date,Store ID,Product ID,Category,Region,Inventory Level,Units Sold,Units Ordered,Price,Discount,Weather Condition,Holiday/Promotion,Seasonality
+2026-08-24,S016,P0107,Groceries,South,6,42,75,4.29,0,Cloudy,0,Summer
+2026-08-24,S017,P0108,Personal Care,West,0,28,55,10.99,15,Rainy,1,Summer
+2026-08-24,S016,P0109,Office Supplies,South,85,14,20,5.49,0,Clear,0,Summer
