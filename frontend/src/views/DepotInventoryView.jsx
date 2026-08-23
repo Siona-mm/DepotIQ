@@ -77,6 +77,7 @@ export default function DepotInventoryView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +104,7 @@ export default function DepotInventoryView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!editItem) {
