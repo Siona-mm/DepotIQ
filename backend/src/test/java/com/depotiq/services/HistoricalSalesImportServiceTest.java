@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
+import com.depotiq.events.OperationalDataImportedEvent;
 import com.depotiq.models.Product;
 import com.depotiq.models.Store;
 import com.depotiq.repositories.ProductRepository;
@@ -23,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.mock.web.MockMultipartFile;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +41,9 @@ class HistoricalSalesImportServiceTest {
 
     @Mock
     private JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private HistoricalSalesImportService service;
@@ -63,6 +68,7 @@ class HistoricalSalesImportServiceTest {
         ));
 
         verify(jdbcTemplate, times(2)).batchUpdate(anyString(), anyList());
+        verify(eventPublisher).publishEvent(any(OperationalDataImportedEvent.class));
         assertThat(response.createdRecords()).isEqualTo(1);
         assertThat(response.skippedRows()).isZero();
     }
