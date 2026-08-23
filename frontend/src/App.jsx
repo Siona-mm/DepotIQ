@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
-import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { loadAuthenticatedUser, loadImportHistory, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
 import { permissionsFor } from "./auth/permissions.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
@@ -41,6 +41,7 @@ export default function App() {
   const [recentImportKeys, setRecentImportKeys] = useState([]);
   const [lastImport, setLastImport] = useState(null);
   const [operationalDataRevision, setOperationalDataRevision] = useState(0);
+  const latestImportIdRef = useRef(null);
 
   useEffect(() => {
     loadAuthenticatedUser()
@@ -85,6 +86,33 @@ export default function App() {
     globalThis.location.hash = hashes[destination] ?? "";
     setPage(destination);
   }, []);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let cancelled = false;
+    const refreshAfterAirflowImport = async () => {
+      try {
+        const [latestImport] = await loadImportHistory();
+        if (!latestImport || cancelled) return;
+
+        if (latestImportIdRef.current !== null && latestImportIdRef.current !== latestImport.id) {
+          setLastImport(latestImport);
+          setOperationalDataRevision((current) => current + 1);
+        }
+        latestImportIdRef.current = latestImport.id;
+      } catch {
+        // Import history is supplementary; an unavailable endpoint must not log the user out.
+      }
+    };
+
+    refreshAfterAirflowImport();
+    const intervalId = globalThis.setInterval(refreshAfterAirflowImport, 10_000);
+    return () => {
+      cancelled = true;
+      globalThis.clearInterval(intervalId);
+    };
+  }, [user]);
 
   const permissions = permissionsFor(user);
 
