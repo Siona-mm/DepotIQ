@@ -96,7 +96,9 @@ export default function App() {
         const [latestImport] = await loadImportHistory();
         if (!latestImport || cancelled) return;
 
-        if (latestImportIdRef.current !== null && latestImportIdRef.current !== latestImport.id) {
+        if (latestImportIdRef.current === null) {
+          setLastImport(latestImport);
+        } else if (latestImportIdRef.current !== latestImport.id) {
           setLastImport(latestImport);
           setOperationalDataRevision((current) => current + 1);
         }
