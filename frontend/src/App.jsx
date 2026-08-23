@@ -33,12 +33,22 @@ function pageFromHash() {
   return routes[globalThis.location.hash] ?? "Dashboard";
 }
 
+function loadRecentImportKeys() {
+  try {
+    const storedKeys = globalThis.sessionStorage.getItem("depotiq-recent-import-keys");
+    globalThis.sessionStorage.removeItem("depotiq-recent-import-keys");
+    return storedKeys ? JSON.parse(storedKeys) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [recentImportKeys, setRecentImportKeys] = useState([]);
+  const [recentImportKeys, setRecentImportKeys] = useState(loadRecentImportKeys);
   const [lastImport, setLastImport] = useState(null);
   const [operationalDataRevision, setOperationalDataRevision] = useState(0);
   const latestImportIdRef = useRef(null);
@@ -144,6 +154,10 @@ export default function App() {
   }, []);
 
   const handleImportCompleted = useCallback(({ keys, result }) => {
+    globalThis.sessionStorage.setItem(
+      "depotiq-recent-import-keys",
+      JSON.stringify(keys),
+    );
     setRecentImportKeys(keys);
     setLastImport(result);
     setOperationalDataRevision((current) => current + 1);
