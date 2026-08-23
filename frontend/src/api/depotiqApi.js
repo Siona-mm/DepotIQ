@@ -166,6 +166,7 @@ export function deleteProduct(id) { return request(`/api/products/${id}`, { meth
 
 export function loadForecasts() { return request("/api/forecasts"); }
 
+
 export function createStore(payload) {
   return request("/api/stores", {
     method: "POST",

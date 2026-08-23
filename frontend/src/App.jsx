@@ -1,5 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { loadAuthenticatedUser, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  loadAuthenticatedUser,
+  loadImportHistory,
+  loadProfile,
+  signIn,
+  signOut,
+} from "./api/depotiqApi.js";
 import { permissionsFor } from "./auth/permissions.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
@@ -33,13 +39,29 @@ function pageFromHash() {
   return routes[globalThis.location.hash] ?? "Dashboard";
 }
 
+function loadRecentImportKeys() {
+  try {
+    const storedKeys = globalThis.sessionStorage.getItem(
+      "depotiq-recent-import-keys",
+    );
+    globalThis.sessionStorage.removeItem("depotiq-recent-import-keys");
+    return storedKeys ? JSON.parse(storedKeys) : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [user, setUser] = useState(undefined);
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [recentImportKeys, setRecentImportKeys] = useState([]);
-  const dashboardRefresh = 0;
+  const [recentImportKeys, setRecentImportKeys] = useState(
+    loadRecentImportKeys,
+  );
+  const [lastImport, setLastImport] = useState(null);
+  const [operationalDataRevision, setOperationalDataRevision] = useState(0);
+  const latestImportIdRef = useRef(null);
 
   useEffect(() => {
     loadAuthenticatedUser()
@@ -85,13 +107,49 @@ export default function App() {
     setPage(destination);
   }, []);
 
+  useEffect(() => {
+    if (!user) return undefined;
+
+    let cancelled = false;
+
+    const refreshAfterAirflowImport = async () => {
+      try {
+        const [latestImport] = await loadImportHistory();
+        if (!latestImport || cancelled) return;
+
+        if (latestImportIdRef.current === null) {
+          setLastImport(latestImport);
+        } else if (latestImportIdRef.current !== latestImport.id) {
+          latestImportIdRef.current = latestImport.id;
+          globalThis.location.reload();
+          return;
+        }
+
+        latestImportIdRef.current = latestImport.id;
+      } catch {
+        // Import history is supplementary.
+      }
+    };
+
+    refreshAfterAirflowImport();
+    const intervalId = globalThis.setInterval(refreshAfterAirflowImport, 10_000);
+
+    return () => {
+      cancelled = true;
+      globalThis.clearInterval(intervalId);
+    };
+  }, [user]);
+
   const permissions = permissionsFor(user);
 
-  const handleAction = useCallback((action) => {
-    if (action === "upload" && permissions.canImportData) {
-      navigate("Upload Data");
-    }
-  }, [navigate, permissions.canImportData]);
+  const handleAction = useCallback(
+    (action) => {
+      if (action === "upload" && permissions.canImportData) {
+        navigate("Upload Data");
+      }
+    },
+    [navigate, permissions.canImportData],
+  );
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
@@ -108,7 +166,19 @@ export default function App() {
   }, []);
 
   const dismissImportedRow = useCallback((key) => {
-    setRecentImportKeys((current) => current.filter((item) => item !== key));
+    setRecentImportKeys((current) =>
+      current.filter((item) => item !== key),
+    );
+  }, []);
+
+  const handleImportCompleted = useCallback(({ keys, result }) => {
+    globalThis.sessionStorage.setItem(
+      "depotiq-recent-import-keys",
+      JSON.stringify(keys),
+    );
+    setRecentImportKeys(keys);
+    setLastImport(result);
+    setOperationalDataRevision((current) => current + 1);
   }, []);
 
   if (user === undefined) {
@@ -130,8 +200,10 @@ export default function App() {
     permissions,
     profile,
     user,
+    dataRevision: operationalDataRevision,
+    lastImport,
     recentlyImportedKeys: recentImportKeys,
-    onImportCompleted: setRecentImportKeys,
+    onImportCompleted: handleImportCompleted,
     onDismissImportedRow: dismissImportedRow,
   };
 
@@ -141,6 +213,7 @@ export default function App() {
     Forecasts: permissions.canViewForecasts,
     "Upload Data": permissions.canImportData,
   };
+
   const activePage = protectedPages[page] === false ? "Dashboard" : page;
 
   return (
@@ -170,7 +243,7 @@ export default function App() {
       ) : (
         <DashboardView
           {...sharedProps}
-          refreshRequest={dashboardRefresh}
+          refreshRequest={operationalDataRevision}
         />
       )}
     </>

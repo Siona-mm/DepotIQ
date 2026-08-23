@@ -1,0 +1,4 @@
+Date,Store ID,Product ID,Category,Region,Inventory Level,Units Sold,Units Ordered,Price,Discount,Weather Condition,Holiday/Promotion,Seasonality
+2026-08-23,S014,P0104,Bakery,North,12,36,60,3.49,0,Clear,0,Summer
+2026-08-23,S015,P0105,Personal Care,East,4,18,48,7.99,10,Rainy,1,Summer
+2026-08-23,S014,P0106,Office Supplies,North,0,22,50,2.50,0,Cloudy,0,Summer
