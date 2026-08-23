@@ -509,8 +509,10 @@ input:focus-visible {
 .notice-action { flex: 0 0 auto; color: #111111; font-size: 11px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .recent-import-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; border-bottom: 1px solid #e5e7eb; color: #6b7280; background: #f9fafb; font-size: 11px; }
 .recent-import-banner strong { color: #111111; font-size: 12px; }
-.recently-imported-row { background: #f3f4f6; cursor: pointer; }
-.recently-imported-row:hover { background: #e5e7eb; }
+.recently-imported-row { cursor: pointer; }
+.recently-imported-row td { background: #fff7ed; }
+.recently-imported-row td:first-child { box-shadow: inset 3px 0 0 #111111; }
+.recently-imported-row:hover td { background: #ffedd5; }
 .recent-import-badge { display: inline-flex; margin-left: 7px; padding: 2px 5px; border: 1px solid #111111; border-radius: 4px; color: #111111; font-size: 9px; font-weight: 600; line-height: 1; vertical-align: middle; }
 .selected-file-details { display: grid; width: min(100%, 430px); grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; margin-top: 3px; padding: 10px; border: 1px solid #e5e7eb; border-radius: 5px; color: #6b7280; background: #ffffff; text-align: left; font-size: 10px; }
 .selected-file-details span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
