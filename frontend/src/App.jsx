@@ -39,7 +39,7 @@ export default function App() {
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
   const [recentImportKeys, setRecentImportKeys] = useState([]);
-  const dashboardRefresh = 0;
+  const [operationalDataRevision, setOperationalDataRevision] = useState(0);
 
   useEffect(() => {
     loadAuthenticatedUser()
@@ -111,6 +111,11 @@ export default function App() {
     setRecentImportKeys((current) => current.filter((item) => item !== key));
   }, []);
 
+  const handleImportCompleted = useCallback((keys) => {
+    setRecentImportKeys(keys);
+    setOperationalDataRevision((current) => current + 1);
+  }, []);
+
   if (user === undefined) {
     return <main className="auth-loading">Checking your session...</main>;
   }
@@ -130,8 +135,9 @@ export default function App() {
     permissions,
     profile,
     user,
+    dataRevision: operationalDataRevision,
     recentlyImportedKeys: recentImportKeys,
-    onImportCompleted: setRecentImportKeys,
+    onImportCompleted: handleImportCompleted,
     onDismissImportedRow: dismissImportedRow,
   };
 
@@ -170,7 +176,7 @@ export default function App() {
       ) : (
         <DashboardView
           {...sharedProps}
-          refreshRequest={dashboardRefresh}
+          refreshRequest={operationalDataRevision}
         />
       )}
     </>
