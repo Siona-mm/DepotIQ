@@ -51,6 +51,9 @@ data/synthetic/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/synthetic/README.md
+data/imports/incoming/*.csv
+data/imports/processed/*.csv
+data/imports/failed/*.csv
 ml-service/models/*
 !ml-service/models/.gitkeep
 
