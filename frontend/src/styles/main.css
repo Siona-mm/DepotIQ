@@ -586,6 +586,9 @@ input:focus-visible {
 .import-feedback-errors > div { display:flex; align-items:center; gap:7px; font-size:12px; }
 .import-feedback-errors ul { max-height:120px; margin:9px 0; padding-left:20px; overflow:auto; font-size:11px; line-height:1.55; }
 .import-feedback-errors p { margin:0; color:#7f1d1d; font-size:11px; }
+.import-issue, .import-clean { display:inline-flex; padding:4px 7px; border-radius:999px; font-size:10px; font-weight:650; }
+.import-issue { color:#991b1b; background:#fef2f2; cursor:help; }
+.import-clean { color:#166534; background:#f0fdf4; }
 
 .profile-name {
   max-width: 160px;
