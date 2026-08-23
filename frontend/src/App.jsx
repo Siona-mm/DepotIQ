@@ -99,8 +99,9 @@ export default function App() {
         if (latestImportIdRef.current === null) {
           setLastImport(latestImport);
         } else if (latestImportIdRef.current !== latestImport.id) {
-          setLastImport(latestImport);
-          setOperationalDataRevision((current) => current + 1);
+          latestImportIdRef.current = latestImport.id;
+          globalThis.location.reload();
+          return;
         }
         latestImportIdRef.current = latestImport.id;
       } catch {
