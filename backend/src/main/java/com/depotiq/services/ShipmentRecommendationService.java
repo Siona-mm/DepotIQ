@@ -16,6 +16,7 @@ import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -33,6 +34,7 @@ public class ShipmentRecommendationService {
     private final ShipmentRecommendationMapper shipmentRecommendationMapper;
     private final UserSettingsService userSettingsService;
 
+    @Autowired
     public ShipmentRecommendationService(
             ShipmentRecommendationRepository shipmentRecommendationRepository,
             StoreRepository storeRepository,
