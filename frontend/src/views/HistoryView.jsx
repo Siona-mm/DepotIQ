@@ -81,6 +81,7 @@ export default function HistoryView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,7 +106,7 @@ export default function HistoryView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!undoItem) {
