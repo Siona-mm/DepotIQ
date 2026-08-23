@@ -1,4 +1,4 @@
-import { Bell, CheckCheck, CircleAlert, PackageCheck, TriangleAlert } from "lucide-react";
+import { Bell, CheckCheck, CircleAlert, PackageCheck, RefreshCw, TriangleAlert } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadDashboardData, loadSettings, loadShipmentPageData } from "../api/depotiqApi.js";
 import { buildOperationalNotifications } from "../notifications/operationalNotifications.js";
@@ -12,6 +12,7 @@ function iconFor(tone) {
 export default function NotificationCenter({ onNavigate, user }) {
   const [open, setOpen] = useState(false);
   const [readIds, setReadIds] = useState([]);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [data, setData] = useState({
     recommendations: [],
     shipments: [],
@@ -47,6 +48,7 @@ export default function NotificationCenter({ onNavigate, user }) {
                 ? settingsResult.value
                 : { alertThreshold: 250, emailAlerts: false },
             });
+            setLastUpdated(new Date());
           }
         });
     };
@@ -59,6 +61,16 @@ export default function NotificationCenter({ onNavigate, user }) {
       globalThis.removeEventListener("depotiq-settings-updated", refreshNotifications);
     };
   }, []);
+
+  useEffect(() => {
+    if (!data.settings.autoRefresh) return undefined;
+
+    const timer = globalThis.setInterval(
+      () => globalThis.dispatchEvent(new globalThis.Event("depotiq-settings-updated")),
+      60000,
+    );
+    return () => globalThis.clearInterval(timer);
+  }, [data.settings.autoRefresh]);
 
   useEffect(() => {
     try {
@@ -120,7 +132,18 @@ export default function NotificationCenter({ onNavigate, user }) {
                 Mark all read
               </button>
             )}
+            <button
+              aria-label="Refresh notifications"
+              className="notification-refresh"
+              onClick={() => globalThis.dispatchEvent(new globalThis.Event("depotiq-settings-updated"))}
+              title="Refresh notifications"
+              type="button"
+            >
+              <RefreshCw aria-hidden="true" size={14} />
+            </button>
           </header>
+
+          {lastUpdated && <p className="notification-updated">Updated {lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>}
 
           <div className="notification-list">
             {notifications.length ? notifications.map((item) => {
