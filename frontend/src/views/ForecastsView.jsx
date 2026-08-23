@@ -9,7 +9,7 @@ const formatNumber = (value) => new Intl.NumberFormat("en-US", { maximumFraction
 const formatCompact = (value) => new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(Number(value ?? 0));
 const CHART_TOOLTIP_STYLE = { border: "1px solid #e5e7eb", borderRadius: "6px", boxShadow: "0 8px 24px rgba(17, 17, 17, 0.08)", fontSize: "12px" };
 
-export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
+export default function ForecastsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, dataRevision = 0 }) {
   const [forecasts, setForecasts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,7 +20,7 @@ export default function ForecastsView({ collapsed, onAction, onCollapse, onNavig
     catch (requestError) { setError(requestError.message); }
     finally { setLoading(false); }
   }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [dataRevision, load]);
 
   const visible = useMemo(() => {
     const normalized = query.trim().toLowerCase();
