@@ -12,12 +12,12 @@ function stockState(item) {
   return { key: "in", label: "In stock" };
 }
 
-export default function StoreInventoryView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, recentlyImportedKeys = [], onDismissImportedRow }) {
+export default function StoreInventoryView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, dataRevision = 0, recentlyImportedKeys = [], onDismissImportedRow }) {
   const [inventory, setInventory] = useState([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [message, setMessage] = useState("");
   const [query, setQuery] = useState(""), [storeFilter, setStoreFilter] = useState("ALL"), [statusFilter, setStatusFilter] = useState("ALL");
   const [editing, setEditing] = useState(null), [inventoryLevel, setInventoryLevel] = useState(""), [incomingUnits, setIncomingUnits] = useState(""), [saving, setSaving] = useState(false);
   const load = useCallback(async () => { try { setError(""); setInventory(await loadStoreInventory()); } catch (requestError) { setError(requestError.message); } finally { setLoading(false); } }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [dataRevision, load]);
   const recentImportKeySet = useMemo(() => new Set(recentlyImportedKeys), [recentlyImportedKeys]);
   const visible = useMemo(() => { const normalized = query.toLowerCase().trim(); return inventory.filter((item) => storeFilter === "ALL" || item.storeCode === storeFilter).filter((item) => statusFilter === "ALL" || stockState(item).key === statusFilter).filter((item) => !normalized || [item.storeCode, item.storeName, item.productCode, item.productName, item.category].some((value) => String(value ?? "").toLowerCase().includes(normalized))).sort((left, right) => Number(recentImportKeySet.has(`${right.storeCode}::${right.productCode}`)) - Number(recentImportKeySet.has(`${left.storeCode}::${left.productCode}`))); }, [inventory, query, recentImportKeySet, statusFilter, storeFilter]);
   const storeOptions = [...new Set(inventory.map((item) => item.storeCode))].sort();
