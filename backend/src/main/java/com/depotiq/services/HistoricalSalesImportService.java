@@ -2,6 +2,7 @@ package com.depotiq.services;
 
 import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
 import com.depotiq.dtos.importing.ImportAuditLogResponse;
+import com.depotiq.events.OperationalDataImportedEvent;
 import com.depotiq.models.Product;
 import com.depotiq.models.ImportAuditLog;
 import com.depotiq.models.Store;
@@ -26,6 +27,7 @@ import java.util.Set;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -81,17 +83,20 @@ public class HistoricalSalesImportService {
     private final ProductRepository productRepository;
     private final ImportAuditLogRepository importAuditLogRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     public HistoricalSalesImportService(
             StoreRepository storeRepository,
             ProductRepository productRepository,
             ImportAuditLogRepository importAuditLogRepository,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            ApplicationEventPublisher eventPublisher
     ) {
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.importAuditLogRepository = importAuditLogRepository;
         this.jdbcTemplate = jdbcTemplate;
+        this.eventPublisher = eventPublisher;
     }
 
     public HistoricalSalesImportResponse importCsv(MultipartFile file) {
@@ -171,6 +176,7 @@ public class HistoricalSalesImportService {
                     List.copyOf(errors)
             );
             saveAuditLog(file.getOriginalFilename(), response);
+            eventPublisher.publishEvent(new OperationalDataImportedEvent(importedAt));
             return response;
         } catch (IOException exception) {
             throw new IllegalArgumentException("The CSV file could not be read.", exception);
