@@ -133,7 +133,6 @@ public class ShipmentRecommendationService {
         recommendation.setStatus(request.getStatus());
 
         ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
-        if (operationalActivityService != null) operationalActivityService.record("RECOMMENDATION_OVERRIDDEN", username, "RECOMMENDATION", saved.getId(), saved.getStore().getStoreCode() + " / " + saved.getProduct().getProductCode(), request.getReason().trim());
         return shipmentRecommendationMapper.toResponse(saved);
     }
 
