@@ -506,6 +506,7 @@ input:focus-visible {
 .upload-test-file a { text-decoration: underline; text-underline-offset: 3px; }
 .clear-file-button { justify-self: center; padding: 0; border: 0; background: transparent; cursor: pointer; }
 .notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.notice-actions { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 14px; }
 .notice-action { flex: 0 0 auto; padding: 0; border: 0; color: #111111; background: transparent; cursor: pointer; font: inherit; font-size: 11px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .recent-import-banner { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 16px; border-bottom: 1px solid #bfdbfe; color: #111111; background: #eff6ff; font-size: 11px; }
 .recent-import-banner strong { color: #111111; font-size: 12px; }
