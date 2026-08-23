@@ -31,7 +31,6 @@ public class ShipmentRecommendationService {
     private final ProductRepository productRepository;
     private final DemandForecastRepository demandForecastRepository;
     private final ShipmentRecommendationMapper shipmentRecommendationMapper;
-    private final UserSettingsService userSettingsService;
 
     public ShipmentRecommendationService(
             ShipmentRecommendationRepository shipmentRecommendationRepository,
@@ -40,24 +39,11 @@ public class ShipmentRecommendationService {
             DemandForecastRepository demandForecastRepository,
             ShipmentRecommendationMapper shipmentRecommendationMapper
     ) {
-        this(shipmentRecommendationRepository, storeRepository, productRepository,
-                demandForecastRepository, shipmentRecommendationMapper, null);
-    }
-
-    public ShipmentRecommendationService(
-            ShipmentRecommendationRepository shipmentRecommendationRepository,
-            StoreRepository storeRepository,
-            ProductRepository productRepository,
-            DemandForecastRepository demandForecastRepository,
-            ShipmentRecommendationMapper shipmentRecommendationMapper,
-            UserSettingsService userSettingsService
-    ) {
         this.shipmentRecommendationRepository = shipmentRecommendationRepository;
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.demandForecastRepository = demandForecastRepository;
         this.shipmentRecommendationMapper = shipmentRecommendationMapper;
-        this.userSettingsService = userSettingsService;
     }
 
     public List<ShipmentRecommendationResponse> getAllRecommendations() {
@@ -122,21 +108,6 @@ public class ShipmentRecommendationService {
             Long id,
             OverrideRecommendationRequest request
     ) {
-        return overrideRecommendedShipment(id, request, null);
-    }
-
-    public ShipmentRecommendationResponse overrideRecommendedShipment(
-            Long id,
-            OverrideRecommendationRequest request,
-            String username
-    ) {
-        if (username != null && userSettingsService != null
-                && !userSettingsService.allowsRecommendationOverrides(username)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Recommendation overrides are disabled in your settings"
-            );
-        }
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
 
         if (recommendation.getStatus() != RecommendationStatus.PENDING

@@ -26,7 +26,6 @@ import RetryNotice from "../components/RetryNotice.jsx";
 import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 import {
   loadDashboardData,
-  loadSettings,
   importHistoricalSalesCsv,
   overrideRecommendationAmount,
   loadMlStatus,
@@ -240,7 +239,6 @@ export default function DashboardView({
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
-  const [workflowSettings, setWorkflowSettings] = useState({ allowOverrides: true });
   const [mlStatus, setMlStatus] = useState(null);
   const [mlStatusLoading, setMlStatusLoading] = useState(true);
   const [loading, setLoading] = useState(true);
@@ -275,10 +273,9 @@ export default function DashboardView({
     setMlStatusLoading(true);
 
     try {
-      const [dashboardResult, statusResult, settingsResult] = await Promise.allSettled([
+      const [dashboardResult, statusResult] = await Promise.allSettled([
         loadDashboardData(),
         loadMlStatus(),
-        loadSettings(),
       ]);
 
       if (dashboardResult.status === "rejected") {
@@ -289,9 +286,6 @@ export default function DashboardView({
       setMlStatus(
         statusResult.status === "fulfilled" ? statusResult.value : null,
       );
-      if (settingsResult.status === "fulfilled") {
-        setWorkflowSettings(settingsResult.value);
-      }
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -864,13 +858,13 @@ export default function DashboardView({
                       <td>
                         <div className="recommendation-product">
                           <span>{item.productCode}</span>
-                          {workflowSettings.allowOverrides && <button
+                          <button
                             aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
                             onClick={() => setInsightItem(item)}
                             type="button"
                           >
                             Details
-                          </button>}
+                          </button>
                         </div>
                       </td>
                       <td>{formatNumber(item.currentInventory)}</td>
