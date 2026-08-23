@@ -237,6 +237,7 @@ export default function DashboardView({
   permissions,
   profile,
   refreshRequest,
+  recentlyImportedKeys = [],
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
@@ -385,6 +386,19 @@ export default function DashboardView({
     [data.recommendations],
   );
 
+  const recentImportKeySet = useMemo(
+    () => new Set(recentlyImportedKeys),
+    [recentlyImportedKeys],
+  );
+
+  const recentlyImportedRecommendations = useMemo(
+    () =>
+      dashboardRecommendations.filter((item) =>
+        recentImportKeySet.has(`${item.storeCode}::${item.productCode}`),
+      ),
+    [dashboardRecommendations, recentImportKeySet],
+  );
+
   const summary = useMemo(() => {
     const urgent = dashboardRecommendations.filter(
       (item) => item.priority === "URGENT",
@@ -436,11 +450,21 @@ export default function DashboardView({
             .includes(normalizedQuery),
         );
       })
-      .sort((left, right) => compareRecommendations(left, right, sortBy));
+      .sort(
+        (left, right) =>
+          Number(
+            recentImportKeySet.has(`${right.storeCode}::${right.productCode}`),
+          ) -
+            Number(
+              recentImportKeySet.has(`${left.storeCode}::${left.productCode}`),
+            ) ||
+          compareRecommendations(left, right, sortBy),
+      );
   }, [
     dashboardRecommendations,
     priorityFilter,
     query,
+    recentImportKeySet,
     sortBy,
     storeFilter,
   ]);
@@ -673,7 +697,18 @@ export default function DashboardView({
         />
 
         <section className="dashboard-grid">
-          <section className="table-panel">
+          <section className="table-panel" id="shipment-recommendations">
+            {recentlyImportedRecommendations.length > 0 && (
+              <div className="recent-import-banner">
+                <strong>
+                  {recentlyImportedRecommendations.length} shipment recommendation
+                  {recentlyImportedRecommendations.length === 1 ? "" : "s"} refreshed
+                </strong>
+                <span>
+                  Highlighted rows relate to your latest import and clear after a refresh.
+                </span>
+              </div>
+            )}
             <div className="panel-toolbar">
               <h2>Shipment Recommendations</h2>
               <div className="table-actions">
@@ -858,21 +893,23 @@ export default function DashboardView({
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRecommendations.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.storeCode}</td>
+                  {visibleRecommendations.map((item) => {
+                    const isRecentlyImported = recentImportKeySet.has(
+                      `${item.storeCode}::${item.productCode}`,
+                    );
+
+                    return (
+                    <tr
+                      className={isRecentlyImported ? "recently-imported-row" : undefined}
+                      key={item.id}
+                    >
                       <td>
-                        <div className="recommendation-product">
-                          <span>{item.productCode}</span>
-                          {workflowSettings.allowOverrides && <button
-                            aria-label={`View recommendation details for ${item.storeCode} ${item.productCode}`}
-                            onClick={() => setInsightItem(item)}
-                            type="button"
-                          >
-                            Details
-                          </button>}
-                        </div>
+                        {item.storeCode}
+                        {isRecentlyImported && (
+                          <span className="recent-import-badge">New</span>
+                        )}
                       </td>
+                      <td>{item.productCode}</td>
                       <td>{formatNumber(item.currentInventory)}</td>
                       <td>
                         {formatNumber(
@@ -970,7 +1007,8 @@ export default function DashboardView({
                         </div>
                       </td>}
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
