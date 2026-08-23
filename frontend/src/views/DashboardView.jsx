@@ -241,7 +241,7 @@ export default function DashboardView({
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
-  const [workflowSettings, setWorkflowSettings] = useState({ allowOverrides: true });
+  const [, setWorkflowSettings] = useState({ allowOverrides: true });
   const [mlStatus, setMlStatus] = useState(null);
   const [mlStatusLoading, setMlStatusLoading] = useState(true);
   const [loading, setLoading] = useState(true);
