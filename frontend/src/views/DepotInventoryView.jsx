@@ -14,7 +14,7 @@ import {
   updateDepotInventory,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -230,7 +230,7 @@ export default function DepotInventoryView({
               value={query}
             />
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         {(error || message) && (

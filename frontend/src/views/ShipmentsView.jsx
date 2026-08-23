@@ -17,7 +17,7 @@ import {
   updateShipmentStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 const STATUS_ACTIONS = {
   PLANNED: ["READY", "Mark ready", CircleCheckBig],
@@ -280,7 +280,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">

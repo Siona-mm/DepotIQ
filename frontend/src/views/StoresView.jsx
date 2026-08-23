@@ -2,7 +2,7 @@ import { Building2, MapPin, PencilLine, Plus, Search, Store, Trash2, X } from "l
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createStore, deleteStore, loadStores, updateStore } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -116,7 +116,7 @@ export default function StoresView({ collapsed, onAction, onCollapse, onNavigate
               value={query}
             />
           </label>
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
         {(error || message) && <div className={error ? "notice error" : "notice"} role="status">{error || message}</div>}
