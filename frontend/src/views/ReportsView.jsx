@@ -72,6 +72,7 @@ export default function ReportsView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
@@ -95,7 +96,7 @@ export default function ReportsView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   const storeOptions = useMemo(
     () =>
