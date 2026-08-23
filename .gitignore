@@ -54,6 +54,7 @@ data/synthetic/*
 data/imports/incoming/*.csv
 data/imports/processed/*.csv
 data/imports/failed/*.csv
+airflow/dags/__pycache__/
 ml-service/models/*
 !ml-service/models/.gitkeep
 
