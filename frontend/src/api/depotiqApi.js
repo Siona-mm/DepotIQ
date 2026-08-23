@@ -177,12 +177,13 @@ export function loadRecommendationHistory() {
 }
 
 export async function loadShipmentPageData() {
-  const [shipments, approvedRecommendations] = await Promise.all([
+  const [shipments, approvedRecommendations, pendingRecommendations] = await Promise.all([
     request("/api/shipments"),
     request("/api/recommendations?status=APPROVED"),
+    request("/api/recommendations?status=PENDING"),
   ]);
 
-  return { shipments, approvedRecommendations };
+  return { shipments, approvedRecommendations, pendingRecommendations };
 }
 
 export function createShipment(payload) {
