@@ -122,14 +122,7 @@ public class ShipmentRecommendationService {
         }
 
         ShipmentRecommendation recommendation = shipmentRecommendationMapper.toEntity(request, store, product, forecast);
-        ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
-        if (operationalActivityService != null) {
-            operationalActivityService.record("RECOMMENDATION_OVERRIDDEN", username,
-                    "RECOMMENDATION", saved.getId(),
-                    saved.getStore().getStoreCode() + " / " + saved.getProduct().getProductCode(),
-                    request.getReason().trim());
-        }
-        return shipmentRecommendationMapper.toResponse(saved);
+        return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
     }
 
     public ShipmentRecommendationResponse updateRecommendationStatus(
@@ -139,7 +132,9 @@ public class ShipmentRecommendationService {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
         recommendation.setStatus(request.getStatus());
 
-        return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
+        ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
+        if (operationalActivityService != null) operationalActivityService.record("RECOMMENDATION_OVERRIDDEN", username, "RECOMMENDATION", saved.getId(), saved.getStore().getStoreCode() + " / " + saved.getProduct().getProductCode(), request.getReason().trim());
+        return shipmentRecommendationMapper.toResponse(saved);
     }
 
     public ShipmentRecommendationResponse overrideRecommendedShipment(
