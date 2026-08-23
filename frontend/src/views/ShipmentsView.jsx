@@ -419,6 +419,7 @@ export default function ShipmentsView({
                               onClick={() =>
                                 changeStatus(shipment, action[0])
                               }
+                              title={`Next lifecycle step: ${action[1]}`}
                               type="button"
                             >
                               <ActionIcon aria-hidden="true" size={14} />
@@ -435,7 +436,7 @@ export default function ShipmentsView({
                               onClick={() =>
                                 changeStatus(shipment, "CANCELLED")
                               }
-                              title="Cancel shipment"
+                              title="Cancel this planned shipment"
                               type="button"
                             >
                               <Ban aria-hidden="true" size={14} />
