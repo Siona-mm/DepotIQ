@@ -157,6 +157,9 @@ public class MlIntegrationService {
                         payload.horizonDays()
                 )
                 .orElseGet(ShipmentRecommendation::new);
+        boolean isNewRecommendation = recommendation.getId() == null;
+        boolean canRefreshSuggestedShipment = isNewRecommendation
+                || recommendation.getStatus() == RecommendationStatus.PENDING;
 
         recommendation.setStore(store);
         recommendation.setProduct(product);
@@ -170,11 +173,14 @@ public class MlIntegrationService {
         recommendation.setIncomingUnits(payload.incomingUnits());
         recommendation.setSafetyStock(payload.safetyStock());
         recommendation.setRequiredStock(payload.requiredStock());
-        recommendation.setRecommendedShipment(payload.recommendedShipment());
-        recommendation.setPriority(parsePriority(payload.priority()));
         recommendation.setExplanation(payload.explanation());
 
-        if (recommendation.getId() == null) {
+        if (canRefreshSuggestedShipment) {
+            recommendation.setRecommendedShipment(payload.recommendedShipment());
+            recommendation.setPriority(parsePriority(payload.priority()));
+        }
+
+        if (isNewRecommendation) {
             recommendation.setStatus(RecommendationStatus.PENDING);
         }
 
