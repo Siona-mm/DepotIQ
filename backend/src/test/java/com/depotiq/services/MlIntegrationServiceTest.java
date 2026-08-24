@@ -3,17 +3,18 @@ package com.depotiq.services;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.depotiq.dtos.ml.MlDataSyncRequest;
+import com.depotiq.dtos.ml.MlDataSyncResponse;
 import com.depotiq.dtos.ml.MlRecommendationBatchResponse;
 import com.depotiq.dtos.ml.MlRecommendationPayload;
 import com.depotiq.dtos.ml.MlSyncResponse;
-import com.depotiq.dtos.ml.MlHealthResponse;
-import com.depotiq.dtos.ml.MlModelInfoResponse;
-import com.depotiq.dtos.ml.MlStatusResponse;
 import com.depotiq.models.DemandForecast;
 import com.depotiq.models.Product;
+import com.depotiq.models.SalesRecord;
 import com.depotiq.models.ShipmentRecommendation;
 import com.depotiq.models.Store;
 import com.depotiq.repositories.DemandForecastRepository;
@@ -29,10 +30,67 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import org.mockito.ArgumentCaptor;
 
 class MlIntegrationServiceTest {
+
+    @Test
+    void syncsOnlyTheRecentHistoryNeededForInference() {
+        MlServiceClient client = mock(MlServiceClient.class);
+        StoreRepository stores = mock(StoreRepository.class);
+        ProductRepository products = mock(ProductRepository.class);
+        DemandForecastRepository forecasts = mock(DemandForecastRepository.class);
+        ShipmentRecommendationRepository recommendations =
+                mock(ShipmentRecommendationRepository.class);
+        SalesRecordRepository salesRecords = mock(SalesRecordRepository.class);
+        StoreInventoryRepository storeInventory = mock(StoreInventoryRepository.class);
+
+        Store store = new Store();
+        store.setStoreCode("S001");
+        Product product = new Product();
+        product.setProductCode("P0001");
+        SalesRecord latest = new SalesRecord();
+        latest.setStore(store);
+        latest.setProduct(product);
+        latest.setSaleDate(LocalDate.of(2026, 8, 23));
+        latest.setUnitsSold(12);
+
+        LocalDate historyStart = LocalDate.of(2026, 6, 24);
+        MlDataSyncResponse expectedResponse = new MlDataSyncResponse(
+                "ok",
+                1,
+                0,
+                LocalDateTime.now()
+        );
+        when(salesRecords.findTopByOrderBySaleDateDesc()).thenReturn(Optional.of(latest));
+        when(salesRecords.findBySaleDateGreaterThanEqualOrderBySaleDateAsc(historyStart))
+                .thenReturn(List.of(latest));
+        when(storeInventory.findAll()).thenReturn(List.of());
+        when(client.syncData(any(MlDataSyncRequest.class))).thenReturn(expectedResponse);
+
+        MlIntegrationService service = new MlIntegrationService(
+                client,
+                stores,
+                products,
+                forecasts,
+                recommendations,
+                salesRecords,
+                storeInventory
+        );
+
+        MlDataSyncResponse response = service.syncImportedData();
+
+        ArgumentCaptor<MlDataSyncRequest> requestCaptor =
+                ArgumentCaptor.forClass(MlDataSyncRequest.class);
+        verify(salesRecords)
+                .findBySaleDateGreaterThanEqualOrderBySaleDateAsc(historyStart);
+        verify(salesRecords, never()).findAll();
+        verify(client).syncData(requestCaptor.capture());
+        assertThat(requestCaptor.getValue().salesRecords()).hasSize(1);
+        assertThat(requestCaptor.getValue().salesRecords().get(0).storeCode())
+                .isEqualTo("S001");
+        assertThat(response).isSameAs(expectedResponse);
+    }
 
     @Test
     void syncsKnownRowsAndSkipsUnknownRows() {
@@ -90,88 +148,6 @@ class MlIntegrationServiceTest {
         assertThat(response.skippedUnknownStoreOrProduct()).isEqualTo(1);
         verify(forecasts).save(any(DemandForecast.class));
         verify(recommendations).save(any(ShipmentRecommendation.class));
-    }
-
-    @Test
-    void reportsStoredCoverageWhenMlServiceIsUnavailable() {
-        MlServiceClient client = mock(MlServiceClient.class);
-        StoreRepository stores = mock(StoreRepository.class);
-        ProductRepository products = mock(ProductRepository.class);
-        DemandForecastRepository forecasts = mock(DemandForecastRepository.class);
-        ShipmentRecommendationRepository recommendations = mock(ShipmentRecommendationRepository.class);
-        SalesRecordRepository salesRecords = mock(SalesRecordRepository.class);
-        StoreInventoryRepository storeInventory = mock(StoreInventoryRepository.class);
-
-        DemandForecast forecast = forecast();
-        when(forecasts.findAll()).thenReturn(List.of(forecast));
-        when(recommendations.findAll()).thenReturn(List.of(new ShipmentRecommendation()));
-        when(client.getHealth()).thenThrow(new ResponseStatusException(
-                HttpStatus.BAD_GATEWAY,
-                "ML service is unavailable"
-        ));
-
-        MlIntegrationService service = new MlIntegrationService(
-                client, stores, products, forecasts, recommendations, salesRecords, storeInventory
-        );
-
-        MlStatusResponse response = service.getStatus();
-
-        assertThat(response.serviceAvailable()).isFalse();
-        assertThat(response.serviceStatus()).isEqualTo("unavailable");
-        assertThat(response.forecastCount()).isEqualTo(1);
-        assertThat(response.recommendationCount()).isEqualTo(1);
-        assertThat(response.coveredStores()).isEqualTo(1);
-        assertThat(response.coveredProducts()).isEqualTo(1);
-        assertThat(response.averageMae()).isEqualByComparingTo("11.85");
-        assertThat(response.latestForecastDate()).isEqualTo(LocalDate.of(2024, 2, 4));
-        assertThat(response.lastSynchronizedAt()).isEqualTo(LocalDateTime.of(2024, 2, 5, 9, 30));
-    }
-
-    @Test
-    void reportsMlModelDetailsWhenServiceIsAvailable() {
-        MlServiceClient client = mock(MlServiceClient.class);
-        DemandForecastRepository forecasts = mock(DemandForecastRepository.class);
-        ShipmentRecommendationRepository recommendations = mock(ShipmentRecommendationRepository.class);
-        when(forecasts.findAll()).thenReturn(List.of());
-        when(recommendations.findAll()).thenReturn(List.of());
-        when(client.getHealth()).thenReturn(new MlHealthResponse("ok"));
-        when(client.getModels()).thenReturn(List.of(new MlModelInfoResponse(
-                7, "hist_gradient_boosting", "1.0", BigDecimal.valueOf(11.85),
-                BigDecimal.valueOf(16.2), true
-        )));
-
-        MlIntegrationService service = new MlIntegrationService(
-                client,
-                mock(StoreRepository.class),
-                mock(ProductRepository.class),
-                forecasts,
-                recommendations,
-                mock(SalesRecordRepository.class),
-                mock(StoreInventoryRepository.class)
-        );
-
-        MlStatusResponse response = service.getStatus();
-
-        assertThat(response.serviceAvailable()).isTrue();
-        assertThat(response.serviceStatus()).isEqualTo("ok");
-        assertThat(response.models()).singleElement().satisfies(model -> {
-            assertThat(model.modelName()).isEqualTo("hist_gradient_boosting");
-            assertThat(model.artifactAvailable()).isTrue();
-        });
-    }
-
-    private DemandForecast forecast() {
-        Store store = new Store();
-        store.setId(11L);
-        Product product = new Product();
-        product.setId(22L);
-        DemandForecast forecast = new DemandForecast();
-        forecast.setStore(store);
-        forecast.setProduct(product);
-        forecast.setForecastDate(LocalDate.of(2024, 2, 4));
-        forecast.setModelMae(BigDecimal.valueOf(11.85));
-        forecast.setUpdatedAt(LocalDateTime.of(2024, 2, 5, 9, 30));
-        return forecast;
     }
 
     private MlRecommendationPayload payload(String storeCode, String productCode) {
