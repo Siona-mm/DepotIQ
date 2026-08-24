@@ -2,7 +2,7 @@ import { PackageSearch, PencilLine, Plus, Search, Tags, Trash2, X } from "lucide
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createProduct, deleteProduct, loadProducts, updateProduct } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const money = (value) => new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value ?? 0));
 const EMPTY_PRODUCT = { name: "", category: "", brand: "", supplierCode: "", externalSku: "", unitCost: 0, price: 0, weightKg: 0, shelfLifeDays: 0, perishable: false };
@@ -12,11 +12,11 @@ const FIELDS = [
   ["price", "Price", "number"], ["weightKg", "Weight (kg)", "number"], ["shelfLifeDays", "Shelf life (days)", "number"],
 ];
 
-export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user }) {
+export default function ProductsView({ collapsed, onAction, onCollapse, onNavigate, onSignOut, permissions, profile, user, dataRevision = 0 }) {
   const [products, setProducts] = useState([]), [loading, setLoading] = useState(true), [error, setError] = useState(""), [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false), [editing, setEditing] = useState(null), [form, setForm] = useState(EMPTY_PRODUCT), [saving, setSaving] = useState(false);
   const load = useCallback(async () => { try { setError(""); setProducts(await loadProducts()); } catch (requestError) { setError(requestError.message); } finally { setLoading(false); } }, []);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [dataRevision, load]);
   const visible = useMemo(() => { const normalized = query.toLowerCase().trim(); return !normalized ? products : products.filter((product) => [product.productCode, product.externalSku, product.name, product.category, product.brand].some((value) => String(value ?? "").toLowerCase().includes(normalized))); }, [products, query]);
   const openForm = (product = null) => { setEditing(product); setForm(product ? { ...product } : EMPTY_PRODUCT); setError(""); setFormOpen(true); };
   const closeForm = () => { if (!saving) setFormOpen(false); };
@@ -27,7 +27,7 @@ export default function ProductsView({ collapsed, onAction, onCollapse, onNaviga
   return <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
     <AppSidebar activePage="Products" collapsed={collapsed} onAction={onAction} onCollapse={onCollapse} onNavigate={onNavigate} onSignOut={onSignOut} permissions={permissions} profile={profile} user={user} />
     <main className="dashboard products-page">
-      <header className="topbar"><h1>Products</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search products</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search product, code, category, or brand..." value={query} /></label><HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} /></header>
+      <header className="topbar"><h1>Products</h1><label className="search-box"><Search size={15} /><span className="sr-only">Search products</span><input onChange={(event) => setQuery(event.target.value)} placeholder="Search product, code, category, or brand..." value={query} /></label><UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} /></header>
       {error && <div className="notice error">{error}</div>}
       <section className="metrics-grid"><article className="metric-card"><PackageSearch size={20} /><div><span>Total Products</span><strong>{products.length}</strong><small>In product catalog</small></div></article><article className="metric-card"><Tags size={20} /><div><span>Categories</span><strong>{new Set(products.map((product) => product.category)).size}</strong><small>Product groups</small></div></article></section>
       <section className="table-panel products-table-panel"><div className="panel-toolbar"><h2>Product catalog</h2><div className="table-actions"><button className="tool-button" onClick={() => openForm()} type="button"><Plus size={14} />Add product</button></div></div><div className="table-scroll"><table><thead><tr><th>Code</th><th>External SKU</th><th>Product</th><th>Category</th><th>Brand</th><th>Supplier</th><th>Price</th><th>Perishable</th><th>Actions</th></tr></thead><tbody>{visible.map((product) => <tr key={product.id}><td>{product.productCode}</td><td>{product.externalSku || "—"}</td><td>{product.name}</td><td>{product.category}</td><td>{product.brand || "—"}</td><td>{product.supplierCode || "—"}</td><td>{money(product.price)}</td><td>{product.perishable ? "Yes" : "No"}</td><td><div className="action-buttons"><button aria-label={`Edit ${product.productCode}`} className="icon-button" onClick={() => openForm(product)} type="button"><PencilLine size={14} /></button><button aria-label={`Delete ${product.productCode}`} className="reject-button" onClick={() => remove(product)} type="button"><Trash2 size={14} /></button></div></td></tr>)}</tbody></table></div>{loading && <div className="panel-empty">Loading products...</div>}{!loading && !visible.length && <div className="panel-empty">No products match your search.</div>}</section>

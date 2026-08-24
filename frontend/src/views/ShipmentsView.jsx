@@ -6,6 +6,7 @@ import {
   Clock3,
   PackageCheck,
   Plus,
+  ClipboardCheck,
   Search,
   Truck,
   X,
@@ -17,7 +18,7 @@ import {
   updateShipmentStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const STATUS_ACTIONS = {
   PLANNED: ["READY", "Mark ready", CircleCheckBig],
@@ -73,9 +74,11 @@ export default function ShipmentsView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [shipments, setShipments] = useState([]);
   const [approvedRecommendations, setApprovedRecommendations] = useState([]);
+  const [pendingRecommendations, setPendingRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -97,6 +100,7 @@ export default function ShipmentsView({
       const result = await loadShipmentPageData();
       setShipments(result.shipments);
       setApprovedRecommendations(result.approvedRecommendations);
+      setPendingRecommendations(result.pendingRecommendations);
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -106,7 +110,7 @@ export default function ShipmentsView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!planOpen) {
@@ -178,8 +182,11 @@ export default function ShipmentsView({
       ).length,
       transit: shipments.filter((item) => item.status === "DISPATCHED").length,
       delivered: shipments.filter((item) => item.status === "DELIVERED").length,
+      pendingApproval: pendingRecommendations.filter(
+        (item) => Number(item.recommendedShipment) > 0,
+      ).length,
     }),
-    [shipments],
+    [pendingRecommendations, shipments],
   );
 
   const resetPlan = () => {
@@ -280,7 +287,7 @@ export default function ShipmentsView({
             />
           </label>
 
-          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
@@ -324,6 +331,12 @@ export default function ShipmentsView({
             label="Delivered"
             note="Received by stores"
             value={summary.delivered}
+          />
+          <ShipmentMetric
+            icon={ClipboardCheck}
+            label="Awaiting Approval"
+            note="Recommendations ready to review"
+            value={summary.pendingApproval}
           />
         </section>
 
@@ -419,7 +432,6 @@ export default function ShipmentsView({
                               onClick={() =>
                                 changeStatus(shipment, action[0])
                               }
-                              title={`Next lifecycle step: ${action[1]}`}
                               type="button"
                             >
                               <ActionIcon aria-hidden="true" size={14} />
@@ -436,7 +448,7 @@ export default function ShipmentsView({
                               onClick={() =>
                                 changeStatus(shipment, "CANCELLED")
                               }
-                              title="Cancel this planned shipment"
+                              title="Cancel shipment"
                               type="button"
                             >
                               <Ban aria-hidden="true" size={14} />

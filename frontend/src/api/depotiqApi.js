@@ -6,58 +6,21 @@ function authorizationHeader() {
   return token ? { Authorization: `Basic ${token}` } : {};
 }
 
-function messageForStatus(status, apiMessage) {
-  if (status === 401) {
-    return "Your session has expired. Please sign in again.";
-  }
-
-  if (status === 403) {
-    return "You do not have permission to complete this action.";
-  }
-
-  if (status === 404) {
-    return apiMessage || "The requested record could not be found. Refresh the page and try again.";
-  }
-
-  if (status === 409) {
-    return apiMessage || "This change conflicts with existing data. Refresh the page and try again.";
-  }
-
-  if (status === 502 || status === 503 || status === 504) {
-    return "A connected service is currently unavailable. Please try again shortly.";
-  }
-
-  if (status >= 500) {
-    return "The server could not complete this request. Please try again shortly.";
-  }
-
-  return apiMessage || "We could not complete this request. Please review the information and try again.";
-}
-
 async function request(path, options = {}) {
-  let response;
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      headers: {
-        ...(options.body instanceof globalThis.FormData
-          ? {}
-          : { "Content-Type": "application/json" }),
-        ...authorizationHeader(),
-        ...options.headers,
-      },
-      ...options,
-    });
-  } catch {
-    throw new Error("Could not reach DepotIQ. Check that the backend is running, then try again.");
-  }
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    headers: {
+      ...(options.body instanceof globalThis.FormData
+        ? {}
+        : { "Content-Type": "application/json" }),
+      ...authorizationHeader(),
+      ...options.headers,
+    },
+    ...options,
+  });
 
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    const validationMessage = Object.values(body?.validationErrors ?? {})[0];
-    throw new Error(messageForStatus(
-      response.status,
-      validationMessage ?? body?.message,
-    ));
+    throw new Error(body?.message ?? `Request failed with status ${response.status}`);
   }
 
   if (response.status === 204) {
@@ -166,6 +129,7 @@ export function deleteProduct(id) { return request(`/api/products/${id}`, { meth
 
 export function loadForecasts() { return request("/api/forecasts"); }
 
+export function loadImportHistory() { return request("/api/imports"); }
 
 export function createStore(payload) {
   return request("/api/stores", {
@@ -196,10 +160,6 @@ export function syncMlRecommendations() {
   return request("/api/ml/sync", { method: "POST" });
 }
 
-export function loadMlStatus() {
-  return request("/api/ml/status");
-}
-
 export function overrideRecommendationAmount(id, recommendedShipment, reason) {
   return request(`/api/recommendations/${id}/override`, {
     method: "PATCH",
@@ -219,12 +179,13 @@ export function loadRecommendationHistory() {
 }
 
 export async function loadShipmentPageData() {
-  const [shipments, approvedRecommendations] = await Promise.all([
+  const [shipments, approvedRecommendations, pendingRecommendations] = await Promise.all([
     request("/api/shipments"),
     request("/api/recommendations?status=APPROVED"),
+    request("/api/recommendations?status=PENDING"),
   ]);
 
-  return { shipments, approvedRecommendations };
+  return { shipments, approvedRecommendations, pendingRecommendations };
 }
 
 export function createShipment(payload) {
@@ -249,12 +210,4 @@ export function importHistoricalSalesCsv(file) {
     method: "POST",
     body: formData,
   });
-}
-
-export function loadImportHistory() {
-  return request("/api/imports");
-}
-
-export function loadOperationalActivity() {
-  return request("/api/activity");
 }

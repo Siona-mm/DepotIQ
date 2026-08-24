@@ -36,10 +36,6 @@ public class UserSettingsService {
         return mapper.toResponse(findOrCreate(username));
     }
 
-    public boolean allowsRecommendationOverrides(String username) {
-        return Boolean.TRUE.equals(findOrCreate(username).getAllowOverrides());
-    }
-
     private UserSettings findOrCreate(String username) {
         return repository.findByUsername(username).orElseGet(() -> {
             UserSettings settings = new UserSettings();

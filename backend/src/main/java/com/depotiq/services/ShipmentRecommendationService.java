@@ -16,7 +16,6 @@ import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -32,8 +31,6 @@ public class ShipmentRecommendationService {
     private final ProductRepository productRepository;
     private final DemandForecastRepository demandForecastRepository;
     private final ShipmentRecommendationMapper shipmentRecommendationMapper;
-    private final UserSettingsService userSettingsService;
-    private final OperationalActivityService operationalActivityService;
 
     public ShipmentRecommendationService(
             ShipmentRecommendationRepository shipmentRecommendationRepository,
@@ -42,39 +39,11 @@ public class ShipmentRecommendationService {
             DemandForecastRepository demandForecastRepository,
             ShipmentRecommendationMapper shipmentRecommendationMapper
     ) {
-        this(shipmentRecommendationRepository, storeRepository, productRepository,
-                demandForecastRepository, shipmentRecommendationMapper, null, null);
-    }
-
-    public ShipmentRecommendationService(
-            ShipmentRecommendationRepository shipmentRecommendationRepository,
-            StoreRepository storeRepository,
-            ProductRepository productRepository,
-            DemandForecastRepository demandForecastRepository,
-            ShipmentRecommendationMapper shipmentRecommendationMapper,
-            UserSettingsService userSettingsService
-    ) {
-        this(shipmentRecommendationRepository, storeRepository, productRepository,
-                demandForecastRepository, shipmentRecommendationMapper, userSettingsService, null);
-    }
-
-    @Autowired
-    public ShipmentRecommendationService(
-            ShipmentRecommendationRepository shipmentRecommendationRepository,
-            StoreRepository storeRepository,
-            ProductRepository productRepository,
-            DemandForecastRepository demandForecastRepository,
-            ShipmentRecommendationMapper shipmentRecommendationMapper,
-            UserSettingsService userSettingsService,
-            OperationalActivityService operationalActivityService
-    ) {
         this.shipmentRecommendationRepository = shipmentRecommendationRepository;
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.demandForecastRepository = demandForecastRepository;
         this.shipmentRecommendationMapper = shipmentRecommendationMapper;
-        this.userSettingsService = userSettingsService;
-        this.operationalActivityService = operationalActivityService;
     }
 
     public List<ShipmentRecommendationResponse> getAllRecommendations() {
@@ -132,29 +101,13 @@ public class ShipmentRecommendationService {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
         recommendation.setStatus(request.getStatus());
 
-        ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
-        return shipmentRecommendationMapper.toResponse(saved);
+        return shipmentRecommendationMapper.toResponse(shipmentRecommendationRepository.save(recommendation));
     }
 
     public ShipmentRecommendationResponse overrideRecommendedShipment(
             Long id,
             OverrideRecommendationRequest request
     ) {
-        return overrideRecommendedShipment(id, request, null);
-    }
-
-    public ShipmentRecommendationResponse overrideRecommendedShipment(
-            Long id,
-            OverrideRecommendationRequest request,
-            String username
-    ) {
-        if (username != null && userSettingsService != null
-                && !userSettingsService.allowsRecommendationOverrides(username)) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Recommendation overrides are disabled in your settings"
-            );
-        }
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
 
         if (recommendation.getStatus() != RecommendationStatus.PENDING

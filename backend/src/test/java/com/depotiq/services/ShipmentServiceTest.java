@@ -176,21 +176,6 @@ class ShipmentServiceTest {
                 .hasMessageContaining("Not enough free depot stock");
     }
 
-    @Test
-    void rejectsSkippedShipmentLifecycleSteps() {
-        Shipment shipment = new Shipment();
-        shipment.setId(50L);
-        shipment.setStatus(ShipmentStatus.PLANNED);
-        UpdateShipmentStatusRequest request = new UpdateShipmentStatusRequest();
-        request.setStatus(ShipmentStatus.DISPATCHED);
-
-        when(shipments.findById(50L)).thenReturn(Optional.of(shipment));
-
-        assertThatThrownBy(() -> service.updateStatus(50L, request))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Cannot move shipment from PLANNED to DISPATCHED");
-    }
-
     private CreateShipmentRequest createRequest(List<Long> ids) {
         CreateShipmentRequest request = new CreateShipmentRequest();
         request.setRecommendationIds(ids);

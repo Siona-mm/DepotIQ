@@ -12,11 +12,10 @@ import {
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   loadRecommendationHistory,
-  loadOperationalActivity,
   updateRecommendationStatus,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const PAGE_SIZE = 12;
 const ACTIVE_STATUSES = new Set([
@@ -82,9 +81,9 @@ export default function HistoryView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [recommendations, setRecommendations] = useState([]);
-  const [activity, setActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -97,9 +96,7 @@ export default function HistoryView({
   const load = useCallback(async () => {
     setError("");
     try {
-      const [history, activityHistory] = await Promise.all([loadRecommendationHistory(), loadOperationalActivity()]);
-      setRecommendations(history);
-      setActivity(activityHistory);
+      setRecommendations(await loadRecommendationHistory());
     } catch (requestError) {
       setError(requestError.message);
     } finally {
@@ -109,7 +106,7 @@ export default function HistoryView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!undoItem) {
@@ -240,7 +237,11 @@ export default function HistoryView({
               value={query}
             />
           </label>
-          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+          <UserAvatar
+            onClick={() => onNavigate("Profile")}
+            profile={profile}
+            user={user}
+          />
         </header>
 
         <div className="page-heading">
@@ -261,11 +262,6 @@ export default function HistoryView({
           <Metric icon={Clock3} label="Approved" note="Waiting for transport planning" value={summary.approved} />
           <Metric icon={Truck} label="In Transport" note="Ready, assigned, or shipped" value={summary.transport} />
           <Metric icon={CheckCircle2} label="Closed" note="Delivered, rejected, or cancelled" value={summary.closed} />
-        </section>
-
-        <section className="table-panel history-table-panel">
-          <div className="panel-toolbar"><div><h2>Operational activity</h2><span className="panel-subtitle">Recent actions across recommendations and shipments</span></div></div>
-          <div className="table-scroll"><table><thead><tr><th>Action</th><th>Reference</th><th>By</th><th>When</th></tr></thead><tbody>{activity.slice(0, 12).map((item) => <tr key={item.id}><td>{item.activityType.replaceAll("_", " ")}</td><td><strong>{item.referenceLabel}</strong><br /><small>{item.detail}</small></td><td>{item.actor}</td><td>{new Date(item.createdAt).toLocaleString()}</td></tr>)}</tbody></table></div>{!activity.length && <div className="panel-empty">No operational activity has been recorded yet.</div>}
         </section>
 
         <section className="table-panel history-table-panel">

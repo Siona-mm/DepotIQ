@@ -1,6 +1,7 @@
 import {
   Camera,
   KeyRound,
+  LogOut,
   Save,
   Settings,
   ShieldCheck,
@@ -9,7 +10,7 @@ import {
 import { useRef, useState } from "react";
 import { updateCredentials, updateProfile } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 const EMPTY_PROFILE = {
   displayName: "",
@@ -151,7 +152,7 @@ export default function ProfileView({
         <header className="topbar">
           <h1>Profile</h1>
           <div />
-          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+          <UserAvatar profile={profile} user={user} />
         </header>
 
         <div className="page-heading">
@@ -358,6 +359,14 @@ export default function ProfileView({
                 >
                   <Settings aria-hidden="true" size={15} />
                   Workspace settings
+                </button>
+                <button
+                  className="secondary-button danger-text"
+                  onClick={onSignOut}
+                  type="button"
+                >
+                  <LogOut aria-hidden="true" size={15} />
+                  Sign out
                 </button>
               </div>
             </section>

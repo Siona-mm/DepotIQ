@@ -14,7 +14,7 @@ import {
   updateDepotInventory,
 } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
-import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import UserAvatar from "../components/UserAvatar.jsx";
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
@@ -77,6 +77,7 @@ export default function DepotInventoryView({
   permissions,
   profile,
   user,
+  dataRevision = 0,
 }) {
   const [inventory, setInventory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +104,7 @@ export default function DepotInventoryView({
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, [dataRevision, load]);
 
   useEffect(() => {
     if (!editItem) {
@@ -230,7 +231,7 @@ export default function DepotInventoryView({
               value={query}
             />
           </label>
-          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
+          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
         </header>
 
         {(error || message) && (

@@ -3,9 +3,7 @@ package com.depotiq.services;
 import com.depotiq.dtos.ml.MlHealthResponse;
 import com.depotiq.dtos.ml.MlDataSyncRequest;
 import com.depotiq.dtos.ml.MlDataSyncResponse;
-import com.depotiq.dtos.ml.MlModelInfoResponse;
 import com.depotiq.dtos.ml.MlRecommendationBatchResponse;
-import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -58,23 +56,6 @@ public class MlServiceClient {
             return response;
         } catch (RestClientException exception) {
             throw unavailable("Could not retrieve ML recommendations", exception);
-        }
-    }
-
-    public List<MlModelInfoResponse> getModels() {
-        try {
-            List<MlModelInfoResponse> response = restClient.get()
-                    .uri("/recommendations/models")
-                    .retrieve()
-                    .body(new org.springframework.core.ParameterizedTypeReference<>() {});
-
-            if (response == null) {
-                throw unavailable("ML service returned an empty model response", null);
-            }
-
-            return response;
-        } catch (RestClientException exception) {
-            throw unavailable("Could not retrieve ML model information", exception);
         }
     }
 
