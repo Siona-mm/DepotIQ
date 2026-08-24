@@ -8,6 +8,14 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  PolarAngleAxis,
+  PolarGrid,
+  Radar,
+  RadarChart,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 import { loadDashboardData } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 import RetryNotice from "../components/RetryNotice.jsx";
@@ -194,6 +202,16 @@ export default function ReportsView({
     1,
   );
 
+  const radarData = useMemo(
+    () =>
+      categorySummary.slice(0, 6).map((item) => ({
+        category: item.category,
+        demand: Math.round(item.demand),
+        forecasts: item.forecasts,
+      })),
+    [categorySummary],
+  );
+
   return (
     <div className={collapsed ? "app-shell sidebar-collapsed" : "app-shell"}>
       <AppSidebar
@@ -262,6 +280,66 @@ export default function ReportsView({
             <span>Average confidence range</span>
             <strong>+/- {formatNumber(summary.averageUncertainty / 2)} units</strong>
           </div>
+        </section>
+
+        <section className="table-panel demand-radar-panel">
+          <div className="panel-toolbar">
+            <div>
+              <h2>Category demand profile</h2>
+              <span className="panel-subtitle">
+                Highest-demand categories in the selected planning view
+              </span>
+            </div>
+            <span className="radar-total-label">
+              {formatNumber(summary.totalDemand)} units planned
+            </span>
+          </div>
+
+          {radarData.length > 0 ? (
+            <div className="demand-radar-content">
+              <div className="demand-radar-chart" aria-label="Demand by category radar chart">
+                <ResponsiveContainer height="100%" width="100%">
+                  <RadarChart cx="50%" cy="50%" data={radarData} outerRadius="69%">
+                    <PolarGrid stroke="#d1d5db" />
+                    <PolarAngleAxis
+                      dataKey="category"
+                      tick={{ fill: "#6b7280", fontSize: 11 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        border: "1px solid #e5e7eb",
+                        borderRadius: "6px",
+                        boxShadow: "0 8px 24px rgba(17, 17, 17, 0.1)",
+                        color: "#111111",
+                        fontSize: "12px",
+                      }}
+                      formatter={(value) => [`${formatNumber(value)} units`, "Planned demand"]}
+                    />
+                    <Radar
+                      dataKey="demand"
+                      fill="#111111"
+                      fillOpacity={0.16}
+                      name="Planned demand"
+                      stroke="#111111"
+                      strokeWidth={2}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="demand-radar-list">
+                {radarData.map((item) => (
+                  <div key={item.category}>
+                    <span>{item.category}</span>
+                    <strong>{formatNumber(item.demand)}</strong>
+                    <small>{formatNumber(item.forecasts)} forecasts</small>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="panel-empty">No forecasts match this report.</div>
+          )}
         </section>
 
         <section className="report-grid">

@@ -2846,6 +2846,82 @@ select:focus-visible {
   font-size: 13px;
 }
 
+.demand-radar-panel {
+  margin-bottom: 17px;
+}
+
+.demand-radar-panel .panel-toolbar {
+  min-height: 64px;
+  padding-inline: 16px;
+}
+
+.demand-radar-panel .panel-toolbar > div {
+  display: grid;
+  gap: 3px;
+}
+
+.radar-total-label {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.demand-radar-content {
+  display: grid;
+  grid-template-columns: minmax(340px, 1.1fr) minmax(250px, 0.9fr);
+  min-height: 310px;
+}
+
+.demand-radar-chart {
+  min-height: 310px;
+  padding: 10px 12px 8px;
+}
+
+.demand-radar-chart .recharts-text,
+.demand-radar-chart .recharts-tooltip-wrapper {
+  font-family: "Geist Variable", Geist, sans-serif;
+}
+
+.demand-radar-list {
+  display: grid;
+  align-content: center;
+  border-left: 1px solid #e5e7eb;
+}
+
+.demand-radar-list > div {
+  min-height: 50px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-content: center;
+  column-gap: 12px;
+  padding: 8px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.demand-radar-list > div:last-child {
+  border-bottom: 0;
+}
+
+.demand-radar-list span,
+.demand-radar-list small {
+  min-width: 0;
+  overflow: hidden;
+  color: #6b7280;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.demand-radar-list strong {
+  color: #111111;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.demand-radar-list small {
+  grid-column: 1 / -1;
+  margin-top: 2px;
+}
+
 .report-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.9fr);
@@ -3417,6 +3493,15 @@ select:focus-visible {
   .report-grid,
   .settings-layout {
     grid-template-columns: 1fr;
+  }
+
+  .demand-radar-content {
+    grid-template-columns: 1fr;
+  }
+
+  .demand-radar-list {
+    border-top: 1px solid #e5e7eb;
+    border-left: 0;
   }
 
   .settings-section,
