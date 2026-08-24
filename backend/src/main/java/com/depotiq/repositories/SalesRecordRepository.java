@@ -8,6 +8,10 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface SalesRecordRepository extends JpaRepository<SalesRecord, Long> {
+    Optional<SalesRecord> findTopByOrderBySaleDateDesc();
+
+    List<SalesRecord> findBySaleDateGreaterThanEqualOrderBySaleDateAsc(LocalDate saleDate);
+
     List<SalesRecord> findByStoreIdAndProductIdOrderBySaleDateAsc(Long storeId, Long productId);
 
     Optional<SalesRecord> findByStoreIdAndProductIdAndSaleDate(
