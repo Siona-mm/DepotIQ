@@ -9,6 +9,8 @@ public record HistoricalSalesImportResponse(
         int skippedRows,
         int createdStores,
         int createdProducts,
-        List<String> errors
+        List<String> errors,
+        List<String> importedInventoryKeys,
+        boolean planningRefreshRequested
 ) {
 }
