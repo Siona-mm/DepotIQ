@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadAuthenticatedUser, loadImportHistory, loadProfile, signIn, signOut } from "./api/depotiqApi.js";
+import {
+  loadAuthenticatedUser,
+  loadImportHistory,
+  loadProfile,
+  signIn,
+  signOut,
+} from "./api/depotiqApi.js";
 import { permissionsFor } from "./auth/permissions.js";
 import DashboardView from "./views/DashboardView.jsx";
 import DepotInventoryView from "./views/DepotInventoryView.jsx";
@@ -35,7 +41,9 @@ function pageFromHash() {
 
 function loadRecentImportKeys() {
   try {
-    const storedKeys = globalThis.sessionStorage.getItem("depotiq-recent-import-keys");
+    const storedKeys = globalThis.sessionStorage.getItem(
+      "depotiq-recent-import-keys",
+    );
     globalThis.sessionStorage.removeItem("depotiq-recent-import-keys");
     return storedKeys ? JSON.parse(storedKeys) : [];
   } catch {
@@ -48,7 +56,9 @@ export default function App() {
   const [profile, setProfile] = useState(null);
   const [page, setPage] = useState(pageFromHash);
   const [collapsed, setCollapsed] = useState(false);
-  const [recentImportKeys, setRecentImportKeys] = useState(loadRecentImportKeys);
+  const [recentImportKeys, setRecentImportKeys] = useState(
+    loadRecentImportKeys,
+  );
   const [lastImport, setLastImport] = useState(null);
   const [operationalDataRevision, setOperationalDataRevision] = useState(0);
   const latestImportIdRef = useRef(null);
@@ -101,6 +111,7 @@ export default function App() {
     if (!user) return undefined;
 
     let cancelled = false;
+
     const refreshAfterAirflowImport = async () => {
       try {
         const [latestImport] = await loadImportHistory();
@@ -113,14 +124,16 @@ export default function App() {
           globalThis.location.reload();
           return;
         }
+
         latestImportIdRef.current = latestImport.id;
       } catch {
-        // Import history is supplementary; an unavailable endpoint must not log the user out.
+        // Import history is supplementary.
       }
     };
 
     refreshAfterAirflowImport();
     const intervalId = globalThis.setInterval(refreshAfterAirflowImport, 10_000);
+
     return () => {
       cancelled = true;
       globalThis.clearInterval(intervalId);
@@ -129,11 +142,14 @@ export default function App() {
 
   const permissions = permissionsFor(user);
 
-  const handleAction = useCallback((action) => {
-    if (action === "upload" && permissions.canImportData) {
-      navigate("Upload Data");
-    }
-  }, [navigate, permissions.canImportData]);
+  const handleAction = useCallback(
+    (action) => {
+      if (action === "upload" && permissions.canImportData) {
+        navigate("Upload Data");
+      }
+    },
+    [navigate, permissions.canImportData],
+  );
 
   const handleSignIn = useCallback(async (username, password) => {
     const authenticatedUser = await signIn(username, password);
@@ -150,7 +166,9 @@ export default function App() {
   }, []);
 
   const dismissImportedRow = useCallback((key) => {
-    setRecentImportKeys((current) => current.filter((item) => item !== key));
+    setRecentImportKeys((current) =>
+      current.filter((item) => item !== key),
+    );
   }, []);
 
   const handleImportCompleted = useCallback(({ keys, result }) => {
@@ -195,6 +213,7 @@ export default function App() {
     Forecasts: permissions.canViewForecasts,
     "Upload Data": permissions.canImportData,
   };
+
   const activePage = protectedPages[page] === false ? "Dashboard" : page;
 
   return (

@@ -20,11 +20,16 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
-import UserAvatar from "../components/UserAvatar.jsx";
+import MlStatusPanel from "../components/MlStatusPanel.jsx";
+import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
+import RetryNotice from "../components/RetryNotice.jsx";
+import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 import {
   loadDashboardData,
+  loadSettings,
   importHistoricalSalesCsv,
   overrideRecommendationAmount,
+  loadMlStatus,
   syncMlRecommendations,
   updateRecommendationStatus,
 } from "../api/depotiqApi.js";
@@ -236,6 +241,9 @@ export default function DashboardView({
   user,
 }) {
   const [data, setData] = useState(EMPTY_DATA);
+  const [, setWorkflowSettings] = useState({ allowOverrides: true });
+  const [mlStatus, setMlStatus] = useState(null);
+  const [mlStatusLoading, setMlStatusLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState("");
@@ -248,6 +256,7 @@ export default function DashboardView({
   const [sortBy, setSortBy] = useState("UPDATED_DESC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
+  const [insightItem, setInsightItem] = useState(null);
   const [overrideAmount, setOverrideAmount] = useState("");
   const [overrideReason, setOverrideReason] = useState("");
   const [savingOverride, setSavingOverride] = useState(false);
@@ -263,13 +272,32 @@ export default function DashboardView({
 
   const load = useCallback(async () => {
     setError("");
+    setLoading(true);
+    setMlStatusLoading(true);
 
     try {
-      setData(await loadDashboardData());
+      const [dashboardResult, statusResult, settingsResult] = await Promise.allSettled([
+        loadDashboardData(),
+        loadMlStatus(),
+        loadSettings(),
+      ]);
+
+      if (dashboardResult.status === "rejected") {
+        throw dashboardResult.reason;
+      }
+
+      setData(dashboardResult.value);
+      setMlStatus(
+        statusResult.status === "fulfilled" ? statusResult.value : null,
+      );
+      if (settingsResult.status === "fulfilled") {
+        setWorkflowSettings(settingsResult.value);
+      }
     } catch (requestError) {
       setError(requestError.message);
     } finally {
       setLoading(false);
+      setMlStatusLoading(false);
     }
   }, []);
 
@@ -626,14 +654,14 @@ export default function DashboardView({
             />
           </label>
 
-          <UserAvatar onClick={() => onNavigate("Profile")} profile={profile} user={user} />
+          <HeaderAccountControls onNavigate={onNavigate} onSignOut={onSignOut} profile={profile} user={user} />
         </header>
 
-        {(error || syncMessage) && (
-          <div className={error ? "notice error" : "notice"} role="status">
-            {error || syncMessage}
-          </div>
-        )}
+        {error ? (
+          <RetryNotice message={error} onRetry={load} />
+        ) : syncMessage ? (
+          <div className="notice" role="status">{syncMessage}</div>
+        ) : null}
 
         <section className="metrics-grid" aria-label="Depot summary">
           <Metric
@@ -661,6 +689,12 @@ export default function DashboardView({
             value={summary.stores}
           />
         </section>
+
+        <MlStatusPanel
+          loading={mlStatusLoading}
+          onRetry={load}
+          status={mlStatus}
+        />
 
         <section className="dashboard-grid">
           <section className="table-panel" id="shipment-recommendations">
@@ -1165,6 +1199,7 @@ export default function DashboardView({
           </section>
         </div>
       )}
+      {insightItem && <RecommendationInsightsDialog depotAvailableUnits={depotInventoryByProduct.get(insightItem.productId)} onClose={() => setInsightItem(null)} recommendation={insightItem} />}
       {overrideItem && (
         <div
           className="modal-backdrop"

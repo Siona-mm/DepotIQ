@@ -7,6 +7,8 @@ import com.depotiq.dtos.ml.MlSalesRecordPayload;
 import com.depotiq.dtos.ml.MlStoreInventoryPayload;
 import com.depotiq.dtos.ml.MlRecommendationPayload;
 import com.depotiq.dtos.ml.MlSyncResponse;
+import com.depotiq.dtos.ml.MlStatusResponse;
+import com.depotiq.dtos.ml.MlModelInfoResponse;
 import com.depotiq.models.DemandForecast;
 import com.depotiq.models.Product;
 import com.depotiq.models.RecommendationPriority;
@@ -19,12 +21,16 @@ import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
 import com.depotiq.repositories.SalesRecordRepository;
 import com.depotiq.repositories.StoreInventoryRepository;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.List;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @Transactional
@@ -115,6 +121,57 @@ public class MlIntegrationService {
         return mlServiceClient.syncData(request);
     }
 
+    @Transactional(readOnly = true)
+    public MlStatusResponse getStatus() {
+        List<DemandForecast> forecasts = demandForecastRepository.findAll();
+        List<ShipmentRecommendation> recommendations = recommendationRepository.findAll();
+
+        boolean serviceAvailable = true;
+        String serviceStatus = "ok";
+        List<MlModelInfoResponse> models = List.of();
+        try {
+            serviceStatus = mlServiceClient.getHealth().status();
+            models = mlServiceClient.getModels();
+        } catch (ResponseStatusException exception) {
+            serviceAvailable = false;
+            serviceStatus = "unavailable";
+        }
+
+        return new MlStatusResponse(
+                serviceAvailable,
+                serviceStatus,
+                models,
+                forecasts.size(),
+                recommendations.size(),
+                forecasts.stream().map(forecast -> forecast.getStore().getId()).distinct().count(),
+                forecasts.stream().map(forecast -> forecast.getProduct().getId()).distinct().count(),
+                averageMae(forecasts),
+                forecasts.stream()
+                        .map(DemandForecast::getForecastDate)
+                        .max(Comparator.naturalOrder())
+                        .orElse(null),
+                forecasts.stream()
+                        .map(DemandForecast::getUpdatedAt)
+                        .filter(java.util.Objects::nonNull)
+                        .max(Comparator.naturalOrder())
+                        .orElse(null)
+        );
+    }
+
+    private BigDecimal averageMae(List<DemandForecast> forecasts) {
+        List<BigDecimal> values = forecasts.stream()
+                .map(DemandForecast::getModelMae)
+                .filter(java.util.Objects::nonNull)
+                .toList();
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        BigDecimal total = values.stream().reduce(BigDecimal.ZERO, BigDecimal::add);
+        return total.divide(BigDecimal.valueOf(values.size()), MathContext.DECIMAL64);
+    }
+
     private DemandForecast upsertForecast(
             MlRecommendationPayload payload,
             Store store,
@@ -157,9 +214,6 @@ public class MlIntegrationService {
                         payload.horizonDays()
                 )
                 .orElseGet(ShipmentRecommendation::new);
-        boolean isNewRecommendation = recommendation.getId() == null;
-        boolean canRefreshSuggestedShipment = isNewRecommendation
-                || recommendation.getStatus() == RecommendationStatus.PENDING;
 
         recommendation.setStore(store);
         recommendation.setProduct(product);
@@ -173,14 +227,11 @@ public class MlIntegrationService {
         recommendation.setIncomingUnits(payload.incomingUnits());
         recommendation.setSafetyStock(payload.safetyStock());
         recommendation.setRequiredStock(payload.requiredStock());
+        recommendation.setRecommendedShipment(payload.recommendedShipment());
+        recommendation.setPriority(parsePriority(payload.priority()));
         recommendation.setExplanation(payload.explanation());
 
-        if (canRefreshSuggestedShipment) {
-            recommendation.setRecommendedShipment(payload.recommendedShipment());
-            recommendation.setPriority(parsePriority(payload.priority()));
-        }
-
-        if (isNewRecommendation) {
+        if (recommendation.getId() == null) {
             recommendation.setStatus(RecommendationStatus.PENDING);
         }
 

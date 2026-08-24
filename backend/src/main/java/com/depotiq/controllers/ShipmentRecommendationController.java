@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 
@@ -76,9 +77,10 @@ public class ShipmentRecommendationController {
     @PatchMapping("/{id}/override")
     public ShipmentRecommendationResponse overrideRecommendedShipment(
             @PathVariable Long id,
-            @Valid @RequestBody OverrideRecommendationRequest request
+            @Valid @RequestBody OverrideRecommendationRequest request,
+            Authentication authentication
     ) {
-        return shipmentRecommendationService.overrideRecommendedShipment(id, request);
+        return shipmentRecommendationService.overrideRecommendedShipment(id, request, authentication.getName());
     }
 
     @DeleteMapping("/{id}")

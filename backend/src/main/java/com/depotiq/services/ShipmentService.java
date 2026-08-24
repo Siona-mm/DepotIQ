@@ -36,6 +36,7 @@ public class ShipmentService {
     private final StoreInventoryRepository storeInventoryRepository;
     private final ShipmentMapper shipmentMapper;
     private final BusinessCodeGenerator businessCodeGenerator;
+    private final OperationalActivityService activityService;
 
     public ShipmentService(
             ShipmentRepository shipmentRepository,
@@ -46,6 +47,20 @@ public class ShipmentService {
             ShipmentMapper shipmentMapper,
             BusinessCodeGenerator businessCodeGenerator
     ) {
+        this(shipmentRepository, shipmentItemRepository, recommendationRepository, depotInventoryRepository, storeInventoryRepository, shipmentMapper, businessCodeGenerator, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ShipmentService(
+            ShipmentRepository shipmentRepository,
+            ShipmentItemRepository shipmentItemRepository,
+            ShipmentRecommendationRepository recommendationRepository,
+            DepotInventoryRepository depotInventoryRepository,
+            StoreInventoryRepository storeInventoryRepository,
+            ShipmentMapper shipmentMapper,
+            BusinessCodeGenerator businessCodeGenerator,
+            OperationalActivityService activityService
+    ) {
         this.shipmentRepository = shipmentRepository;
         this.shipmentItemRepository = shipmentItemRepository;
         this.recommendationRepository = recommendationRepository;
@@ -53,6 +68,7 @@ public class ShipmentService {
         this.storeInventoryRepository = storeInventoryRepository;
         this.shipmentMapper = shipmentMapper;
         this.businessCodeGenerator = businessCodeGenerator;
+        this.activityService = activityService;
     }
 
     @Transactional(readOnly = true)
@@ -130,7 +146,9 @@ public class ShipmentService {
         }
 
         recommendationRepository.saveAll(recommendations);
-        return shipmentMapper.toResponse(shipmentRepository.save(shipment));
+        Shipment saved = shipmentRepository.save(shipment);
+        recordActivity(saved, "SHIPMENT_PLANNED", "Shipment planned from approved recommendations");
+        return shipmentMapper.toResponse(saved);
     }
 
     public ShipmentResponse updateStatus(
@@ -158,7 +176,9 @@ public class ShipmentService {
             );
         }
 
-        return shipmentMapper.toResponse(shipmentRepository.save(shipment));
+        Shipment saved = shipmentRepository.save(shipment);
+        recordActivity(saved, "SHIPMENT_" + target.name(), "Shipment status changed to " + target.name());
+        return shipmentMapper.toResponse(saved);
     }
 
     private void validateDates(CreateShipmentRequest request) {
@@ -388,5 +408,9 @@ public class ShipmentService {
             return null;
         }
         return notes.trim();
+    }
+
+    private void recordActivity(Shipment shipment, String type, String detail) {
+        if (activityService != null) activityService.record(type, "System", "SHIPMENT", shipment.getId(), shipment.getShipmentNumber(), detail);
     }
 }
