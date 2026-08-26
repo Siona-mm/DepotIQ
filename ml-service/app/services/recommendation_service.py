@@ -113,7 +113,7 @@ def build_synced_recommendations(synced_data) -> tuple[RecommendationResponse, .
             predictedDemand=predicted_demand,
             confidenceLower=max(0, predicted_demand - model_mae),
             confidenceUpper=predicted_demand + model_mae,
-            modelName="synced_sales_average",
+            modelName="synced_sales_30_day_baseline",
             modelVersion="1.0",
             modelMae=float(model_mae),
             safetyStock=safety_stock,
@@ -121,8 +121,9 @@ def build_synced_recommendations(synced_data) -> tuple[RecommendationResponse, .
             recommendedShipment=recommended_shipment,
             priority=priority,
             explanation=(
-                "7-day demand estimate based on the latest synced sales records "
-                "with a 15% safety-stock allowance."
+                "7-day baseline estimate based on the latest 30 synced sales "
+                "records with a 15% safety-stock allowance. This fallback is "
+                "used when a compatible trained model artifact is unavailable."
             ),
         ))
 

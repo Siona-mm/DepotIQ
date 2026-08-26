@@ -21,6 +21,7 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,7 @@ public class HistoricalSalesImportService {
     };
     private static final String DEFAULT_SOURCE_SYSTEM = "CSV_UPLOAD";
     private static final int BATCH_SIZE = 1_000;
+    private static final int MAX_REPORTED_ERRORS = 100;
 
     private static final String SALES_UPSERT_SQL = """
             INSERT INTO sales_records (
@@ -103,6 +105,7 @@ public class HistoricalSalesImportService {
         if (file == null || file.isEmpty()) {
             throw new IllegalArgumentException("A non-empty CSV file is required.");
         }
+        validateFileName(file.getOriginalFilename());
 
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)
@@ -120,7 +123,9 @@ public class HistoricalSalesImportService {
             int updated = 0;
             int createdStores = 0;
             int createdProducts = 0;
+            int skipped = 0;
             List<String> errors = new ArrayList<>();
+            Set<String> importedInventoryKeys = new LinkedHashSet<>();
             List<ImportedRow> pendingRows = new ArrayList<>(BATCH_SIZE);
             Map<InventoryKey, ImportedRow> latestInventoryRows = new HashMap<>();
             Map<String, Store> storesByCode = loadStores();
@@ -146,11 +151,12 @@ public class HistoricalSalesImportService {
                         }
                         createdStores += result.storeCreated() ? 1 : 0;
                         createdProducts += result.productCreated() ? 1 : 0;
+                        importedInventoryKeys.add(result.inventoryKey());
                         pendingRows.add(result.row());
                         latestInventoryRows.merge(
                                 result.row().inventoryKey(),
                                 result.row(),
-                                (current, candidate) -> candidate.saleDate().isAfter(current.saleDate())
+                                (current, candidate) -> !candidate.saleDate().isBefore(current.saleDate())
                                         ? candidate
                                         : current
                         );
@@ -159,7 +165,10 @@ public class HistoricalSalesImportService {
                             pendingRows.clear();
                         }
                     } catch (IllegalArgumentException exception) {
-                        errors.add("Line " + (csvRecord.getRecordNumber() + 1) + ": " + exception.getMessage());
+                        skipped++;
+                        if (errors.size() < MAX_REPORTED_ERRORS) {
+                            errors.add("Line " + (csvRecord.getRecordNumber() + 1) + ": " + exception.getMessage());
+                        }
                     }
                 }
             }
@@ -170,13 +179,17 @@ public class HistoricalSalesImportService {
                     processed,
                     created,
                     updated,
-                    errors.size(),
+                    skipped,
                     createdStores,
                     createdProducts,
-                    List.copyOf(errors)
+                    List.copyOf(errors),
+                    List.copyOf(importedInventoryKeys),
+                    !importedInventoryKeys.isEmpty()
             );
             saveAuditLog(file.getOriginalFilename(), response);
-            eventPublisher.publishEvent(new OperationalDataImportedEvent(importedAt));
+            if (response.planningRefreshRequested()) {
+                eventPublisher.publishEvent(new OperationalDataImportedEvent(importedAt));
+            }
             return response;
         } catch (IOException exception) {
             throw new IllegalArgumentException("The CSV file could not be read.", exception);
@@ -204,7 +217,7 @@ public class HistoricalSalesImportService {
 
     private void saveAuditLog(String fileName, HistoricalSalesImportResponse response) {
         ImportAuditLog auditLog = new ImportAuditLog();
-        auditLog.setFileName(fileName == null || fileName.isBlank() ? "unnamed.csv" : fileName);
+        auditLog.setFileName(safeFileName(fileName));
         auditLog.setImportType("HISTORICAL_SALES");
         auditLog.setProcessedRows(response.processedRows());
         auditLog.setCreatedRecords(response.createdRecords());
@@ -271,7 +284,26 @@ public class HistoricalSalesImportService {
                 parseNonNegativeInteger(value(row, "Units Ordered"), "Units Ordered")
         );
 
-        return new ImportRowResult(importedRow, storeResult.created(), productResult.created());
+        return new ImportRowResult(
+                importedRow,
+                storeResult.created(),
+                productResult.created(),
+                storeCode + "::" + productCode
+        );
+    }
+
+    private void validateFileName(String fileName) {
+        if (!safeFileName(fileName).toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
+            throw new IllegalArgumentException("Only CSV files are supported.");
+        }
+    }
+
+    private String safeFileName(String fileName) {
+        if (fileName == null || fileName.isBlank()) {
+            return "unnamed.csv";
+        }
+        String normalized = fileName.replace('\\', '/');
+        return normalized.substring(normalized.lastIndexOf('/') + 1);
     }
 
     private void writeSalesBatch(List<ImportedRow> rows) {
@@ -521,7 +553,8 @@ public class HistoricalSalesImportService {
     private record ImportRowResult(
             ImportedRow row,
             boolean storeCreated,
-            boolean productCreated
+            boolean productCreated,
+            String inventoryKey
     ) {
     }
 }

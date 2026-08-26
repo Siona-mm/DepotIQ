@@ -3,7 +3,6 @@ package com.depotiq.controllers;
 import com.depotiq.dtos.ml.MlHealthResponse;
 import com.depotiq.dtos.ml.MlDataSyncResponse;
 import com.depotiq.dtos.ml.MlSyncResponse;
-import com.depotiq.dtos.ml.MlStatusResponse;
 import com.depotiq.services.MlIntegrationService;
 import com.depotiq.services.MlServiceClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,11 +27,6 @@ public class MlIntegrationController {
     @GetMapping("/health")
     public MlHealthResponse getHealth() {
         return mlServiceClient.getHealth();
-    }
-
-    @GetMapping("/status")
-    public MlStatusResponse getStatus() {
-        return mlIntegrationService.getStatus();
     }
 
     @PostMapping("/sync")

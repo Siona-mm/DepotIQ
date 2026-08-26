@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import com.depotiq.dtos.importing.HistoricalSalesImportResponse;
@@ -71,6 +72,8 @@ class HistoricalSalesImportServiceTest {
         verify(eventPublisher).publishEvent(any(OperationalDataImportedEvent.class));
         assertThat(response.createdRecords()).isEqualTo(1);
         assertThat(response.skippedRows()).isZero();
+        assertThat(response.importedInventoryKeys()).containsExactly("S001::P0001");
+        assertThat(response.planningRefreshRequested()).isTrue();
     }
 
     @Test
@@ -120,6 +123,39 @@ class HistoricalSalesImportServiceTest {
 
         assertThat(response.createdRecords()).isEqualTo(1);
         verify(jdbcTemplate, times(2)).batchUpdate(anyString(), anyList());
+    }
+
+    @Test
+    void rejectsNonCsvFilesBeforeReadingRows() {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "sales.txt",
+                "text/plain",
+                "not,csv".getBytes()
+        );
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.importCsv(file))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Only CSV files are supported.");
+
+        verify(eventPublisher, never()).publishEvent(any());
+    }
+
+    @Test
+    void doesNotRefreshPlanningWhenEveryRowIsInvalid() {
+        when(storeRepository.findAll()).thenReturn(List.of());
+        when(productRepository.findAll()).thenReturn(List.of());
+        mockExistingSalesKeys();
+
+        HistoricalSalesImportResponse response = service.importCsv(csvFile(
+                "bad-date,S001,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"
+        ));
+
+        assertThat(response.skippedRows()).isEqualTo(1);
+        assertThat(response.importedInventoryKeys()).isEmpty();
+        assertThat(response.planningRefreshRequested()).isFalse();
+        verify(eventPublisher, never()).publishEvent(any());
+        verify(jdbcTemplate, never()).batchUpdate(anyString(), anyList());
     }
 
     private MockMultipartFile csvFile(String row) {

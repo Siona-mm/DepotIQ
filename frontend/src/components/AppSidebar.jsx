@@ -5,7 +5,6 @@ import {
   FileChartColumn,
   History,
   LayoutDashboard,
-  PackageOpen,
   PackageSearch,
   Settings,
   Store,
@@ -39,7 +38,7 @@ export default function AppSidebar({
   return (
     <aside className={collapsed ? "sidebar collapsed" : "sidebar"}>
       <div className="brand">
-        <PackageOpen aria-hidden="true" size={29} strokeWidth={1.8} />
+        <img alt="" aria-hidden="true" src="/depotiq-mark.png" style={{ width: 30, height: 30, objectFit: "contain" }} />
         <span>DepotIQ</span>
       </div>
 

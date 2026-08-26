@@ -1,4 +1,4 @@
-import { LockKeyhole, PackageOpen } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import { useState } from "react";
 
 export default function LoginView({ onSignIn }) {
@@ -22,7 +22,7 @@ export default function LoginView({ onSignIn }) {
 
   return <main className="login-page">
     <section className="login-card" aria-labelledby="login-title">
-      <div className="login-brand"><PackageOpen size={28} /><span>DepotIQ</span></div>
+      <div className="login-brand"><img alt="" aria-hidden="true" src="/depotiq-mark.png" style={{ width: 29, height: 29, objectFit: "contain" }} /><span>DepotIQ</span></div>
       <div className="login-heading"><LockKeyhole size={19} /><h1 id="login-title">Sign in</h1><p>Use your assigned DepotIQ account to continue.</p></div>
       {error && <div className="notice error" role="alert">{error}</div>}
       <form onSubmit={submit}>
