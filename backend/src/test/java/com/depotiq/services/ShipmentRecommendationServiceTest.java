@@ -1,11 +1,13 @@
 package com.depotiq.services;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.depotiq.dtos.recommendation.OverrideRecommendationRequest;
+import com.depotiq.dtos.recommendation.UpdateRecommendationStatusRequest;
 import com.depotiq.dtos.recommendation.ShipmentRecommendationResponse;
 import com.depotiq.mappers.ShipmentRecommendationMapper;
 import com.depotiq.models.RecommendationStatus;
@@ -16,6 +18,7 @@ import com.depotiq.repositories.ShipmentRecommendationRepository;
 import com.depotiq.repositories.StoreRepository;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.server.ResponseStatusException;
 
 class ShipmentRecommendationServiceTest {
 
@@ -65,5 +68,35 @@ class ShipmentRecommendationServiceTest {
         assertThat(recommendation.getOverriddenAt()).isNotNull();
         assertThat(recommendation.getStatus()).isEqualTo(RecommendationStatus.EDITED);
         verify(recommendations).save(recommendation);
+    }
+
+    @Test
+    void preventsManualChangesToTransportManagedStatuses() {
+        ShipmentRecommendationRepository recommendations =
+                mock(ShipmentRecommendationRepository.class);
+        ShipmentRecommendation recommendation = new ShipmentRecommendation();
+        recommendation.setId(12L);
+        recommendation.setStatus(RecommendationStatus.READY_FOR_TRANSPORT);
+        UpdateRecommendationStatusRequest request =
+                new UpdateRecommendationStatusRequest();
+        request.setStatus(RecommendationStatus.PENDING);
+
+        when(recommendations.findById(12L)).thenReturn(Optional.of(recommendation));
+
+        ShipmentRecommendationService service = new ShipmentRecommendationService(
+                recommendations,
+                mock(StoreRepository.class),
+                mock(ProductRepository.class),
+                mock(DemandForecastRepository.class),
+                mock(ShipmentRecommendationMapper.class)
+        );
+
+        assertThatThrownBy(
+                () -> service.updateRecommendationStatus(12L, request)
+        )
+                .isInstanceOf(ResponseStatusException.class)
+                .hasMessageContaining(
+                        "Cannot move recommendation from READY_FOR_TRANSPORT"
+                );
     }
 }

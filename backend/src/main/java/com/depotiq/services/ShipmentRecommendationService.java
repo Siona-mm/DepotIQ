@@ -130,10 +130,38 @@ public class ShipmentRecommendationService {
             UpdateRecommendationStatusRequest request
     ) {
         ShipmentRecommendation recommendation = findRecommendationOrThrow(id);
+        validateManualStatusTransition(
+                recommendation.getStatus(),
+                request.getStatus()
+        );
         recommendation.setStatus(request.getStatus());
 
         ShipmentRecommendation saved = shipmentRecommendationRepository.save(recommendation);
         return shipmentRecommendationMapper.toResponse(saved);
+    }
+
+    private void validateManualStatusTransition(
+            RecommendationStatus current,
+            RecommendationStatus target
+    ) {
+        if (current == target) {
+            return;
+        }
+
+        boolean allowed = switch (current) {
+            case PENDING, EDITED -> target == RecommendationStatus.APPROVED
+                    || target == RecommendationStatus.REJECTED;
+            case APPROVED, REJECTED -> target == RecommendationStatus.PENDING;
+            case READY_FOR_TRANSPORT, ASSIGNED_TO_ROUTE, SHIPPED,
+                    DELIVERED, CANCELLED -> false;
+        };
+
+        if (!allowed) {
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Cannot move recommendation from " + current + " to " + target
+            );
+        }
     }
 
     public ShipmentRecommendationResponse overrideRecommendedShipment(
