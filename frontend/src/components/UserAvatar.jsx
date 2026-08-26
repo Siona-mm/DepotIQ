@@ -1,5 +1,5 @@
 import { LogOut, UserRound, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 function initials(name) {
   return String(name || "User")
@@ -15,6 +15,7 @@ export default function UserAvatar({ className = "avatar", onClick, onSignOut, p
   const [open, setOpen] = useState(false);
   const [confirmingSignOut, setConfirmingSignOut] = useState(false);
   const menuRef = useRef(null);
+  const menuId = useId();
   const displayName = profile?.displayName || user?.username || "User";
   const role = user?.roles?.[0]?.replace("ROLE_", "") || "USER";
   const content = profile?.avatarData ? (
@@ -34,6 +35,17 @@ export default function UserAvatar({ className = "avatar", onClick, onSignOut, p
     return () => document.removeEventListener("pointerdown", closeFromOutside);
   }, []);
 
+  useEffect(() => {
+    const closeFromEscape = (event) => {
+      if (event.key !== "Escape") return;
+      setOpen(false);
+      setConfirmingSignOut(false);
+    };
+
+    document.addEventListener("keydown", closeFromEscape);
+    return () => document.removeEventListener("keydown", closeFromEscape);
+  }, []);
+
   if (!onClick && !onSignOut) {
     return <div className={className} title={displayName}>{content}</div>;
   }
@@ -43,6 +55,7 @@ export default function UserAvatar({ className = "avatar", onClick, onSignOut, p
       <span className="profile-name">{displayName}</span>
       <button
         aria-expanded={open}
+        aria-controls={open ? menuId : undefined}
         aria-haspopup="menu"
         aria-label={`Open ${displayName}'s account menu`}
         className={className}
@@ -54,7 +67,7 @@ export default function UserAvatar({ className = "avatar", onClick, onSignOut, p
       </button>
 
       {open && (
-        <div className="account-popover" role="menu">
+        <div className="account-popover" id={menuId} role="menu">
           <div className="account-identity">
             <strong>{displayName}</strong>
             <span>{role}</span>
