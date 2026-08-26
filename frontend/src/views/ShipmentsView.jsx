@@ -51,6 +51,20 @@ function formatNumber(value) {
   return new Intl.NumberFormat("en-US").format(Number(value ?? 0));
 }
 
+function newestShipmentFirst(left, right) {
+  const idDifference = Number(right.id ?? 0) - Number(left.id ?? 0);
+
+  if (idDifference !== 0) {
+    return idDifference;
+  }
+
+  return String(right.shipmentNumber ?? "").localeCompare(
+    String(left.shipmentNumber ?? ""),
+    undefined,
+    { numeric: true },
+  );
+}
+
 function ShipmentMetric({ icon: Icon, label, value, note }) {
   return (
     <article className="metric-card">
@@ -95,7 +109,7 @@ export default function ShipmentsView({
 
     try {
       const result = await loadShipmentPageData();
-      setShipments(result.shipments);
+      setShipments([...result.shipments].sort(newestShipmentFirst));
       setApprovedRecommendations(result.approvedRecommendations);
     } catch (requestError) {
       setError(requestError.message);
@@ -198,10 +212,24 @@ export default function ShipmentsView({
   };
 
   const toggleRecommendation = (id) => {
-    setSelectedIds((current) =>
-      current.includes(id)
-        ? current.filter((item) => item !== id)
-        : [...current, id],
+    setSelectedIds((current) => {
+      if (current.includes(id)) {
+        return current.filter((item) => item !== id);
+      }
+
+      return [...current, id];
+    });
+  };
+
+  const allStoreRecommendationsSelected =
+    storeRecommendations.length > 0 &&
+    storeRecommendations.every((item) => selectedIds.includes(item.id));
+
+  const toggleAllRecommendations = () => {
+    setSelectedIds(
+      allStoreRecommendationsSelected
+        ? []
+        : storeRecommendations.map((item) => item.id),
     );
   };
 
@@ -218,10 +246,7 @@ export default function ShipmentsView({
         expectedDeliveryDate: deliveryDate,
         notes: notes.trim() || null,
       });
-      setShipments((current) => [shipment, ...current]);
-      setApprovedRecommendations((current) =>
-        current.filter((item) => !selectedIds.includes(item.id)),
-      );
+      await load();
       setPlanOpen(false);
       setMessage(
         `${shipment.shipmentNumber} was planned for ${shipment.storeCode}.`,
@@ -240,9 +265,7 @@ export default function ShipmentsView({
 
     try {
       const updated = await updateShipmentStatus(shipment.id, status);
-      setShipments((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item)),
-      );
+      await load();
       setMessage(`${updated.shipmentNumber} is now ${status.toLowerCase()}.`);
     } catch (requestError) {
       setError(requestError.message);
@@ -521,6 +544,14 @@ export default function ShipmentsView({
 
               <fieldset className="recommendation-picker">
                 <legend>Approved recommendations</legend>
+                {storeId && storeRecommendations.length > 0 && (
+                  <div className="recommendation-picker-actions">
+                    <span>{storeRecommendations.length} available</span>
+                    <button onClick={toggleAllRecommendations} type="button">
+                      {allStoreRecommendationsSelected ? "Clear all" : "Select all"}
+                    </button>
+                  </div>
+                )}
                 {!storeId && <p>Choose a store to see approved stock.</p>}
                 {storeId && storeRecommendations.length === 0 && (
                   <p>This store has no approved recommendations.</p>

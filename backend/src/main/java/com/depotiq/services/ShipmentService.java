@@ -21,6 +21,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -115,7 +116,7 @@ public class ShipmentService {
         }
 
         List<ShipmentRecommendation> recommendations =
-                recommendationRepository.findAllById(recommendationIds);
+                recommendationRepository.findAllByIdForUpdate(recommendationIds);
 
         if (recommendations.size() != recommendationIds.size()) {
             throw new ResponseStatusException(
@@ -155,7 +156,7 @@ public class ShipmentService {
             Long id,
             UpdateShipmentStatusRequest request
     ) {
-        Shipment shipment = findShipmentOrThrow(id);
+        Shipment shipment = findShipmentForUpdateOrThrow(id);
         ShipmentStatus current = shipment.getStatus();
         ShipmentStatus target = request.getStatus();
 
@@ -231,7 +232,7 @@ public class ShipmentService {
         Long productId = recommendation.getProduct().getId();
         int quantity = recommendation.getRecommendedShipment();
         DepotInventory depotInventory = depotInventoryRepository
-                .findByProductId(productId)
+                .findByProductIdForUpdate(productId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.CONFLICT,
                         "Depot inventory is missing for product "
@@ -255,7 +256,7 @@ public class ShipmentService {
         depotInventoryRepository.save(depotInventory);
 
         StoreInventory storeInventory = storeInventoryRepository
-                .findByStoreIdAndProductId(
+                .findByStoreIdAndProductIdForUpdate(
                         recommendation.getStore().getId(),
                         productId
                 )
@@ -281,7 +282,7 @@ public class ShipmentService {
     private void dispatch(Shipment shipment) {
         for (ShipmentItem item : shipment.getItems()) {
             DepotInventory inventory = depotInventoryRepository
-                    .findByProductId(item.getProduct().getId())
+                    .findByProductIdForUpdate(item.getProduct().getId())
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.CONFLICT,
                             "Depot inventory is missing during dispatch"
@@ -306,6 +307,8 @@ public class ShipmentService {
             item.getRecommendation().setStatus(RecommendationStatus.SHIPPED);
         }
 
+        recommendationRepository.saveAll(recommendationsFor(shipment));
+
         shipment.setStatus(ShipmentStatus.DISPATCHED);
         shipment.setDispatchedAt(LocalDateTime.now());
     }
@@ -313,7 +316,7 @@ public class ShipmentService {
     private void deliver(Shipment shipment) {
         for (ShipmentItem item : shipment.getItems()) {
             StoreInventory inventory = storeInventoryRepository
-                    .findByStoreIdAndProductId(
+                    .findByStoreIdAndProductIdForUpdate(
                             shipment.getStore().getId(),
                             item.getProduct().getId()
                     )
@@ -322,16 +325,25 @@ public class ShipmentService {
                             "Store inventory is missing during delivery"
                     ));
 
+            if (inventory.getIncomingUnits() < item.getQuantity()) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Incoming store inventory is inconsistent during delivery"
+                );
+            }
+
             inventory.setInventoryLevel(
                     inventory.getInventoryLevel() + item.getQuantity()
             );
             inventory.setIncomingUnits(
-                    Math.max(0, inventory.getIncomingUnits() - item.getQuantity())
+                    inventory.getIncomingUnits() - item.getQuantity()
             );
             inventory.setLastUpdated(LocalDateTime.now());
             storeInventoryRepository.save(inventory);
             item.getRecommendation().setStatus(RecommendationStatus.DELIVERED);
         }
+
+        recommendationRepository.saveAll(recommendationsFor(shipment));
 
         shipment.setStatus(ShipmentStatus.DELIVERED);
         shipment.setDeliveredAt(LocalDateTime.now());
@@ -340,38 +352,57 @@ public class ShipmentService {
     private void cancel(Shipment shipment) {
         for (ShipmentItem item : shipment.getItems()) {
             DepotInventory depotInventory = depotInventoryRepository
-                    .findByProductId(item.getProduct().getId())
+                    .findByProductIdForUpdate(item.getProduct().getId())
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.CONFLICT,
                             "Depot inventory is missing during cancellation"
                     ));
+
+            if (depotInventory.getReservedUnits() < item.getQuantity()) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Reserved depot inventory is inconsistent during cancellation"
+                );
+            }
             depotInventory.setReservedUnits(
-                    Math.max(
-                            0,
-                            depotInventory.getReservedUnits() - item.getQuantity()
-                    )
+                    depotInventory.getReservedUnits() - item.getQuantity()
             );
             depotInventory.setLastUpdated(LocalDateTime.now());
             depotInventoryRepository.save(depotInventory);
 
-            storeInventoryRepository.findByStoreIdAndProductId(
-                    shipment.getStore().getId(),
-                    item.getProduct().getId()
-            ).ifPresent(inventory -> {
-                inventory.setIncomingUnits(
-                        Math.max(
-                                0,
-                                inventory.getIncomingUnits() - item.getQuantity()
-                        )
+            StoreInventory storeInventory = storeInventoryRepository
+                    .findByStoreIdAndProductIdForUpdate(
+                            shipment.getStore().getId(),
+                            item.getProduct().getId()
+                    )
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.CONFLICT,
+                            "Store inventory is missing during cancellation"
+                    ));
+            if (storeInventory.getIncomingUnits() < item.getQuantity()) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Incoming store inventory is inconsistent during cancellation"
                 );
-                inventory.setLastUpdated(LocalDateTime.now());
-                storeInventoryRepository.save(inventory);
-            });
+            }
+            storeInventory.setIncomingUnits(
+                    storeInventory.getIncomingUnits() - item.getQuantity()
+            );
+            storeInventory.setLastUpdated(LocalDateTime.now());
+            storeInventoryRepository.save(storeInventory);
 
-            item.getRecommendation().setStatus(RecommendationStatus.APPROVED);
+            item.getRecommendation().setStatus(RecommendationStatus.CANCELLED);
         }
 
+        recommendationRepository.saveAll(recommendationsFor(shipment));
+
         shipment.setStatus(ShipmentStatus.CANCELLED);
+    }
+
+    private List<ShipmentRecommendation> recommendationsFor(Shipment shipment) {
+        return shipment.getItems().stream()
+                .map(ShipmentItem::getRecommendation)
+                .collect(Collectors.toList());
     }
 
     private void validateTransition(
@@ -397,6 +428,14 @@ public class ShipmentService {
 
     private Shipment findShipmentOrThrow(Long id) {
         return shipmentRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Shipment not found"
+                ));
+    }
+
+    private Shipment findShipmentForUpdateOrThrow(Long id) {
+        return shipmentRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Shipment not found"

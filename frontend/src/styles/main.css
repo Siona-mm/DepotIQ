@@ -3410,6 +3410,35 @@ select:focus-visible {
   text-align: center;
 }
 
+.recommendation-picker-actions {
+  position: sticky;
+  top: -8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 36px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.recommendation-picker-actions span {
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.recommendation-picker-actions button {
+  padding: 4px 7px;
+  border: 0;
+  background: transparent;
+  color: #111111;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .recommendation-option {
   min-height: 53px;
   display: grid;

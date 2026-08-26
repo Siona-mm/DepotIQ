@@ -75,12 +75,12 @@ class ShipmentServiceTest {
         CreateShipmentRequest request = createRequest(List.of(30L));
         ShipmentResponse response = new ShipmentResponse();
 
-        when(recommendations.findAllById(List.of(30L)))
+        when(recommendations.findAllByIdForUpdate(List.of(30L)))
                 .thenReturn(List.of(recommendation));
         when(shipmentItems.existsByRecommendationId(30L)).thenReturn(false);
-        when(depotInventory.findByProductId(20L))
+        when(depotInventory.findByProductIdForUpdate(20L))
                 .thenReturn(Optional.of(depot));
-        when(storeInventory.findByStoreIdAndProductId(10L, 20L))
+        when(storeInventory.findByStoreIdAndProductIdForUpdate(10L, 20L))
                 .thenReturn(Optional.of(destination));
         when(shipments.save(any(Shipment.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
@@ -120,8 +120,8 @@ class ShipmentServiceTest {
         request.setStatus(ShipmentStatus.DISPATCHED);
         ShipmentResponse response = new ShipmentResponse();
 
-        when(shipments.findById(50L)).thenReturn(Optional.of(shipment));
-        when(depotInventory.findByProductId(20L))
+        when(shipments.findByIdForUpdate(50L)).thenReturn(Optional.of(shipment));
+        when(depotInventory.findByProductIdForUpdate(20L))
                 .thenReturn(Optional.of(depot));
         when(shipments.save(shipment)).thenReturn(shipment);
         when(mapper.toResponse(shipment)).thenReturn(response);
@@ -147,7 +147,7 @@ class ShipmentServiceTest {
                 recommendation(31L, store(11L), product, 25);
         CreateShipmentRequest request = createRequest(List.of(30L, 31L));
 
-        when(recommendations.findAllById(List.of(30L, 31L)))
+        when(recommendations.findAllByIdForUpdate(List.of(30L, 31L)))
                 .thenReturn(List.of(first, second));
 
         assertThatThrownBy(() -> service.createShipment(request))
@@ -166,14 +166,121 @@ class ShipmentServiceTest {
         DepotInventory depot = depotInventory(product, 50, 20);
         CreateShipmentRequest request = createRequest(List.of(30L));
 
-        when(recommendations.findAllById(List.of(30L)))
+        when(recommendations.findAllByIdForUpdate(List.of(30L)))
                 .thenReturn(List.of(recommendation));
-        when(depotInventory.findByProductId(20L))
+        when(depotInventory.findByProductIdForUpdate(20L))
                 .thenReturn(Optional.of(depot));
 
         assertThatThrownBy(() -> service.createShipment(request))
                 .isInstanceOf(ResponseStatusException.class)
                 .hasMessageContaining("Not enough free depot stock");
+    }
+
+    @Test
+    void plansMultipleApprovedRecommendationsForTheSameProduct() {
+        Store store = store(10L);
+        Product product = product(20L, "P0020");
+        ShipmentRecommendation first =
+                recommendation(30L, store, product, 20);
+        ShipmentRecommendation second =
+                recommendation(31L, store, product, 25);
+        DepotInventory depot = depotInventory(product, 100, 10);
+        StoreInventory destination = storeInventory(store, product, 12, 5);
+        CreateShipmentRequest request = createRequest(List.of(30L, 31L));
+        ShipmentResponse response = new ShipmentResponse();
+
+        when(recommendations.findAllByIdForUpdate(List.of(30L, 31L)))
+                .thenReturn(List.of(first, second));
+        when(depotInventory.findByProductIdForUpdate(20L))
+                .thenReturn(Optional.of(depot));
+        when(storeInventory.findByStoreIdAndProductIdForUpdate(10L, 20L))
+                .thenReturn(Optional.of(destination));
+        when(shipments.save(any(Shipment.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(mapper.toResponse(any(Shipment.class))).thenReturn(response);
+
+        assertThat(service.createShipment(request)).isSameAs(response);
+        assertThat(depot.getReservedUnits()).isEqualTo(55);
+        assertThat(destination.getIncomingUnits()).isEqualTo(50);
+        assertThat(first.getStatus())
+                .isEqualTo(RecommendationStatus.READY_FOR_TRANSPORT);
+        assertThat(second.getStatus())
+                .isEqualTo(RecommendationStatus.READY_FOR_TRANSPORT);
+    }
+
+    @Test
+    void cancellingPlannedShipmentReleasesReservedAndIncomingUnits() {
+        Store store = store(10L);
+        Product product = product(20L, "P0020");
+        ShipmentRecommendation recommendation =
+                recommendation(30L, store, product, 40);
+        recommendation.setStatus(RecommendationStatus.READY_FOR_TRANSPORT);
+        DepotInventory depot = depotInventory(product, 100, 40);
+        StoreInventory destination = storeInventory(store, product, 12, 45);
+        Shipment shipment = shipment(
+                50L,
+                ShipmentStatus.PLANNED,
+                store,
+                product,
+                recommendation,
+                40
+        );
+        UpdateShipmentStatusRequest request = new UpdateShipmentStatusRequest();
+        request.setStatus(ShipmentStatus.CANCELLED);
+
+        when(shipments.findByIdForUpdate(50L)).thenReturn(Optional.of(shipment));
+        when(depotInventory.findByProductIdForUpdate(20L))
+                .thenReturn(Optional.of(depot));
+        when(storeInventory.findByStoreIdAndProductIdForUpdate(10L, 20L))
+                .thenReturn(Optional.of(destination));
+        when(shipments.save(shipment)).thenReturn(shipment);
+
+        service.updateStatus(50L, request);
+
+        assertThat(depot.getAvailableUnits()).isEqualTo(100);
+        assertThat(depot.getReservedUnits()).isZero();
+        assertThat(destination.getInventoryLevel()).isEqualTo(12);
+        assertThat(destination.getIncomingUnits()).isEqualTo(5);
+        assertThat(recommendation.getStatus())
+                .isEqualTo(RecommendationStatus.CANCELLED);
+        assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.CANCELLED);
+        verify(recommendations).saveAll(List.of(recommendation));
+    }
+
+    @Test
+    void deliveringShipmentMovesIncomingUnitsIntoStoreStock() {
+        Store store = store(10L);
+        Product product = product(20L, "P0020");
+        ShipmentRecommendation recommendation =
+                recommendation(30L, store, product, 40);
+        recommendation.setStatus(RecommendationStatus.SHIPPED);
+        StoreInventory destination = storeInventory(store, product, 12, 45);
+        Shipment shipment = shipment(
+                50L,
+                ShipmentStatus.DISPATCHED,
+                store,
+                product,
+                recommendation,
+                40
+        );
+        UpdateShipmentStatusRequest request = new UpdateShipmentStatusRequest();
+        request.setStatus(ShipmentStatus.DELIVERED);
+
+        when(shipments.findByIdForUpdate(50L)).thenReturn(Optional.of(shipment));
+        when(storeInventory.findByStoreIdAndProductIdForUpdate(10L, 20L))
+                .thenReturn(Optional.of(destination));
+        when(shipments.save(shipment)).thenReturn(shipment);
+
+        service.updateStatus(50L, request);
+
+        assertThat(destination.getInventoryLevel()).isEqualTo(52);
+        assertThat(destination.getIncomingUnits()).isEqualTo(5);
+        assertThat(recommendation.getStatus())
+                .isEqualTo(RecommendationStatus.DELIVERED);
+        assertThat(shipment.getStatus()).isEqualTo(ShipmentStatus.DELIVERED);
+        assertThat(shipment.getDeliveredAt()).isNotNull();
+        verify(storeInventory).save(destination);
+        verify(recommendations).saveAll(List.of(recommendation));
     }
 
     @Test
@@ -184,7 +291,7 @@ class ShipmentServiceTest {
         UpdateShipmentStatusRequest request = new UpdateShipmentStatusRequest();
         request.setStatus(ShipmentStatus.DISPATCHED);
 
-        when(shipments.findById(50L)).thenReturn(Optional.of(shipment));
+        when(shipments.findByIdForUpdate(50L)).thenReturn(Optional.of(shipment));
 
         assertThatThrownBy(() -> service.updateStatus(50L, request))
                 .isInstanceOf(ResponseStatusException.class)
