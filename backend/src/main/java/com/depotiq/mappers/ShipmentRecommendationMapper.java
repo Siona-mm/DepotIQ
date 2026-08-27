@@ -21,6 +21,7 @@ public class ShipmentRecommendationMapper {
         response.setStoreId(store.getId());
         response.setStoreCode(store.getStoreCode());
         response.setStoreName(store.getName());
+        response.setDeliveryLeadTimeDays(store.getDeliveryLeadTimeDays());
         response.setProductId(product.getId());
         response.setProductCode(product.getProductCode());
         response.setProductName(product.getName());

@@ -234,6 +234,13 @@ export function createShipment(payload) {
   });
 }
 
+export function approveAndDispatchShipment(recommendationIds) {
+  return request("/api/shipments/approve-and-dispatch", {
+    method: "POST",
+    body: JSON.stringify({ recommendationIds }),
+  });
+}
+
 export function updateShipmentStatus(id, status) {
   return request(`/api/shipments/${id}/status`, {
     method: "PATCH",

@@ -1,6 +1,7 @@
 package com.depotiq.services;
 
 import com.depotiq.dtos.shipment.CreateShipmentRequest;
+import com.depotiq.dtos.shipment.ApproveAndDispatchShipmentRequest;
 import com.depotiq.dtos.shipment.ShipmentResponse;
 import com.depotiq.dtos.shipment.UpdateShipmentStatusRequest;
 import com.depotiq.mappers.ShipmentMapper;
@@ -152,6 +153,71 @@ public class ShipmentService {
         return shipmentMapper.toResponse(saved);
     }
 
+    public ShipmentResponse approveAndDispatch(
+            ApproveAndDispatchShipmentRequest request
+    ) {
+        List<Long> recommendationIds = request.getRecommendationIds();
+        Set<Long> distinctIds = new HashSet<>(recommendationIds);
+
+        if (distinctIds.size() != recommendationIds.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Recommendation IDs must be unique"
+            );
+        }
+
+        List<ShipmentRecommendation> recommendations =
+                recommendationRepository.findAllByIdForUpdate(recommendationIds);
+
+        if (recommendations.size() != recommendationIds.size()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "One or more recommendations were not found"
+            );
+        }
+
+        validateRecommendationGroup(recommendations);
+        recommendations.forEach(
+                recommendation -> recommendation.setStatus(RecommendationStatus.APPROVED)
+        );
+        recommendationRepository.saveAll(recommendations);
+
+        ShipmentRecommendation first = recommendations.get(0);
+        LocalDate expectedDeliveryDate = first.getRecommendationDate()
+                .plusDays(first.getHorizonDays());
+        int leadTimeDays = Math.max(
+                0,
+                first.getStore().getDeliveryLeadTimeDays() == null
+                        ? 0
+                        : first.getStore().getDeliveryLeadTimeDays()
+        );
+        LocalDate plannedDispatchDate = expectedDeliveryDate.minusDays(leadTimeDays);
+        LocalDate today = LocalDate.now();
+
+        if (plannedDispatchDate.isBefore(today)) {
+            plannedDispatchDate = today;
+        }
+        if (expectedDeliveryDate.isBefore(plannedDispatchDate)) {
+            expectedDeliveryDate = plannedDispatchDate;
+        }
+
+        CreateShipmentRequest createRequest = new CreateShipmentRequest();
+        createRequest.setRecommendationIds(recommendationIds);
+        createRequest.setPlannedDispatchDate(plannedDispatchDate);
+        createRequest.setExpectedDeliveryDate(expectedDeliveryDate);
+        createRequest.setNotes(request.getNotes());
+
+        ShipmentResponse planned = createShipment(createRequest);
+        updateStatus(
+                planned.getId(),
+                statusRequest(ShipmentStatus.READY)
+        );
+        return updateStatus(
+                planned.getId(),
+                statusRequest(ShipmentStatus.DISPATCHED)
+        );
+    }
+
     public ShipmentResponse updateStatus(
             Long id,
             UpdateShipmentStatusRequest request
@@ -226,6 +292,52 @@ public class ShipmentService {
                 );
             }
         }
+    }
+
+    private void validateRecommendationGroup(
+            List<ShipmentRecommendation> recommendations
+    ) {
+        ShipmentRecommendation first = recommendations.get(0);
+        Long storeId = first.getStore().getId();
+        LocalDate recommendationDate = first.getRecommendationDate();
+        Integer horizonDays = first.getHorizonDays();
+
+        for (ShipmentRecommendation recommendation : recommendations) {
+            if (!recommendation.getStore().getId().equals(storeId)
+                    || !recommendation.getRecommendationDate().equals(recommendationDate)
+                    || !recommendation.getHorizonDays().equals(horizonDays)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A shipment must contain one store, recommendation date, and planning horizon"
+                );
+            }
+            if (recommendation.getStatus() != RecommendationStatus.PENDING
+                    && recommendation.getStatus() != RecommendationStatus.EDITED) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "Only pending recommendations can be approved and dispatched"
+                );
+            }
+            if (recommendation.getRecommendedShipment() == null
+                    || recommendation.getRecommendedShipment() <= 0) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Shipment quantities must be greater than zero"
+                );
+            }
+            if (shipmentItemRepository.existsByRecommendationId(recommendation.getId())) {
+                throw new ResponseStatusException(
+                        HttpStatus.CONFLICT,
+                        "A recommendation is already assigned to a shipment"
+                );
+            }
+        }
+    }
+
+    private UpdateShipmentStatusRequest statusRequest(ShipmentStatus status) {
+        UpdateShipmentStatusRequest request = new UpdateShipmentStatusRequest();
+        request.setStatus(status);
+        return request;
     }
 
     private void reserveInventory(ShipmentRecommendation recommendation) {

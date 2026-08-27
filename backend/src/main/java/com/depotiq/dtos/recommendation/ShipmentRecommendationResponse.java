@@ -12,6 +12,7 @@ public class ShipmentRecommendationResponse {
     private Long storeId;
     private String storeCode;
     private String storeName;
+    private Integer deliveryLeadTimeDays;
     private Long productId;
     private String productCode;
     private String productName;
@@ -65,6 +66,14 @@ public class ShipmentRecommendationResponse {
 
     public void setStoreName(String storeName) {
         this.storeName = storeName;
+    }
+
+    public Integer getDeliveryLeadTimeDays() {
+        return deliveryLeadTimeDays;
+    }
+
+    public void setDeliveryLeadTimeDays(Integer deliveryLeadTimeDays) {
+        this.deliveryLeadTimeDays = deliveryLeadTimeDays;
     }
 
     public Long getProductId() {
