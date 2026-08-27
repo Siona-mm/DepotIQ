@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public class UpdateStoreRequest {
+    private String externalStoreId;
+
     @NotBlank
     private String name;
 
@@ -29,6 +31,14 @@ public class UpdateStoreRequest {
     @NotNull
     @Min(1)
     private Integer preferredHorizonDays;
+
+    public String getExternalStoreId() {
+        return externalStoreId;
+    }
+
+    public void setExternalStoreId(String externalStoreId) {
+        this.externalStoreId = externalStoreId;
+    }
 
     public String getName() {
         return name;

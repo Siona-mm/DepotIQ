@@ -9,5 +9,7 @@ import java.util.Optional;
 public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<Product> findByProductCode(String productCode);
 
+    Optional<Product> findByExternalSkuIgnoreCase(String externalSku);
+
     boolean existsByProductCode(String productCode);
 }
