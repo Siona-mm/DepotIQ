@@ -4,6 +4,7 @@ import com.depotiq.config.SecurityConfig;
 import com.depotiq.dtos.profile.ProfileResponse;
 import com.depotiq.dtos.settings.SettingsResponse;
 import com.depotiq.services.AccountService;
+import com.depotiq.services.CatalogCsvImportService;
 import com.depotiq.services.InventoryService;
 import com.depotiq.services.StoreService;
 import com.depotiq.services.HistoricalSalesImportService;
@@ -59,6 +60,9 @@ class AuthorizationControllerTest {
 
     @MockBean
     private HistoricalSalesImportService historicalSalesImportService;
+
+    @MockBean
+    private CatalogCsvImportService catalogCsvImportService;
 
     @MockBean
     private JpaMetamodelMappingContext jpaMappingContext;
