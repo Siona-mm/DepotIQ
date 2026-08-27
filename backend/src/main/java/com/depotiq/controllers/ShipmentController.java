@@ -1,6 +1,7 @@
 package com.depotiq.controllers;
 
 import com.depotiq.dtos.shipment.CreateShipmentRequest;
+import com.depotiq.dtos.shipment.ApproveAndDispatchShipmentRequest;
 import com.depotiq.dtos.shipment.ShipmentResponse;
 import com.depotiq.dtos.shipment.UpdateShipmentStatusRequest;
 import com.depotiq.models.ShipmentStatus;
@@ -46,6 +47,14 @@ public class ShipmentController {
             @Valid @RequestBody CreateShipmentRequest request
     ) {
         return shipmentService.createShipment(request);
+    }
+
+    @PostMapping("/approve-and-dispatch")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ShipmentResponse approveAndDispatchShipment(
+            @Valid @RequestBody ApproveAndDispatchShipmentRequest request
+    ) {
+        return shipmentService.approveAndDispatch(request);
     }
 
     @PatchMapping("/{id}/status")

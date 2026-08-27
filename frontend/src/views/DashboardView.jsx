@@ -5,8 +5,10 @@ import {
   Boxes,
   ChartNoAxesCombined,
   Check,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   PencilLine,
   RefreshCw,
   RotateCcw,
@@ -18,7 +20,7 @@ import {
   Warehouse,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppSidebar from "../components/AppSidebar.jsx";
 import MlStatusPanel from "../components/MlStatusPanel.jsx";
 import RecommendationInsightsDialog from "../components/RecommendationInsightsDialog.jsx";
@@ -26,6 +28,7 @@ import RetryNotice from "../components/RetryNotice.jsx";
 import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
 import {
   loadDashboardData,
+  approveAndDispatchShipment,
   loadSettings,
   importHistoricalSalesCsv,
   overrideRecommendationAmount,
@@ -151,6 +154,79 @@ function formatUpdated(value) {
   }).format(new Date(`${value}T00:00:00`));
 }
 
+function toIsoDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function shipmentDates(item) {
+  const expected = new Date(`${item.recommendationDate}T12:00:00`);
+  expected.setDate(expected.getDate() + Number(item.horizonDays ?? 0));
+  const dispatch = new Date(expected);
+  dispatch.setDate(
+    dispatch.getDate() - Number(item.deliveryLeadTimeDays ?? 0),
+  );
+  const today = new Date();
+  today.setHours(12, 0, 0, 0);
+
+  if (dispatch < today) {
+    dispatch.setTime(today.getTime());
+  }
+  if (expected < dispatch) {
+    expected.setTime(dispatch.getTime());
+  }
+
+  return {
+    dispatchDate: toIsoDate(dispatch),
+    expectedDeliveryDate: toIsoDate(expected),
+  };
+}
+
+function groupRecommendations(recommendations, recentImportKeySet) {
+  const groups = new Map();
+
+  recommendations.forEach((item) => {
+    const dates = shipmentDates(item);
+    const key = [
+      item.storeId,
+      item.recommendationDate,
+      item.horizonDays,
+    ].join("::");
+    const current = groups.get(key) ?? {
+      key,
+      storeId: item.storeId,
+      storeCode: item.storeCode,
+      storeName: item.storeName,
+      recommendationDate: item.recommendationDate,
+      horizonDays: Number(item.horizonDays),
+      dispatchDate: dates.dispatchDate,
+      expectedDeliveryDate: dates.expectedDeliveryDate,
+      priority: item.priority,
+      recommendedShipment: 0,
+      predictedDemand: 0,
+      currentInventory: 0,
+      recentlyImported: false,
+      items: [],
+    };
+
+    current.items.push(item);
+    current.recommendedShipment += Number(item.recommendedShipment ?? 0);
+    current.predictedDemand += Number(item.predictedDemand ?? 0);
+    current.currentInventory += Number(item.currentInventory ?? 0);
+    current.recentlyImported ||= recentImportKeySet.has(
+      `${item.storeCode}::${item.productCode}`,
+    );
+    if (
+      (PRIORITY_ORDER[item.priority] ?? Number.MAX_SAFE_INTEGER) <
+      (PRIORITY_ORDER[current.priority] ?? Number.MAX_SAFE_INTEGER)
+    ) {
+      current.priority = item.priority;
+    }
+    groups.set(key, current);
+  });
+
+  return Array.from(groups.values());
+}
+
 function Metric({ icon: Icon, label, value, note }) {
   return (
     <article className="metric-card">
@@ -170,56 +246,6 @@ function EmptyPanel({ children }) {
 
 function isActionable(status) {
   return status === "PENDING" || status === "EDITED";
-}
-
-function canUndoApproval(status) {
-  return status === "APPROVED";
-}
-
-function recommendationActionLabel(status) {
-  const labels = {
-    APPROVED: "Undo",
-    REJECTED: "Rejected",
-    READY_FOR_TRANSPORT: "Ready",
-    ASSIGNED_TO_ROUTE: "Assigned",
-    SHIPPED: "Shipped",
-    DELIVERED: "Delivered",
-    CANCELLED: "Cancelled",
-  };
-
-  return labels[status] ?? "Approve";
-}
-
-function recommendationActionClass(status) {
-  if (status === "APPROVED") {
-    return "approve-button approved undoable";
-  }
-
-  if (status === "REJECTED" || status === "CANCELLED") {
-    return "approve-button rejected";
-  }
-
-  if (!isActionable(status)) {
-    return "approve-button processed";
-  }
-
-  return "approve-button";
-}
-
-function recommendationActionTitle(status) {
-  if (isActionable(status)) {
-    return "Approve recommendation";
-  }
-
-  if (status === "APPROVED") {
-    return "Return this recommendation to pending review";
-  }
-
-  if (status === "REJECTED" || status === "CANCELLED") {
-    return "This recommendation is closed";
-  }
-
-  return "This recommendation is already being processed in transportation planning";
 }
 
 function closeFromBackdrop(event, close) {
@@ -263,6 +289,7 @@ export default function DashboardView({
   const [rejectItem, setRejectItem] = useState(null);
   const [undoItem, setUndoItem] = useState(null);
   const [statusUpdate, setStatusUpdate] = useState(null);
+  const [expandedGroup, setExpandedGroup] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -391,19 +418,21 @@ export default function DashboardView({
     [recentlyImportedKeys],
   );
 
-  const recentlyImportedRecommendations = useMemo(
-    () =>
-      dashboardRecommendations.filter((item) =>
-        recentImportKeySet.has(`${item.storeCode}::${item.productCode}`),
-      ),
+  const recommendationGroups = useMemo(
+    () => groupRecommendations(dashboardRecommendations, recentImportKeySet),
     [dashboardRecommendations, recentImportKeySet],
   );
 
+  const recentlyImportedGroups = useMemo(
+    () => recommendationGroups.filter((group) => group.recentlyImported),
+    [recommendationGroups],
+  );
+
   const summary = useMemo(() => {
-    const urgent = dashboardRecommendations.filter(
-      (item) => item.priority === "URGENT",
+    const urgent = recommendationGroups.filter(
+      (group) => group.priority === "URGENT",
     ).length;
-    const pending = dashboardRecommendations.length;
+    const pending = recommendationGroups.length;
     const stores = new Set(data.storeInventory.map((item) => item.storeId)).size;
     const meanAccuracy =
       data.forecasts.length === 0
@@ -420,30 +449,33 @@ export default function DashboardView({
       stores,
       accuracy: `${meanAccuracy.toFixed(1)}%`,
     };
-  }, [dashboardRecommendations, data.forecasts, data.storeInventory]);
+  }, [recommendationGroups, data.forecasts, data.storeInventory]);
 
   const filteredRecommendations = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return dashboardRecommendations
+    return recommendationGroups
       .filter(
-        (item) => storeFilter === "ALL" || item.storeCode === storeFilter,
+        (group) => storeFilter === "ALL" || group.storeCode === storeFilter,
       )
       .filter(
-        (item) => priorityFilter === "ALL" || item.priority === priorityFilter,
+        (group) => priorityFilter === "ALL" || group.priority === priorityFilter,
       )
-      .filter((item) => {
+      .filter((group) => {
         if (!normalizedQuery) {
           return true;
         }
 
         return [
-          item.storeCode,
-          item.storeName,
-          item.productCode,
-          item.productName,
-          item.category,
-          item.priority,
+          group.storeCode,
+          group.storeName,
+          group.priority,
+          group.horizonDays,
+          ...group.items.flatMap((item) => [
+            item.productCode,
+            item.productName,
+            item.category,
+          ]),
         ].some((value) =>
           String(value ?? "")
             .toLowerCase()
@@ -452,19 +484,15 @@ export default function DashboardView({
       })
       .sort(
         (left, right) =>
-          Number(
-            recentImportKeySet.has(`${right.storeCode}::${right.productCode}`),
-          ) -
-            Number(
-              recentImportKeySet.has(`${left.storeCode}::${left.productCode}`),
-            ) ||
+          Number(right.recentlyImported) - Number(left.recentlyImported) ||
+          left.dispatchDate.localeCompare(right.dispatchDate) ||
+          left.horizonDays - right.horizonDays ||
           compareRecommendations(left, right, sortBy),
       );
   }, [
-    dashboardRecommendations,
+    recommendationGroups,
     priorityFilter,
     query,
-    recentImportKeySet,
     sortBy,
     storeFilter,
   ]);
@@ -473,13 +501,13 @@ export default function DashboardView({
     () =>
       Array.from(
         new Map(
-          dashboardRecommendations.map((item) => [
-            item.storeCode,
-            `${item.storeCode} - ${item.storeName}`,
+          recommendationGroups.map((group) => [
+            group.storeCode,
+            `${group.storeCode} - ${group.storeName}`,
           ]),
         ),
       ),
-    [dashboardRecommendations],
+    [recommendationGroups],
   );
 
   const filtersActive =
@@ -602,6 +630,27 @@ export default function DashboardView({
     }
   };
 
+  const approveShipmentGroup = async (group) => {
+    setStatusUpdate({ id: group.key, status: "DISPATCHING" });
+    setError("");
+    setSyncMessage("");
+
+    try {
+      const shipment = await approveAndDispatchShipment(
+        group.items.map((item) => item.id),
+      );
+      setSyncMessage(
+        `${shipment.shipmentNumber} was approved and dispatched to ${shipment.storeCode}.`,
+      );
+      setExpandedGroup(null);
+      await load();
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setStatusUpdate(null);
+    }
+  };
+
   const uploadHistoricalSales = async (event) => {
     event.preventDefault();
     if (!uploadFile) {
@@ -698,11 +747,11 @@ export default function DashboardView({
 
         <section className="dashboard-grid">
           <section className="table-panel" id="shipment-recommendations">
-            {recentlyImportedRecommendations.length > 0 && (
+            {recentlyImportedGroups.length > 0 && (
               <div className="recent-import-banner">
                 <strong>
-                  {recentlyImportedRecommendations.length} shipment recommendation
-                  {recentlyImportedRecommendations.length === 1 ? "" : "s"} refreshed
+                  {recentlyImportedGroups.length} shipment plan
+                  {recentlyImportedGroups.length === 1 ? "" : "s"} refreshed
                 </strong>
                 <span>
                   Highlighted rows relate to your latest import and clear after a refresh.
@@ -881,132 +930,212 @@ export default function DashboardView({
               <table>
                 <thead>
                   <tr>
+                    <th aria-label="Expand shipment" />
+                    <th>Dispatch</th>
                     <th>Store</th>
-                    <th>Product</th>
-                    <th>Store Stock</th>
-                    <th>Depot Stock</th>
-                    <th>Predicted Demand</th>
-                    <th>Recommended Shipment</th>
+                    <th>Horizon</th>
+                    <th>Products</th>
+                    <th>Total Units</th>
                     <th>Priority</th>
-                    <th>Updated</th>
                     {permissions.canManageRecommendations && <th>Actions</th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleRecommendations.map((item) => {
-                    const isRecentlyImported = recentImportKeySet.has(
-                      `${item.storeCode}::${item.productCode}`,
-                    );
+                  {visibleRecommendations.map((group, index) => {
+                    const expanded = expandedGroup === group.key;
+                    const showDayDivider =
+                      index === 0 ||
+                      visibleRecommendations[index - 1].dispatchDate !==
+                        group.dispatchDate;
+                    const columnCount = permissions.canManageRecommendations
+                      ? 8
+                      : 7;
 
                     return (
-                    <tr
-                      className={isRecentlyImported ? "recently-imported-row" : undefined}
-                      key={item.id}
-                    >
-                      <td>
-                        {item.storeCode}
-                        {isRecentlyImported && (
-                          <span className="recent-import-badge">New</span>
+                      <Fragment key={group.key}>
+                        {showDayDivider && (
+                          <tr className="shipment-day-divider">
+                            <td colSpan={columnCount}>
+                              Dispatch {formatUpdated(group.dispatchDate)}
+                            </td>
+                          </tr>
                         )}
-                      </td>
-                      <td>{item.productCode}</td>
-                      <td>{formatNumber(item.currentInventory)}</td>
-                      <td>
-                        {formatNumber(
-                          depotInventoryByProduct.get(item.productId),
-                        )}
-                      </td>
-                      <td>{formatNumber(item.predictedDemand)}</td>
-                      <td>
-                        <div className="shipment-value">
-                          <span>{formatNumber(item.recommendedShipment)}</span>
-                          {item.originalRecommendedShipment != null && (
-                            <small
-                              title={
-                                `Original model amount: ${formatNumber(
-                                  item.originalRecommendedShipment,
-                                )} units. ` +
-                                `Changed by ${item.overriddenBy ?? "an admin"}. ` +
-                                `Reason: ${item.overrideReason ?? "Not provided"}`
-                              }
-                            >
-                              Edited
-                            </small>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`priority ${item.priority.toLowerCase()}`}>
-                          {item.priority[0] + item.priority.slice(1).toLowerCase()}
-                        </span>
-                      </td>
-                      <td>{formatUpdated(item.recommendationDate)}</td>
-                      {permissions.canManageRecommendations && <td className="recommendation-actions">
-                        <div className="action-buttons">
-                          <button
-                            aria-label={`${recommendationActionLabel(
-                              item.status,
-                            )} shipment for ${item.storeCode} ${item.productCode}`}
-                            className={recommendationActionClass(item.status)}
-                            disabled={
-                              (!isActionable(item.status) &&
-                                !canUndoApproval(item.status)) ||
-                              statusUpdate?.id === item.id
-                            }
-                            onClick={() => {
-                              if (canUndoApproval(item.status)) {
-                                setUndoItem(item);
-                                return;
-                              }
-                              changeRecommendationStatus(item, "APPROVED");
-                            }}
-                            title={recommendationActionTitle(item.status)}
-                            type="button"
-                          >
-                            {canUndoApproval(item.status) ? (
-                              <RotateCcw aria-hidden="true" size={13} />
-                            ) : item.status === "REJECTED" ||
-                            item.status === "CANCELLED" ? (
-                              <Ban aria-hidden="true" size={13} />
-                            ) : !isActionable(item.status) &&
-                              item.status !== "APPROVED" ? (
-                              <Truck aria-hidden="true" size={13} />
-                            ) : (
-                              <Check aria-hidden="true" size={13} />
-                            )}
-                            {statusUpdate?.id === item.id
-                              ? "Saving"
-                              : recommendationActionLabel(item.status)}
-                          </button>
-                          {isActionable(item.status) && (
+                        <tr
+                          className={
+                            group.recentlyImported
+                              ? "shipment-group-row recently-imported-row"
+                              : "shipment-group-row"
+                          }
+                        >
+                          <td>
                             <button
-                              aria-label={`Reject shipment for ${item.storeCode} ${item.productCode}`}
-                              className="reject-button"
-                              disabled={statusUpdate?.id === item.id}
-                              onClick={() => setRejectItem(item)}
-                              title="Reject recommendation"
+                              aria-expanded={expanded}
+                              aria-label={`${expanded ? "Collapse" : "Expand"} shipment for ${group.storeCode}`}
+                              className="shipment-expand-button"
+                              onClick={() =>
+                                setExpandedGroup(expanded ? null : group.key)
+                              }
                               type="button"
                             >
-                              <Ban aria-hidden="true" size={14} />
+                              {expanded ? (
+                                <ChevronUp aria-hidden="true" size={15} />
+                              ) : (
+                                <ChevronDown aria-hidden="true" size={15} />
+                              )}
                             </button>
+                          </td>
+                          <td>
+                            <div className="shipment-date-cell">
+                              <strong>{formatUpdated(group.dispatchDate)}</strong>
+                              <small>
+                                Arrives {formatUpdated(group.expectedDeliveryDate)}
+                              </small>
+                            </div>
+                          </td>
+                          <td>
+                            <div className="shipment-store-cell">
+                              <strong>
+                                {group.storeCode}
+                                {group.recentlyImported && (
+                                  <span className="recent-import-badge">New</span>
+                                )}
+                              </strong>
+                              <small>{group.storeName}</small>
+                            </div>
+                          </td>
+                          <td>{group.horizonDays}-day plan</td>
+                          <td>
+                            <div className="shipment-product-summary">
+                              <strong>
+                                {group.items.length} product
+                                {group.items.length === 1 ? "" : "s"}
+                              </strong>
+                              <small>
+                                {group.items
+                                  .slice(0, 3)
+                                  .map((item) => item.productCode)
+                                  .join(", ")}
+                                {group.items.length > 3 ? " +" : ""}
+                              </small>
+                            </div>
+                          </td>
+                          <td>{formatNumber(group.recommendedShipment)}</td>
+                          <td>
+                            <span className={`priority ${group.priority.toLowerCase()}`}>
+                              {group.priority[0] +
+                                group.priority.slice(1).toLowerCase()}
+                            </span>
+                          </td>
+                          {permissions.canManageRecommendations && (
+                            <td className="recommendation-actions">
+                              <button
+                                className="approve-button shipment-dispatch-button"
+                                disabled={statusUpdate?.id === group.key}
+                                onClick={() => approveShipmentGroup(group)}
+                                type="button"
+                              >
+                                <Truck aria-hidden="true" size={13} />
+                                {statusUpdate?.id === group.key
+                                  ? "Dispatching"
+                                  : "Approve & dispatch"}
+                              </button>
+                            </td>
                           )}
-                          <button
-                            aria-label={`Edit shipment for ${item.storeCode} ${item.productCode}`}
-                            className="override-button"
-                            disabled={!isActionable(item.status)}
-                            onClick={() => openOverride(item)}
-                            title={
-                              !isActionable(item.status)
-                                ? "Completed recommendations are locked"
-                                : "Edit shipment amount"
-                            }
-                            type="button"
-                          >
-                            <PencilLine aria-hidden="true" size={14} />
-                          </button>
-                        </div>
-                      </td>}
-                    </tr>
+                        </tr>
+                        {expanded && (
+                          <tr className="shipment-group-detail">
+                            <td colSpan={columnCount}>
+                              <div className="shipment-group-detail-panel">
+                                <table className="shipment-product-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Product</th>
+                                      <th>Category</th>
+                                      <th>Store Stock</th>
+                                      <th>Depot Stock</th>
+                                      <th>Predicted Demand</th>
+                                      <th>Units</th>
+                                      <th>Priority</th>
+                                      {permissions.canManageRecommendations && (
+                                        <th>Actions</th>
+                                      )}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {group.items.map((item) => (
+                                      <tr key={item.id}>
+                                        <td>
+                                          <strong>{item.productCode}</strong>
+                                          <small>{item.productName}</small>
+                                        </td>
+                                        <td>{item.category}</td>
+                                        <td>{formatNumber(item.currentInventory)}</td>
+                                        <td>
+                                          {formatNumber(
+                                            depotInventoryByProduct.get(
+                                              item.productId,
+                                            ),
+                                          )}
+                                        </td>
+                                        <td>{formatNumber(item.predictedDemand)}</td>
+                                        <td>
+                                          <div className="shipment-value">
+                                            <span>
+                                              {formatNumber(
+                                                item.recommendedShipment,
+                                              )}
+                                            </span>
+                                            {item.originalRecommendedShipment !=
+                                              null && <small>Edited</small>}
+                                          </div>
+                                        </td>
+                                        <td>
+                                          <span
+                                            className={`priority ${item.priority.toLowerCase()}`}
+                                          >
+                                            {item.priority[0] +
+                                              item.priority.slice(1).toLowerCase()}
+                                          </span>
+                                        </td>
+                                        {permissions.canManageRecommendations && (
+                                          <td>
+                                            <div className="action-buttons">
+                                              <button
+                                                aria-label={`Reject ${item.productCode}`}
+                                                className="reject-button"
+                                                disabled={
+                                                  statusUpdate?.id === item.id
+                                                }
+                                                onClick={() => setRejectItem(item)}
+                                                title="Remove product from this shipment plan"
+                                                type="button"
+                                              >
+                                                <Ban aria-hidden="true" size={14} />
+                                              </button>
+                                              <button
+                                                aria-label={`Edit ${item.productCode}`}
+                                                className="override-button"
+                                                onClick={() => openOverride(item)}
+                                                title="Edit shipment amount"
+                                                type="button"
+                                              >
+                                                <PencilLine
+                                                  aria-hidden="true"
+                                                  size={14}
+                                                />
+                                              </button>
+                                            </div>
+                                          </td>
+                                        )}
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
@@ -1020,7 +1149,7 @@ export default function DashboardView({
 
             <footer className="pagination">
               <span>
-                {filteredRecommendations.length} recommendation
+                {filteredRecommendations.length} shipment
                 {filteredRecommendations.length === 1 ? "" : "s"}
               </span>
               <div aria-label="Table pages">

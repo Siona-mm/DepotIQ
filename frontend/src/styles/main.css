@@ -3700,6 +3700,92 @@ select {
   color: #111111;
 }
 
+.shipment-group-row > td {
+  vertical-align: middle;
+}
+
+.shipment-expand-button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  color: #6b7280;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.shipment-expand-button:hover {
+  color: #111111;
+  background: #f3f4f6;
+}
+
+.shipment-day-divider > td {
+  padding: 9px 14px;
+  border-top: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+  color: #4b5563;
+  background: #f3f4f6;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.shipment-date-cell,
+.shipment-store-cell,
+.shipment-product-summary {
+  display: grid;
+  gap: 3px;
+}
+
+.shipment-date-cell strong,
+.shipment-store-cell strong,
+.shipment-product-summary strong {
+  color: #111111;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.shipment-date-cell small,
+.shipment-store-cell small,
+.shipment-product-summary small {
+  overflow: hidden;
+  color: #9ca3af;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shipment-group-detail > td {
+  padding: 0 !important;
+  background: #fafafa !important;
+}
+
+.shipment-group-detail-panel {
+  padding: 12px 16px 16px 48px;
+}
+
+.shipment-product-table {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.shipment-product-table td:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.shipment-product-table td small {
+  color: #9ca3af;
+  font-size: 10px;
+}
+
+.shipment-dispatch-button {
+  white-space: nowrap;
+}
+
 @media (max-width: 520px) {
   .insight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
