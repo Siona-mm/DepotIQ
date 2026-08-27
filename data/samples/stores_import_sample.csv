@@ -1,0 +1,3 @@
+External Store ID,Name,Store Type,Region,Has Warehouse,Storage Capacity,Delivery Lead Time Days,Preferred Horizon Days
+POS-STORE-101,Central City Market,Medium,North,false,1400,2,7
+ERP-STORE-202,Regional Warehouse East,Warehouse Store,East,true,9000,4,30

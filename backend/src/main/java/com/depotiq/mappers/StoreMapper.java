@@ -13,6 +13,7 @@ public class StoreMapper {
 
         response.setId(store.getId());
         response.setStoreCode(store.getStoreCode());
+        response.setExternalStoreId(store.getExternalStoreId());
         response.setName(store.getName());
         response.setStoreType(store.getStoreType());
         response.setRegion(store.getRegion());
@@ -31,6 +32,7 @@ public class StoreMapper {
 
         store.setStoreCode(storeCode);
         store.setName(request.getName());
+        store.setExternalStoreId(normalizeOptional(request.getExternalStoreId()));
         store.setStoreType(request.getStoreType());
         store.setRegion(request.getRegion());
         store.setHasWarehouse(request.getHasWarehouse());
@@ -49,5 +51,9 @@ public class StoreMapper {
         store.setStorageCapacity(request.getStorageCapacity());
         store.setDeliveryLeadTimeDays(request.getDeliveryLeadTimeDays());
         store.setPreferredHorizonDays(request.getPreferredHorizonDays());
+    }
+
+    private String normalizeOptional(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }

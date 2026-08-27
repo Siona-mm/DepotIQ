@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 public class StoreResponse {
     private Long id;
     private String storeCode;
+    private String externalStoreId;
     private String name;
     private StoreType storeType;
     private String region;
@@ -31,6 +32,14 @@ public class StoreResponse {
 
     public void setStoreCode(String storeCode) {
         this.storeCode = storeCode;
+    }
+
+    public String getExternalStoreId() {
+        return externalStoreId;
+    }
+
+    public void setExternalStoreId(String externalStoreId) {
+        this.externalStoreId = externalStoreId;
     }
 
     public String getName() {

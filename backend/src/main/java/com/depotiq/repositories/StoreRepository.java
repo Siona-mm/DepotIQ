@@ -9,5 +9,7 @@ import java.util.Optional;
 public interface StoreRepository extends JpaRepository<Store, Long> {
     Optional<Store> findByStoreCode(String storeCode);
 
+    Optional<Store> findByExternalStoreIdIgnoreCase(String externalStoreId);
+
     boolean existsByStoreCode(String storeCode);
 }

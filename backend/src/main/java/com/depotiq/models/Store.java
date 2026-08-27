@@ -14,6 +14,9 @@ public class Store extends BaseEntity {
     @Column(name = "store_code", nullable = false, unique = true, length = 50)
     private String storeCode;
 
+    @Column(name = "external_store_id", length = 100)
+    private String externalStoreId;
+
     @Column(nullable = false, length = 150)
     private String name;
 
@@ -42,6 +45,14 @@ public class Store extends BaseEntity {
 
     public void setStoreCode(String storeCode) {
         this.storeCode = storeCode;
+    }
+
+    public String getExternalStoreId() {
+        return externalStoreId;
+    }
+
+    public void setExternalStoreId(String externalStoreId) {
+        this.externalStoreId = externalStoreId;
     }
 
     public String getName() {
