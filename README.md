@@ -423,8 +423,15 @@ cd ~/DepotIQ/ml-service
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+python scripts/bootstrap_models.py
 uvicorn main:app --reload --port 8000
 ```
+
+`bootstrap_models.py` generates the deterministic synthetic retail dataset,
+creates leakage-safe multi-day targets, and trains the 3-, 7-, 14-, and
+30-day demand models. It skips this work when the generated artifacts are
+already current. Use `python scripts/bootstrap_models.py --force` to retrain
+everything explicitly.
 
 ML service health check:
 
@@ -643,8 +650,8 @@ CREATE DATABASE depotiq OWNER depotiq;
 
 ## Run The Full Stack With Docker
 
-Docker Compose starts PostgreSQL, the Python ML service, the Spring Boot API,
-and the React frontend on one shared network.
+Docker Compose first prepares the ML models, then starts PostgreSQL, the Python
+ML service, the Spring Boot API, and the React frontend on one shared network.
 
 ```bash
 cd ~/DepotIQ
@@ -652,6 +659,19 @@ docker compose down --remove-orphans
 docker compose up --build -d
 docker compose ps
 ```
+
+On the first run, the `model-trainer` service generates 100,000 deterministic
+synthetic retail records, creates multi-day targets, and trains all four demand
+models. This can take a few minutes. Follow its progress with:
+
+```bash
+docker compose logs -f model-trainer
+```
+
+Generated datasets and `.joblib` files are stored in the
+`depotiq-ml-data` and `depotiq-ml-models` Docker volumes rather than Git.
+Later Compose starts reuse current artifacts; changes to the generator,
+target preparation, trainers, or Python requirements trigger retraining.
 
 Open the application at:
 
@@ -678,6 +698,17 @@ Check the running services:
 docker compose logs --tail=100 backend
 curl -u admin:admin123 http://localhost:8081/api/auth/me
 curl http://localhost:8000/health
+curl http://localhost:8000/recommendations/models
+```
+
+The models response should report `"artifactAvailable": true` for all four
+planning horizons.
+
+Explicitly retrain all models with:
+
+```bash
+docker compose run --rm model-trainer python scripts/bootstrap_models.py --force
+docker compose restart ml-service backend
 ```
 
 Stop the stack without deleting database data:
@@ -686,8 +717,9 @@ Stop the stack without deleting database data:
 docker compose down
 ```
 
-Do not add `-v` unless you intentionally want to delete the Docker database
-volume.
+Do not add `-v` unless you intentionally want to delete the Docker database,
+generated ML data, and trained-model volumes. The next start recreates and
+retrains the ML artifacts from source.
 
 ### Docker is not running
 
