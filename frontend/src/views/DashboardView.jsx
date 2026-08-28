@@ -185,46 +185,80 @@ function groupRecommendations(recommendations, recentImportKeySet) {
   const groups = new Map();
 
   recommendations.forEach((item) => {
-    const dates = shipmentDates(item);
-    const key = [
-      item.storeId,
-      item.recommendationDate,
-      item.horizonDays,
-    ].join("::");
+    const normalizedStoreCode = String(item.storeCode ?? item.storeId).trim();
+    const normalizedHorizon = Number(item.horizonDays);
+    const key = [normalizedStoreCode, normalizedHorizon].join("::");
     const current = groups.get(key) ?? {
       key,
       storeId: item.storeId,
-      storeCode: item.storeCode,
+      storeCode: normalizedStoreCode,
       storeName: item.storeName,
-      recommendationDate: item.recommendationDate,
-      horizonDays: Number(item.horizonDays),
-      dispatchDate: dates.dispatchDate,
-      expectedDeliveryDate: dates.expectedDeliveryDate,
-      priority: item.priority,
-      recommendedShipment: 0,
-      predictedDemand: 0,
-      currentInventory: 0,
+      horizonDays: normalizedHorizon,
       recentlyImported: false,
-      items: [],
+      itemsByProduct: new Map(),
     };
 
-    current.items.push(item);
-    current.recommendedShipment += Number(item.recommendedShipment ?? 0);
-    current.predictedDemand += Number(item.predictedDemand ?? 0);
-    current.currentInventory += Number(item.currentInventory ?? 0);
     current.recentlyImported ||= recentImportKeySet.has(
       `${item.storeCode}::${item.productCode}`,
     );
-    if (
-      (PRIORITY_ORDER[item.priority] ?? Number.MAX_SAFE_INTEGER) <
-      (PRIORITY_ORDER[current.priority] ?? Number.MAX_SAFE_INTEGER)
-    ) {
-      current.priority = item.priority;
+
+    const productKey = String(item.productCode ?? item.productId).trim();
+    const existing = current.itemsByProduct.get(productKey);
+    const itemDate = String(item.recommendationDate ?? "");
+    const existingDate = String(existing?.recommendationDate ?? "");
+    const itemIsNewer =
+      !existing ||
+      itemDate > existingDate ||
+      (itemDate === existingDate && Number(item.id ?? 0) > Number(existing.id ?? 0));
+
+    if (itemIsNewer) {
+      current.itemsByProduct.set(productKey, item);
     }
     groups.set(key, current);
   });
 
-  return Array.from(groups.values());
+  return Array.from(groups.values()).map((group) => {
+    const items = Array.from(group.itemsByProduct.values());
+    const recommendationDate = items.reduce(
+      (latest, item) =>
+        String(item.recommendationDate ?? "") > latest
+          ? String(item.recommendationDate)
+          : latest,
+      "",
+    );
+    const scheduleItem = { ...items[0], recommendationDate };
+    const dates = shipmentDates(scheduleItem);
+    const priority = items.reduce(
+      (highest, item) =>
+        (PRIORITY_ORDER[item.priority] ?? Number.MAX_SAFE_INTEGER) <
+        (PRIORITY_ORDER[highest] ?? Number.MAX_SAFE_INTEGER)
+          ? item.priority
+          : highest,
+      items[0]?.priority ?? "LOW",
+    );
+
+    return {
+      ...group,
+      itemsByProduct: undefined,
+      items,
+      recommendationDate,
+      dispatchDate: dates.dispatchDate,
+      expectedDeliveryDate: dates.expectedDeliveryDate,
+      priority,
+      recommendedShipment: items.reduce(
+        (total, item) => total + Number(item.recommendedShipment ?? 0),
+        0,
+      ),
+      predictedDemand: items.reduce(
+        (total, item) => total + Number(item.predictedDemand ?? 0),
+        0,
+      ),
+      currentInventory: items.reduce(
+        (total, item) => total + Number(item.currentInventory ?? 0),
+        0,
+      ),
+    };
+  });
 }
 
 function Metric({ icon: Icon, label, value, note }) {
@@ -279,6 +313,7 @@ export default function DashboardView({
   const [sortOpen, setSortOpen] = useState(false);
   const [storeFilter, setStoreFilter] = useState("ALL");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [horizonFilter, setHorizonFilter] = useState("ALL");
   const [sortBy, setSortBy] = useState("UPDATED_DESC");
   const [page, setPage] = useState(1);
   const [overrideItem, setOverrideItem] = useState(null);
@@ -461,6 +496,11 @@ export default function DashboardView({
       .filter(
         (group) => priorityFilter === "ALL" || group.priority === priorityFilter,
       )
+      .filter(
+        (group) =>
+          horizonFilter === "ALL" ||
+          group.horizonDays === Number(horizonFilter),
+      )
       .filter((group) => {
         if (!normalizedQuery) {
           return true;
@@ -486,11 +526,13 @@ export default function DashboardView({
         (left, right) =>
           Number(right.recentlyImported) - Number(left.recentlyImported) ||
           left.dispatchDate.localeCompare(right.dispatchDate) ||
+          compareRecommendations(left, right, sortBy) ||
           left.horizonDays - right.horizonDays ||
-          compareRecommendations(left, right, sortBy),
+          left.storeCode.localeCompare(right.storeCode),
       );
   }, [
     recommendationGroups,
+    horizonFilter,
     priorityFilter,
     query,
     sortBy,
@@ -511,9 +553,13 @@ export default function DashboardView({
   );
 
   const filtersActive =
-    storeFilter !== "ALL" || priorityFilter !== "ALL";
+    storeFilter !== "ALL" ||
+    priorityFilter !== "ALL" ||
+    horizonFilter !== "ALL";
   const activeFilterCount =
-    Number(storeFilter !== "ALL") + Number(priorityFilter !== "ALL");
+    Number(storeFilter !== "ALL") +
+    Number(priorityFilter !== "ALL") +
+    Number(horizonFilter !== "ALL");
 
   const pageCount = Math.max(
     1,
@@ -527,7 +573,7 @@ export default function DashboardView({
 
   useEffect(() => {
     setPage(1);
-  }, [query, storeFilter, priorityFilter, sortBy]);
+  }, [query, storeFilter, priorityFilter, horizonFilter, sortBy]);
 
   const handleSync = async () => {
     setSyncing(true);
@@ -829,6 +875,7 @@ export default function DashboardView({
                           onClick={() => {
                             setStoreFilter("ALL");
                             setPriorityFilter("ALL");
+                            setHorizonFilter("ALL");
                           }}
                           type="button"
                         >
@@ -844,6 +891,20 @@ export default function DashboardView({
                     </section>
                   )}
                 </div>
+                <label className="shipment-horizon-filter">
+                  <span>Horizon</span>
+                  <select
+                    aria-label="Filter shipments by planning horizon"
+                    onChange={(event) => setHorizonFilter(event.target.value)}
+                    value={horizonFilter}
+                  >
+                    <option value="ALL">All plans</option>
+                    <option value="3">3 days</option>
+                    <option value="7">7 days</option>
+                    <option value="14">14 days</option>
+                    <option value="30">30 days</option>
+                  </select>
+                </label>
                 <div className="filter-control" ref={sortControlRef}>
                   <button
                     aria-expanded={sortOpen}
@@ -927,10 +988,10 @@ export default function DashboardView({
             </div>
 
             <div className="table-scroll">
-              <table>
+              <table className="shipment-plan-table">
                 <thead>
                   <tr>
-                    <th aria-label="Expand shipment" />
+                    <th aria-label="Expand shipment" className="shipment-expand-column" />
                     <th>Dispatch</th>
                     <th>Store</th>
                     <th>Horizon</th>
@@ -967,7 +1028,7 @@ export default function DashboardView({
                               : "shipment-group-row"
                           }
                         >
-                          <td>
+                          <td className="shipment-expand-column">
                             <button
                               aria-expanded={expanded}
                               aria-label={`${expanded ? "Collapse" : "Expand"} shipment for ${group.storeCode}`}
@@ -1055,7 +1116,6 @@ export default function DashboardView({
                                       <th>Depot Stock</th>
                                       <th>Predicted Demand</th>
                                       <th>Units</th>
-                                      <th>Priority</th>
                                       {permissions.canManageRecommendations && (
                                         <th>Actions</th>
                                       )}
@@ -1089,16 +1149,8 @@ export default function DashboardView({
                                               null && <small>Edited</small>}
                                           </div>
                                         </td>
-                                        <td>
-                                          <span
-                                            className={`priority ${item.priority.toLowerCase()}`}
-                                          >
-                                            {item.priority[0] +
-                                              item.priority.slice(1).toLowerCase()}
-                                          </span>
-                                        </td>
                                         {permissions.canManageRecommendations && (
-                                          <td>
+                                          <td className="shipment-product-actions">
                                             <div className="action-buttons">
                                               <button
                                                 aria-label={`Reject ${item.productCode}`}

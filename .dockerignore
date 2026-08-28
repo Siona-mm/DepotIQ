@@ -3,3 +3,9 @@
 !ml-service/**
 !data/
 !data/**
+ml-service/models/*
+!ml-service/models/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/synthetic/*
+!data/synthetic/README.md

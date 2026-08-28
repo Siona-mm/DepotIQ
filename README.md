@@ -84,6 +84,9 @@ docker compose down
 ```
 
 This keeps the PostgreSQL data volume. Do not run `docker compose down -v` unless you intentionally want to delete all local DepotIQ database data.
+Do not add `-v` unless you intentionally want to delete the Docker database,
+generated ML data, and trained-model volumes. The next start recreates and
+retrains the ML artifacts from source.
 
 ### Common problem: a service does not start
 
