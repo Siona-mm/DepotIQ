@@ -6,8 +6,8 @@
 
 Before starting, ensure that:
 
-- Docker Desktop is installed and running.
-- WSL integration is enabled for your Ubuntu distribution.
+* Docker Desktop is installed and running.
+* WSL integration is enabled for your Ubuntu distribution.
 
 ### Start the application
 
@@ -41,8 +41,8 @@ docker compose ps -a
 
 After a successful startup:
 
-- `model-trainer` should show `Exited (0)`.
-- The remaining application services should show `running` or `healthy`.
+* `model-trainer` should show `Exited (0)`.
+* The remaining application services should show `running` or `healthy`.
 
 ### Open the application
 
@@ -61,16 +61,16 @@ Password: admin123
 
 ## Service URLs
 
-| Service | URL |
-|---|---|
-| Frontend | `http://localhost:5173` |
+| Service     | URL                     |
+| ----------- | ----------------------- |
+| Frontend    | `http://localhost:5173` |
 | Backend API | `http://localhost:8081` |
-| ML service | `http://localhost:8000` |
-| PostgreSQL | `localhost:5432` |
+| ML service  | `http://localhost:8000` |
+| PostgreSQL  | `localhost:5432`        |
 
 The backend uses port `8081`, leaving port `8080` available for another local project.
 
-## Logs and health checks
+## Logs and Health Checks
 
 ### View service logs
 
@@ -91,7 +91,7 @@ curl http://localhost:8000/recommendations/models
 
 The models endpoint should report `"artifactAvailable": true` for all four planning horizons.
 
-## Restart after code changes
+## Restart After Code Changes
 
 Rebuild and restart the complete application:
 
@@ -107,7 +107,7 @@ docker compose restart frontend
 docker compose restart ml-service
 ```
 
-## Retrain the models
+## Retrain the Models
 
 Training runs automatically when required. To force complete retraining:
 
@@ -116,7 +116,7 @@ docker compose run --rm model-trainer python scripts/bootstrap_models.py --force
 docker compose restart ml-service backend
 ```
 
-## Stop the application
+## Stop the Application
 
 ```bash
 docker compose down
@@ -142,3 +142,13 @@ Then rebuild the affected service. For example:
 ```bash
 docker compose up --build -d backend
 ```
+
+---
+
+## Copyright
+
+Copyright © 2026 DepotIQ Contributors. All rights reserved.
+
+The source code and materials in this repository are publicly available for viewing, academic evaluation, and portfolio purposes only.
+
+No permission is granted to copy, modify, distribute, sublicense, or reuse this source code or substantial portions of it in another project without prior written permission from the respective copyright holder(s).
