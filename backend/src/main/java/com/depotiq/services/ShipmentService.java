@@ -183,7 +183,11 @@ public class ShipmentService {
         recommendationRepository.saveAll(recommendations);
 
         ShipmentRecommendation first = recommendations.get(0);
-        LocalDate expectedDeliveryDate = first.getRecommendationDate()
+        LocalDate latestRecommendationDate = recommendations.stream()
+                .map(ShipmentRecommendation::getRecommendationDate)
+                .max(LocalDate::compareTo)
+                .orElseThrow();
+        LocalDate expectedDeliveryDate = latestRecommendationDate
                 .plusDays(first.getHorizonDays());
         int leadTimeDays = Math.max(
                 0,
@@ -299,16 +303,21 @@ public class ShipmentService {
     ) {
         ShipmentRecommendation first = recommendations.get(0);
         Long storeId = first.getStore().getId();
-        LocalDate recommendationDate = first.getRecommendationDate();
         Integer horizonDays = first.getHorizonDays();
+        Set<Long> productIds = new HashSet<>();
 
         for (ShipmentRecommendation recommendation : recommendations) {
             if (!recommendation.getStore().getId().equals(storeId)
-                    || !recommendation.getRecommendationDate().equals(recommendationDate)
                     || !recommendation.getHorizonDays().equals(horizonDays)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST,
-                        "A shipment must contain one store, recommendation date, and planning horizon"
+                        "A shipment must contain one store and one planning horizon"
+                );
+            }
+            if (!productIds.add(recommendation.getProduct().getId())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "A shipment can contain only one recommendation per product"
                 );
             }
             if (recommendation.getStatus() != RecommendationStatus.PENDING
