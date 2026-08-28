@@ -20,14 +20,34 @@ services:
       retries: 10
     restart: unless-stopped
 
+  model-trainer:
+    build:
+      context: .
+      dockerfile: ml-service/Dockerfile
+    environment:
+      PYTHONPATH: /app/ml-service
+    command: ["python", "scripts/bootstrap_models.py"]
+    volumes:
+      - depotiq-ml-models:/app/ml-service/models
+      - depotiq-ml-data:/app/data
+    networks:
+      - depotiq-network
+    restart: "no"
+
   ml-service:
     build:
       context: .
       dockerfile: ml-service/Dockerfile
     environment:
       PYTHONPATH: /app/ml-service
+    depends_on:
+      model-trainer:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
+    volumes:
+      - depotiq-ml-models:/app/ml-service/models:ro
+      - depotiq-ml-data:/app/data:ro
     networks:
       - depotiq-network
     healthcheck:
@@ -54,7 +74,7 @@ services:
       postgres:
         condition: service_healthy
       ml-service:
-        condition: service_started
+        condition: service_healthy
     ports:
       - "8081:8080"
     networks:
@@ -154,6 +174,8 @@ services:
 
 volumes:
   depotiq-postgres-data:
+  depotiq-ml-models:
+  depotiq-ml-data:
   frontend-node-modules:
   airflow-postgres-data:
 
