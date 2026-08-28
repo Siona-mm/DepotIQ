@@ -3701,19 +3701,41 @@ select {
 }
 
 .shipment-group-row > td {
+  padding-top: 8px;
+  padding-bottom: 8px;
   vertical-align: middle;
+}
+
+.shipment-plan-table > thead > tr > th:first-child,
+.shipment-plan-table > tbody > tr > td:first-child {
+  width: 34px;
+  padding-right: 4px;
+  padding-left: 4px;
+}
+
+.shipment-plan-table > thead > tr > th:nth-child(2) { width: 108px; }
+.shipment-plan-table > thead > tr > th:nth-child(3) { width: 110px; }
+.shipment-plan-table > thead > tr > th:nth-child(4) { width: 82px; }
+.shipment-plan-table > thead > tr > th:nth-child(6) { width: 82px; }
+.shipment-plan-table > thead > tr > th:nth-child(7) { width: 82px; }
+.shipment-plan-table > thead > tr > th:last-child { width: 146px; }
+
+.shipment-expand-column {
+  border-right-color: #e5e7eb;
+  background: #fafafa;
+  text-align: center;
 }
 
 .shipment-expand-button {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   padding: 0;
   place-items: center;
-  border: 1px solid #e5e7eb;
-  border-radius: 5px;
+  border: 0;
+  border-radius: 4px;
   color: #6b7280;
-  background: #ffffff;
+  background: transparent;
   cursor: pointer;
 }
 
@@ -3768,22 +3790,94 @@ select {
 
 .shipment-product-table {
   width: 100%;
+  table-layout: fixed;
   border: 1px solid #e5e7eb;
   background: #ffffff;
 }
 
+.shipment-product-table th:first-child { width: 22%; }
+.shipment-product-table th:nth-child(2) { width: 16%; }
+.shipment-product-table th:nth-child(3),
+.shipment-product-table th:nth-child(4) { width: 14%; }
+.shipment-product-table th:nth-child(5) { width: 17%; }
+.shipment-product-table th:nth-child(6) { width: 10%; }
+.shipment-product-table th:last-child { width: 72px; }
+
+.shipment-product-table tbody td {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  vertical-align: middle;
+}
+
 .shipment-product-table td:first-child {
-  display: grid;
-  gap: 2px;
+  display: table-cell;
+}
+
+.shipment-product-table td:first-child strong {
+  display: block;
+  margin-bottom: 2px;
+  line-height: 1.2;
 }
 
 .shipment-product-table td small {
+  display: block;
+  overflow: hidden;
   color: #9ca3af;
   font-size: 10px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shipment-product-actions {
+  width: 72px;
+  padding-right: 6px !important;
+  padding-left: 6px !important;
+}
+
+.shipment-product-actions .action-buttons {
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.shipment-product-actions .reject-button,
+.shipment-product-actions .override-button {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  padding: 0;
 }
 
 .shipment-dispatch-button {
+  min-width: 128px;
+  padding: 7px 8px;
+  font-size: 10.5px;
   white-space: nowrap;
+}
+
+.shipment-plan-table .recommendation-actions {
+  min-width: 146px;
+  padding-right: 7px;
+  padding-left: 7px;
+}
+
+.shipment-horizon-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.shipment-horizon-filter select {
+  height: 32px;
+  min-width: 92px;
+  padding: 0 26px 0 9px;
+  border: 1px solid #e5e7eb;
+  border-radius: 5px;
+  color: #111111;
+  background: #ffffff;
+  font: inherit;
 }
 
 @media (max-width: 520px) {
