@@ -54,7 +54,7 @@ export default function MlStatusPanel({ loading, onRetry, status }) {
             <Sparkles aria-hidden="true" size={18} />
             <div>
               <strong>{model ? model.modelName.replaceAll("_", " ") : "No model reported"}</strong>
-              <span>{model ? `Version ${model.modelVersion} · ${model.horizonDays}-day horizon` : "Sync model output to populate metadata"}</span>
+              <span>{model ? `Version ${model.modelVersion}` : "Sync model output to populate metadata"}</span>
             </div>
           </div>
           <dl className="ml-status-metrics">
