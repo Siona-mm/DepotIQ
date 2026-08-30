@@ -13,11 +13,11 @@ public class BusinessCodeGenerator {
     }
 
     public String nextStoreCode() {
-        return "S%04d".formatted(nextValue("store_code_seq"));
+        return nextUnusedCode("store_code_seq", "stores", "store_code", "S%03d");
     }
 
     public String nextProductCode() {
-        return "P%04d".formatted(nextValue("product_code_seq"));
+        return nextUnusedCode("product_code_seq", "products", "product_code", "P%04d");
     }
 
     public String nextShipmentNumber() {
@@ -25,6 +25,18 @@ public class BusinessCodeGenerator {
                 Year.now().getValue(),
                 nextValue("shipment_number_seq")
         );
+    }
+
+    // The sequence supplies concurrency-safe candidates. Skip codes created by earlier imports.
+    private String nextUnusedCode(String sequence, String table, String column, String format) {
+        while (true) {
+            String candidate = format.formatted(nextValue(sequence));
+            Boolean exists = jdbcTemplate.queryForObject(
+                    "SELECT EXISTS (SELECT 1 FROM " + table + " WHERE " + column + " = ?)",
+                    Boolean.class, candidate);
+            if (Boolean.FALSE.equals(exists)) return candidate;
+            if (exists == null) throw new IllegalStateException("Could not check generated business code");
+        }
     }
 
     private long nextValue(String sequenceName) {

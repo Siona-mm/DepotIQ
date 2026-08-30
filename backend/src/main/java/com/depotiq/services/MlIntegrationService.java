@@ -63,7 +63,7 @@ public class MlIntegrationService {
         int skipped = 0;
 
         for (MlRecommendationPayload payload : batch.recommendations()) {
-            Optional<Store> store = storeRepository.findByStoreCode(payload.storeCode());
+            Optional<Store> store = storeRepository.findByStoreCode(BusinessCodes.normalizeStoreCode(payload.storeCode()));
             Optional<Product> product = productRepository.findByProductCode(payload.productCode());
 
             if (store.isEmpty() || product.isEmpty()) {
