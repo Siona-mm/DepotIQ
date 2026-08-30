@@ -1,5 +1,8 @@
 # DepotIQ
 
+## Demo
+Check the demo video out: https://drive.google.com/drive/folders/14RcVVbmQfdbeYKK-DJc7khdqW_KmzcyD?usp=sharing
+
 ## Run with Docker
 
 ### Requirements
