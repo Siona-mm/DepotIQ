@@ -248,14 +248,15 @@ export function updateShipmentStatus(id, status) {
   });
 }
 
-export function importHistoricalSalesCsv(file) {
+export function importCsv(file, type = "sales-records", receiptId = "") {
   const formData = new globalThis.FormData();
   formData.append("file", file);
+  if (receiptId.trim()) formData.append("receiptId", receiptId.trim());
+  return request(`/api/imports/${type}`, { method: "POST", body: formData });
+}
 
-  return request("/api/imports/sales-records", {
-    method: "POST",
-    body: formData,
-  });
+export function importHistoricalSalesCsv(file) {
+  return importCsv(file);
 }
 
 export function loadImportHistory() {

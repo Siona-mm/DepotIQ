@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { loadStoreInventory, updateStoreInventory } from "../api/depotiqApi.js";
 import AppSidebar from "../components/AppSidebar.jsx";
 import HeaderAccountControls from "../components/HeaderAccountControls.jsx";
+import { compareBusinessCodes } from "../utils/businessCodes.js";
 
 const number = (value) => new Intl.NumberFormat("en-US").format(Number(value ?? 0));
 function stockState(item) {
@@ -19,8 +20,8 @@ export default function StoreInventoryView({ collapsed, onAction, onCollapse, on
   const load = useCallback(async () => { try { setError(""); setInventory(await loadStoreInventory()); } catch (requestError) { setError(requestError.message); } finally { setLoading(false); } }, []);
   useEffect(() => { load(); }, [load]);
   const recentImportKeySet = useMemo(() => new Set(recentlyImportedKeys), [recentlyImportedKeys]);
-  const visible = useMemo(() => { const normalized = query.toLowerCase().trim(); return inventory.filter((item) => storeFilter === "ALL" || item.storeCode === storeFilter).filter((item) => statusFilter === "ALL" || stockState(item).key === statusFilter).filter((item) => !normalized || [item.storeCode, item.storeName, item.productCode, item.productName, item.category].some((value) => String(value ?? "").toLowerCase().includes(normalized))).sort((left, right) => Number(recentImportKeySet.has(`${right.storeCode}::${right.productCode}`)) - Number(recentImportKeySet.has(`${left.storeCode}::${left.productCode}`))); }, [inventory, query, recentImportKeySet, statusFilter, storeFilter]);
-  const storeOptions = [...new Set(inventory.map((item) => item.storeCode))].sort();
+  const visible = useMemo(() => { const normalized = query.toLowerCase().trim(); return inventory.filter((item) => storeFilter === "ALL" || item.storeCode === storeFilter).filter((item) => statusFilter === "ALL" || stockState(item).key === statusFilter).filter((item) => !normalized || [item.storeCode, item.storeName, item.productCode, item.productName, item.category].some((value) => String(value ?? "").toLowerCase().includes(normalized))).sort((left, right) => Number(recentImportKeySet.has(`${right.storeCode}::${right.productCode}`)) - Number(recentImportKeySet.has(`${left.storeCode}::${left.productCode}`)) || compareBusinessCodes(left.storeCode, right.storeCode) || compareBusinessCodes(left.productCode, right.productCode)); }, [inventory, query, recentImportKeySet, statusFilter, storeFilter]);
+  const storeOptions = [...new Set(inventory.map((item) => item.storeCode))].sort(compareBusinessCodes);
   const atRisk = inventory.filter((item) => stockState(item).key !== "in").length;
   const openEdit = (item) => { setEditing(item); setInventoryLevel(String(item.inventoryLevel)); setIncomingUnits(String(item.incomingUnits)); setError(""); };
   const closeEdit = () => { if (!saving) setEditing(null); };

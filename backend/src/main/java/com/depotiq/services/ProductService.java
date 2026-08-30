@@ -41,6 +41,7 @@ public class ProductService {
     }
 
     public ProductResponse createProduct(CreateProductRequest request) {
+        validateExternalSku(request.getExternalSku(), null);
         Product product = productMapper.toEntity(
                 request,
                 businessCodeGenerator.nextProductCode()
@@ -53,6 +54,7 @@ public class ProductService {
     public ProductResponse updateProduct(Long id, UpdateProductRequest request) {
         Product product = findProductOrThrow(id);
 
+        validateExternalSku(request.getExternalSku(), id);
         productMapper.updateEntity(product, request);
         Product savedProduct = productRepository.save(product);
 
@@ -62,6 +64,16 @@ public class ProductService {
     public void deleteProduct(Long id) {
         Product product = findProductOrThrow(id);
         productRepository.delete(product);
+    }
+
+    private void validateExternalSku(String externalSku, Long currentId) {
+        if (externalSku == null || externalSku.isBlank()) return;
+        productRepository.findByExternalSkuIgnoreCase(externalSku.trim()).ifPresent(existing -> {
+            if (!existing.getId().equals(currentId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "External SKU is already assigned to " + existing.getProductCode());
+            }
+        });
     }
 
     private Product findProductOrThrow(Long id) {

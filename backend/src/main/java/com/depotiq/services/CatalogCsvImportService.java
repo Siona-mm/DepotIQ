@@ -8,17 +8,9 @@ import com.depotiq.models.StoreType;
 import com.depotiq.repositories.ImportAuditLogRepository;
 import com.depotiq.repositories.ProductRepository;
 import com.depotiq.repositories.StoreRepository;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,26 +19,20 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @Transactional
 public class CatalogCsvImportService {
-    private static final int MAX_REPORTED_ERRORS = 100;
-    private static final Set<String> STORE_COLUMNS = Set.of(
+    static final List<String> STORE_COLUMNS = List.of(
             "External Store ID", "Name", "Store Type", "Region", "Has Warehouse",
-            "Storage Capacity", "Delivery Lead Time Days", "Preferred Horizon Days"
-    );
-    private static final Set<String> PRODUCT_COLUMNS = Set.of(
-            "External SKU", "Name", "Category", "Perishable"
-    );
+            "Storage Capacity", "Delivery Lead Time Days", "Preferred Horizon Days");
+    static final List<String> PRODUCT_COLUMNS = List.of(
+            "External SKU", "Name", "Category", "Brand", "Supplier Code", "Unit Cost",
+            "Price", "Weight Kg", "Shelf Life Days", "Perishable");
 
     private final StoreRepository storeRepository;
     private final ProductRepository productRepository;
     private final ImportAuditLogRepository importAuditLogRepository;
     private final BusinessCodeGenerator businessCodeGenerator;
 
-    public CatalogCsvImportService(
-            StoreRepository storeRepository,
-            ProductRepository productRepository,
-            ImportAuditLogRepository importAuditLogRepository,
-            BusinessCodeGenerator businessCodeGenerator
-    ) {
+    public CatalogCsvImportService(StoreRepository storeRepository, ProductRepository productRepository,
+            ImportAuditLogRepository importAuditLogRepository, BusinessCodeGenerator businessCodeGenerator) {
         this.storeRepository = storeRepository;
         this.productRepository = productRepository;
         this.importAuditLogRepository = importAuditLogRepository;
@@ -54,252 +40,122 @@ public class CatalogCsvImportService {
     }
 
     public CatalogImportResponse importStores(MultipartFile file) {
-        return importCsv(file, "STORE_CATALOG", STORE_COLUMNS, this::upsertStore);
+        var identifiers = new HashSet<String>();
+        var rows = CsvImportSupport.read(file, STORE_COLUMNS, row -> {
+            Store draft = parseStore(row);
+            requireUnique(identifiers, draft.getExternalStoreId());
+            return draft;
+        });
+        int created = 0;
+        for (Store draft : rows) {
+            Store store = storeRepository.findByExternalStoreIdIgnoreCase(draft.getExternalStoreId()).orElse(null);
+            if (store == null) {
+                store = draft;
+                store.setStoreCode(businessCodeGenerator.nextStoreCode());
+                created++;
+            } else {
+                store.setName(draft.getName());
+                store.setStoreType(draft.getStoreType());
+                store.setRegion(draft.getRegion());
+                store.setHasWarehouse(draft.getHasWarehouse());
+                store.setStorageCapacity(draft.getStorageCapacity());
+                store.setDeliveryLeadTimeDays(draft.getDeliveryLeadTimeDays());
+                store.setPreferredHorizonDays(draft.getPreferredHorizonDays());
+            }
+            storeRepository.save(store);
+        }
+        return recordImport(file, "STORE_CATALOG", rows.size(), created, rows.size() - created, 0, created, 0);
     }
 
     public CatalogImportResponse importProducts(MultipartFile file) {
-        return importCsv(file, "PRODUCT_CATALOG", PRODUCT_COLUMNS, this::upsertProduct);
-    }
-
-    private CatalogImportResponse importCsv(
-            MultipartFile file,
-            String importType,
-            Set<String> requiredColumns,
-            RowImporter rowImporter
-    ) {
-        validateFile(file);
-        String fileName = safeFileName(file.getOriginalFilename());
-        int processed = 0;
+        var identifiers = new HashSet<String>();
+        var rows = CsvImportSupport.read(file, PRODUCT_COLUMNS, row -> {
+            Product draft = parseProduct(row);
+            requireUnique(identifiers, draft.getExternalSku());
+            return draft;
+        });
         int created = 0;
-        int updated = 0;
-        int skipped = 0;
-        List<String> errors = new ArrayList<>();
-
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8)
-        )) {
-            removeByteOrderMark(reader);
-            CSVFormat format = CSVFormat.DEFAULT.builder()
-                    .setHeader()
-                    .setSkipHeaderRecord(true)
-                    .setIgnoreEmptyLines(true)
-                    .setIgnoreHeaderCase(true)
-                    .setTrim(true)
-                    .build();
-
-            try (CSVParser parser = format.parse(reader)) {
-                validateHeaders(parser.getHeaderMap().keySet(), requiredColumns);
-                for (CSVRecord row : parser) {
-                    processed++;
-                    try {
-                        if (rowImporter.importRow(row)) {
-                            created++;
-                        } else {
-                            updated++;
-                        }
-                    } catch (IllegalArgumentException exception) {
-                        skipped++;
-                        if (errors.size() < MAX_REPORTED_ERRORS) {
-                            errors.add("Line " + (row.getRecordNumber() + 1) + ": " + exception.getMessage());
-                        }
-                    }
-                }
+        for (Product draft : rows) {
+            Product product = productRepository.findByExternalSkuIgnoreCase(draft.getExternalSku()).orElse(null);
+            if (product == null) {
+                product = draft;
+                product.setProductCode(businessCodeGenerator.nextProductCode());
+                created++;
+            } else {
+                copyProduct(draft, product);
             }
-        } catch (IOException exception) {
-            throw new IllegalArgumentException("The CSV file could not be read.", exception);
+            productRepository.save(product);
         }
-
-        CatalogImportResponse response = new CatalogImportResponse(
-                importType,
-                fileName,
-                processed,
-                created,
-                updated,
-                skipped,
-                List.copyOf(errors)
-        );
-        saveAuditLog(response);
-        return response;
+        return recordImport(file, "PRODUCT_CATALOG", rows.size(), created, rows.size() - created, 0, 0, created);
     }
 
-    private boolean upsertStore(CSVRecord row) {
-        String externalStoreId = required(row, "External Store ID");
-        Store store = storeRepository.findByExternalStoreIdIgnoreCase(externalStoreId).orElse(null);
-        boolean created = store == null;
-        if (created) {
-            store = new Store();
-            store.setStoreCode(businessCodeGenerator.nextStoreCode());
-            store.setExternalStoreId(externalStoreId);
-        }
-
-        store.setName(required(row, "Name"));
-        store.setStoreType(parseStoreType(required(row, "Store Type")));
-        store.setRegion(required(row, "Region"));
-        store.setHasWarehouse(parseBoolean(required(row, "Has Warehouse"), "Has Warehouse"));
-        store.setStorageCapacity(parsePositiveInteger(required(row, "Storage Capacity"), "Storage Capacity"));
-        store.setDeliveryLeadTimeDays(parsePositiveInteger(
-                required(row, "Delivery Lead Time Days"),
-                "Delivery Lead Time Days"
-        ));
-        store.setPreferredHorizonDays(parsePositiveInteger(
-                required(row, "Preferred Horizon Days"),
-                "Preferred Horizon Days"
-        ));
-        storeRepository.save(store);
-        return created;
+    static Product parseProduct(CSVRecord row) {
+        Product product = new Product();
+        product.setExternalSku(CsvImportSupport.text(row, "External SKU", 100));
+        product.setName(CsvImportSupport.text(row, "Name", 150));
+        product.setCategory(CsvImportSupport.text(row, "Category", 100));
+        product.setBrand(CsvImportSupport.text(row, "Brand", 100));
+        product.setSupplierCode(CsvImportSupport.text(row, "Supplier Code", 100));
+        product.setUnitCost(CsvImportSupport.decimal(row, "Unit Cost", 12, 2));
+        product.setPrice(CsvImportSupport.decimal(row, "Price", 12, 2));
+        product.setWeightKg(CsvImportSupport.decimal(row, "Weight Kg", 10, 3));
+        if (product.getWeightKg().signum() == 0) throw new IllegalArgumentException("Weight Kg must be greater than zero.");
+        product.setPerishable(CsvImportSupport.bool(row, "Perishable"));
+        product.setShelfLifeDays(CsvImportSupport.integer(row, "Shelf Life Days", product.getPerishable() ? 1 : 0));
+        return product;
     }
 
-    private boolean upsertProduct(CSVRecord row) {
-        String externalSku = required(row, "External SKU");
-        Product product = productRepository.findByExternalSkuIgnoreCase(externalSku).orElse(null);
-        boolean created = product == null;
-        if (created) {
-            product = new Product();
-            product.setProductCode(businessCodeGenerator.nextProductCode());
-            product.setExternalSku(externalSku);
-        }
-
-        product.setName(required(row, "Name"));
-        product.setCategory(required(row, "Category"));
-        product.setBrand(optional(row, "Brand"));
-        product.setSupplierCode(optional(row, "Supplier Code"));
-        product.setUnitCost(parseOptionalDecimal(row, "Unit Cost"));
-        product.setPrice(parseOptionalDecimal(row, "Price"));
-        product.setWeightKg(parseOptionalDecimal(row, "Weight Kg"));
-        product.setShelfLifeDays(parseOptionalNonNegativeInteger(row, "Shelf Life Days"));
-        product.setPerishable(parseBoolean(required(row, "Perishable"), "Perishable"));
-        productRepository.save(product);
-        return created;
+    static void copyProduct(Product draft, Product product) {
+        product.setName(draft.getName());
+        product.setCategory(draft.getCategory());
+        product.setBrand(draft.getBrand());
+        product.setSupplierCode(draft.getSupplierCode());
+        product.setUnitCost(draft.getUnitCost());
+        product.setPrice(draft.getPrice());
+        product.setWeightKg(draft.getWeightKg());
+        product.setShelfLifeDays(draft.getShelfLifeDays());
+        product.setPerishable(draft.getPerishable());
     }
 
-    private void saveAuditLog(CatalogImportResponse response) {
-        ImportAuditLog auditLog = new ImportAuditLog();
-        auditLog.setFileName(response.fileName());
-        auditLog.setImportType(response.importType());
-        auditLog.setProcessedRows(response.processedRows());
-        auditLog.setCreatedRecords(response.createdRecords());
-        auditLog.setUpdatedRecords(response.updatedRecords());
-        auditLog.setSkippedRows(response.skippedRows());
-        auditLog.setCreatedStores("STORE_CATALOG".equals(response.importType()) ? response.createdRecords() : 0);
-        auditLog.setCreatedProducts("PRODUCT_CATALOG".equals(response.importType()) ? response.createdRecords() : 0);
-        auditLog.setErrorSummary(response.errors().isEmpty() ? null : String.join("\n", response.errors()));
-        importAuditLogRepository.save(auditLog);
-    }
-
-    private void validateFile(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new IllegalArgumentException("A non-empty CSV file is required.");
-        }
-        String fileName = file.getOriginalFilename();
-        if (fileName == null || !fileName.toLowerCase(Locale.ROOT).endsWith(".csv")) {
-            throw new IllegalArgumentException("Only CSV files are supported.");
-        }
-    }
-
-    private void validateHeaders(Set<String> actualColumns, Set<String> requiredColumns) {
-        List<String> missing = requiredColumns.stream()
-                .filter(required -> actualColumns.stream().noneMatch(actual -> actual.equalsIgnoreCase(required)))
-                .sorted()
-                .toList();
-        if (!missing.isEmpty()) {
-            throw new IllegalArgumentException("Missing required columns: " + String.join(", ", missing));
-        }
-    }
-
-    private StoreType parseStoreType(String value) {
+    private static Store parseStore(CSVRecord row) {
+        Store store = new Store();
+        store.setExternalStoreId(CsvImportSupport.text(row, "External Store ID", 100));
+        store.setName(CsvImportSupport.text(row, "Name", 150));
         try {
-            return StoreType.valueOf(value.trim().toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_'));
+            store.setStoreType(StoreType.valueOf(CsvImportSupport.required(row, "Store Type")
+                    .toUpperCase(Locale.ROOT).replace('-', '_').replace(' ', '_')));
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException(
-                    "Store Type must be Small, Medium, Large, or Warehouse Store."
-            );
+            throw new IllegalArgumentException("Store Type must be Small, Medium, Large, or Warehouse Store.");
+        }
+        store.setRegion(CsvImportSupport.text(row, "Region", 100));
+        store.setHasWarehouse(CsvImportSupport.bool(row, "Has Warehouse"));
+        store.setStorageCapacity(CsvImportSupport.integer(row, "Storage Capacity", 1));
+        store.setDeliveryLeadTimeDays(CsvImportSupport.integer(row, "Delivery Lead Time Days", 1));
+        store.setPreferredHorizonDays(CsvImportSupport.integer(row, "Preferred Horizon Days", 1));
+        if (!List.of(3, 7, 14, 30).contains(store.getPreferredHorizonDays())) {
+            throw new IllegalArgumentException("Preferred Horizon Days must be 3, 7, 14, or 30.");
+        }
+        return store;
+    }
+
+    static void requireUnique(java.util.Set<String> identifiers, String identifier) {
+        if (!identifiers.add(identifier.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Duplicate identifier in this file: " + identifier);
         }
     }
 
-    private boolean parseBoolean(String value, String field) {
-        return switch (value.trim().toLowerCase(Locale.ROOT)) {
-            case "true", "yes", "1" -> true;
-            case "false", "no", "0" -> false;
-            default -> throw new IllegalArgumentException(field + " must be true or false.");
-        };
-    }
-
-    private int parsePositiveInteger(String value, String field) {
-        int parsed = parseInteger(value, field);
-        if (parsed < 1) {
-            throw new IllegalArgumentException(field + " must be at least 1.");
-        }
-        return parsed;
-    }
-
-    private Integer parseOptionalNonNegativeInteger(CSVRecord row, String field) {
-        String value = optional(row, field);
-        if (value == null) {
-            return null;
-        }
-        int parsed = parseInteger(value, field);
-        if (parsed < 0) {
-            throw new IllegalArgumentException(field + " cannot be negative.");
-        }
-        return parsed;
-    }
-
-    private int parseInteger(String value, String field) {
-        try {
-            return Integer.parseInt(value.trim());
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(field + " must be a whole number.");
-        }
-    }
-
-    private BigDecimal parseOptionalDecimal(CSVRecord row, String field) {
-        String value = optional(row, field);
-        if (value == null) {
-            return null;
-        }
-        try {
-            BigDecimal parsed = new BigDecimal(value);
-            if (parsed.signum() < 0) {
-                throw new IllegalArgumentException(field + " cannot be negative.");
-            }
-            return parsed;
-        } catch (NumberFormatException exception) {
-            throw new IllegalArgumentException(field + " must be a number.");
-        }
-    }
-
-    private String required(CSVRecord row, String field) {
-        String value = optional(row, field);
-        if (value == null) {
-            throw new IllegalArgumentException(field + " is required.");
-        }
-        return value;
-    }
-
-    private String optional(CSVRecord row, String field) {
-        if (!row.isMapped(field)) {
-            return null;
-        }
-        String value = row.get(field);
-        return value == null || value.isBlank() ? null : value.trim();
-    }
-
-    private void removeByteOrderMark(BufferedReader reader) throws IOException {
-        reader.mark(1);
-        if (reader.read() != '\ufeff') {
-            reader.reset();
-        }
-    }
-
-    private String safeFileName(String fileName) {
-        if (fileName == null || fileName.isBlank()) {
-            return "catalog.csv";
-        }
-        return fileName.replace('\\', '/').substring(fileName.replace('\\', '/').lastIndexOf('/') + 1);
-    }
-
-    @FunctionalInterface
-    private interface RowImporter {
-        boolean importRow(CSVRecord row);
+    public CatalogImportResponse recordImport(MultipartFile file, String type, int processed,
+            int created, int updated, int skipped, int createdStores, int createdProducts) {
+        ImportAuditLog log = new ImportAuditLog();
+        log.setFileName(CsvImportSupport.fileName(file));
+        log.setImportType(type);
+        log.setProcessedRows(processed);
+        log.setCreatedRecords(created);
+        log.setUpdatedRecords(updated);
+        log.setSkippedRows(skipped);
+        log.setCreatedStores(createdStores);
+        log.setCreatedProducts(createdProducts);
+        importAuditLogRepository.save(log);
+        return new CatalogImportResponse(type, log.getFileName(), processed, created, updated, skipped, List.of());
     }
 }

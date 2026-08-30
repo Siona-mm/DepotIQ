@@ -31,6 +31,7 @@ public class StoreService {
     public List<StoreResponse> getAllStores() {
         return storeRepository.findAll()
                 .stream()
+                .sorted((left, right) -> BusinessCodes.compareStoreCodes(left.getStoreCode(), right.getStoreCode()))
                 .map(storeMapper::toResponse)
                 .toList();
     }
@@ -41,6 +42,7 @@ public class StoreService {
     }
 
     public StoreResponse createStore(CreateStoreRequest request) {
+        validateExternalStoreId(request.getExternalStoreId(), null);
         Store store = storeMapper.toEntity(
                 request,
                 businessCodeGenerator.nextStoreCode()
@@ -53,6 +55,7 @@ public class StoreService {
     public StoreResponse updateStore(Long id, UpdateStoreRequest request) {
         Store store = findStoreOrThrow(id);
 
+        validateExternalStoreId(request.getExternalStoreId(), id);
         storeMapper.updateEntity(store, request);
         Store savedStore = storeRepository.save(store);
 
@@ -62,6 +65,15 @@ public class StoreService {
     public void deleteStore(Long id) {
         Store store = findStoreOrThrow(id);
         storeRepository.delete(store);
+    }
+
+    private void validateExternalStoreId(String externalId, Long currentId) {
+        if (externalId == null || externalId.isBlank()) return;
+        storeRepository.findByExternalStoreIdIgnoreCase(externalId.trim()).ifPresent(existing -> {
+            if (!existing.getId().equals(currentId)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT, "External Store ID is already assigned to " + existing.getStoreCode());
+            }
+        });
     }
 
     private Store findStoreOrThrow(Long id) {

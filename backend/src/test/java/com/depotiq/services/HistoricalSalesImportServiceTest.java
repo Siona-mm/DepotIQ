@@ -77,32 +77,25 @@ class HistoricalSalesImportServiceTest {
     }
 
     @Test
-    void createsMissingStoreAndProductFromCsvMetadata() {
-        when(storeRepository.findAll()).thenReturn(List.of());
-        when(productRepository.findAll()).thenReturn(List.of());
-        when(storeRepository.save(any(Store.class))).thenAnswer(invocation -> {
-            Store store = invocation.getArgument(0);
-            store.setId(99L);
-            return store;
-        });
-        when(productRepository.save(any(Product.class))).thenAnswer(invocation -> {
-            Product product = invocation.getArgument(0);
-            product.setId(999L);
-            return product;
-        });
-        mockExistingSalesKeys();
+    void rejectsUnknownCatalogIdsWithoutCreatingPlaceholders() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.importCsv(csvFile(
+                "2022-01-01,S999,P9999,Electronics,South,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn")))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Unknown Store ID", "catalog first");
+        verify(storeRepository, never()).save(any());
+        verify(productRepository, never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(jdbcTemplate, eventPublisher);
+    }
 
-        HistoricalSalesImportResponse response = service.importCsv(csvFile(
-                "2022-01-01,S999,P9999,Electronics,South,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"
-        ));
-
-        assertThat(response.createdRecords()).isEqualTo(1);
-        assertThat(response.createdStores()).isEqualTo(1);
-        assertThat(response.createdProducts()).isEqualTo(1);
-        assertThat(response.skippedRows()).isZero();
-        verify(storeRepository).save(any(Store.class));
-        verify(productRepository).save(any(Product.class));
-        verify(jdbcTemplate, times(2)).batchUpdate(anyString(), anyList());
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 14})
+    void rejectsEachBlankRequiredFieldWithoutSideEffects(int column) {
+        String[] values = "2022-01-01,S001,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn".split(",");
+        values[column] = " ";
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.importCsv(csvFile(String.join(",", values))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Line 2", "required");
+        verify(storeRepository, never()).save(any());
+        verify(productRepository, never()).save(any());
+        org.mockito.Mockito.verifyNoInteractions(jdbcTemplate, eventPublisher, importAuditLogRepository);
     }
 
     @Test
@@ -142,20 +135,39 @@ class HistoricalSalesImportServiceTest {
     }
 
     @Test
-    void doesNotRefreshPlanningWhenEveryRowIsInvalid() {
-        when(storeRepository.findAll()).thenReturn(List.of());
-        when(productRepository.findAll()).thenReturn(List.of());
+    void doesNotRefreshPlanningWhenRowsAreInvalid() {
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.importCsv(csvFile(
+                "bad-date,S001,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn")))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("invalid Date");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher, jdbcTemplate, importAuditLogRepository);
+    }
+
+    @Test
+    void validatesTheWholeFileBeforeWritingEvenWhenAnEarlierRowIsValid() {
+        Store store = new Store(); store.setId(1L); store.setStoreCode("S001");
+        Product product = new Product(); product.setId(2L); product.setProductCode("P0001");
+        when(storeRepository.findAll()).thenReturn(List.of(store));
+        when(productRepository.findAll()).thenReturn(List.of(product));
+        String valid = "2022-01-01,S001,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn";
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.importCsv(csvFile(valid + "\n" + valid.replace(",127,", ",-1,"))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Line 3", "Units Sold");
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher, jdbcTemplate, importAuditLogRepository);
+        verify(storeRepository, never()).save(any());
+        verify(productRepository, never()).save(any());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"S0011", "S11", "s011"})
+    void legacyStorePaddingMapsToTheSameStore(String inputCode) {
+        Store store = new Store(); store.setId(15L); store.setStoreCode("S011");
+        Product product = new Product(); product.setId(2L); product.setProductCode("P0001");
+        when(storeRepository.findAll()).thenReturn(List.of(store));
+        when(productRepository.findAll()).thenReturn(List.of(product));
         mockExistingSalesKeys();
-
-        HistoricalSalesImportResponse response = service.importCsv(csvFile(
-                "bad-date,S001,P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"
-        ));
-
-        assertThat(response.skippedRows()).isEqualTo(1);
-        assertThat(response.importedInventoryKeys()).isEmpty();
-        assertThat(response.planningRefreshRequested()).isFalse();
-        verify(eventPublisher, never()).publishEvent(any());
-        verify(jdbcTemplate, never()).batchUpdate(anyString(), anyList());
+        var response = service.importCsv(csvFile("2022-01-01," + inputCode
+                + ",P0001,Groceries,North,231,127,55,135.47,33.5,20,Rainy,0,29.69,Autumn"));
+        assertThat(response.importedInventoryKeys()).containsExactly("S011::P0001");
+        verify(storeRepository, never()).save(any());
     }
 
     private MockMultipartFile csvFile(String row) {

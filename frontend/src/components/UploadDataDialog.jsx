@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { importTypes, validateCsv } from "../utils/csvImport.js";
 import { importHistoricalSalesCsv } from "../api/depotiqApi.js";
 
 export default function UploadDataDialog({ onClose, onImported, open }) {
@@ -48,6 +49,7 @@ export default function UploadDataDialog({ onClose, onImported, open }) {
     setImportResult(null);
 
     try {
+      validateCsv(await uploadFile.text(), importTypes["sales-records"].columns);
       const result = await importHistoricalSalesCsv(uploadFile);
       setImportResult(result);
       onImported();
@@ -89,8 +91,8 @@ export default function UploadDataDialog({ onClose, onImported, open }) {
           </button>
         </header>
         <p>
-          Upload the retail inventory CSV. Rows are matched by store, product,
-          and date.
+          Upload sales for existing DepotIQ store and product IDs. All required
+          columns and values must be present; invalid files save no changes.
         </p>
         <form onSubmit={uploadHistoricalSales}>
           <label className="file-input">
@@ -116,9 +118,9 @@ export default function UploadDataDialog({ onClose, onImported, open }) {
             <div className="import-result" role="status">
               <strong>Import complete</strong>
               <span>
-                {importResult.processedRows} processed ·{" "}
-                {importResult.createdRecords} created ·{" "}
-                {importResult.updatedRecords} updated ·{" "}
+                {importResult.processedRows} processed Ã‚·{" "}
+                {importResult.createdRecords} created Ã‚·{" "}
+                {importResult.updatedRecords} updated Ã‚·{" "}
                 {importResult.skippedRows} skipped
               </span>
               {importResult.errors?.length > 0 && (

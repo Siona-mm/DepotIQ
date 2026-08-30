@@ -33,10 +33,10 @@ public class ProductMapper {
         Product product = new Product();
 
         product.setProductCode(productCode);
-        product.setName(request.getName());
-        product.setCategory(request.getCategory());
-        product.setBrand(request.getBrand());
-        product.setSupplierCode(request.getSupplierCode());
+        product.setName(normalizeOptional(request.getName()));
+        product.setCategory(normalizeOptional(request.getCategory()));
+        product.setBrand(normalizeOptional(request.getBrand()));
+        product.setSupplierCode(normalizeOptional(request.getSupplierCode()));
         product.setExternalSku(normalizeOptional(request.getExternalSku()));
         product.setUnitCost(request.getUnitCost());
         product.setPrice(request.getPrice());
@@ -48,10 +48,10 @@ public class ProductMapper {
     }
 
     public void updateEntity(Product product, UpdateProductRequest request) {
-        product.setName(request.getName());
-        product.setCategory(request.getCategory());
-        product.setBrand(request.getBrand());
-        product.setSupplierCode(request.getSupplierCode());
+        product.setName(normalizeOptional(request.getName()));
+        product.setCategory(normalizeOptional(request.getCategory()));
+        product.setBrand(normalizeOptional(request.getBrand()));
+        product.setSupplierCode(normalizeOptional(request.getSupplierCode()));
         product.setExternalSku(normalizeOptional(request.getExternalSku()));
         product.setUnitCost(request.getUnitCost());
         product.setPrice(request.getPrice());

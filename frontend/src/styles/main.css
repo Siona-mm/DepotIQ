@@ -859,7 +859,7 @@ textarea {
   font-size: 10.5px;
 }
 
-.ml-status-footer span + span::before { content: "·"; margin: 0 7px; }
+.ml-status-footer span + span::before { content: "Ã‚·"; margin: 0 7px; }
 .ml-status-footer strong { color: #374151; font-weight: 500; }
 
 .ml-status-unavailable {
@@ -2077,6 +2077,7 @@ select:focus-visible {
 
 .store-form-dialog form {
   display: grid;
+  align-items: start;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 13px 15px;
   margin-top: 18px;
@@ -2087,6 +2088,8 @@ select:focus-visible {
 }
 
 .store-form-dialog form > footer,
+.store-form-dialog form > .catalog-form-help,
+.store-form-dialog form > .catalog-form-error,
 .store-form-dialog form > .checkbox-field {
   grid-column: 1 / -1;
 }
@@ -2101,9 +2104,61 @@ select:focus-visible {
 
 .dialog-field-grid {
   display: grid;
+  align-items: start;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 13px 15px;
 }
+
+.catalog-form-help {
+  margin: 0 0 12px;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.product-form-dialog label small {
+  font-weight: 400;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.products-table-panel table { min-width: 1380px; }
+/* Allocate every catalog column; the shared nine-column widths leave no room
+   for shelf life, perishability, and actions in this twelve-column table. */
+.products-table-panel th:nth-child(1) { width: 6%; }
+.products-table-panel th:nth-child(2) { width: 10%; }
+.products-table-panel th:nth-child(3) { width: 17%; }
+.products-table-panel th:nth-child(4) { width: 9%; }
+.products-table-panel th:nth-child(5) { width: 10%; }
+.products-table-panel th:nth-child(6) { width: 8%; }
+.products-table-panel th:nth-child(7),
+.products-table-panel th:nth-child(8),
+.products-table-panel th:nth-child(9),
+.products-table-panel th:nth-child(10) { width: 7%; }
+.products-table-panel th:nth-child(11),
+.products-table-panel th:nth-child(12) { width: 6%; }
+.products-table-panel td {
+  height: 42px;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  vertical-align: middle;
+}
+.product-directory-name strong {
+  display: block;
+  overflow: hidden;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.products-table-panel .product-details-warning {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.products-table-panel .action-buttons > button { flex-shrink: 0; }
 
 .generated-code-field input:disabled {
   color: #6b7280;
@@ -3883,3 +3938,19 @@ select {
 @media (max-width: 520px) {
   .insight-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+
+/* CSV import guidance uses the existing upload card and form styling. */
+.upload-type-field { display: grid; gap: 8px; margin-bottom: 18px; font-size: 13px; font-weight: 600; }
+.upload-type-field select { width: 100%; padding: 11px; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #111; font: inherit; }
+.upload-column-guide { margin-top: 20px; font-size: 12px; line-height: 1.65; color: #4b5563; overflow-wrap: anywhere; }
+.upload-column-guide h3 { font-size: 13px; color: #111; }
+.csv-import-error { white-space: pre-wrap; overflow-wrap: anywhere; max-height: 320px; overflow-y: auto; }
+.upload-page-grid { grid-template-columns: minmax(0, 1fr) minmax(250px, 0.45fr); }
+@media (max-width: 1000px) { .upload-page-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.stores-table-panel table { min-width: 980px; }
+.stores-table-panel th:nth-child(2) { width: 25%; }
+.stores-table-panel td.store-directory-name { white-space: normal; text-overflow: clip; overflow-wrap: anywhere; }
+.store-directory-name strong { display: block; font-weight: 500; }
+.store-directory-name small { display: block; margin-top: 4px; color: #6b7280; }
+.store-details-warning { display: inline-block; margin-top: 5px; padding: 2px 6px; border-radius: 4px; background: #fff4db; color: #854d0e; font-size: 11px; }

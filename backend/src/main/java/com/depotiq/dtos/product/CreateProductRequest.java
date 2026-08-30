@@ -1,5 +1,8 @@
 package com.depotiq.dtos.product;
 
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -8,32 +11,51 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 public class CreateProductRequest {
-    @NotBlank
+    @NotBlank(message = "Name is required")
+    @Size(max = 150)
     private String name;
 
-    @NotBlank
+    @NotBlank(message = "Category is required")
+    @Size(max = 100)
     private String category;
 
+    @NotBlank(message = "Brand is required")
+    @Size(max = 100)
     private String brand;
 
+    @NotBlank(message = "Supplier code is required")
+    @Size(max = 100)
     private String supplierCode;
 
+    @Size(max = 100)
     private String externalSku;
 
+    @NotNull(message = "Unit cost is required")
     @DecimalMin(value = "0.00")
+    @Digits(integer = 10, fraction = 2)
     private BigDecimal unitCost;
 
+    @NotNull(message = "Price is required")
     @DecimalMin(value = "0.00")
+    @Digits(integer = 10, fraction = 2)
     private BigDecimal price;
 
-    @DecimalMin(value = "0.000")
+    @NotNull(message = "Weight is required")
+    @DecimalMin(value = "0", inclusive = false, message = "Weight must be greater than zero")
+    @Digits(integer = 7, fraction = 3)
     private BigDecimal weightKg;
 
+    @NotNull(message = "Shelf life is required; use 0 only for non-perishable products")
     @Min(0)
     private Integer shelfLifeDays;
 
-    @NotNull
+    @NotNull(message = "Choose whether the product is perishable")
     private Boolean perishable;
+
+    @AssertTrue(message = "Perishable products need a shelf life of at least 1 day")
+    public boolean isShelfLifeValid() {
+        return !Boolean.TRUE.equals(perishable) || shelfLifeDays == null || shelfLifeDays > 0;
+    }
 
     public String getName() {
         return name;

@@ -2,19 +2,24 @@ package com.depotiq.dtos.store;
 
 import com.depotiq.models.StoreType;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public class UpdateStoreRequest {
+    @Size(max = 100)
     private String externalStoreId;
 
     @NotBlank
+    @Size(max = 150)
     private String name;
 
     @NotNull
     private StoreType storeType;
 
     @NotBlank
+    @Size(max = 100)
     private String region;
 
     @NotNull
@@ -31,6 +36,11 @@ public class UpdateStoreRequest {
     @NotNull
     @Min(1)
     private Integer preferredHorizonDays;
+
+    @AssertTrue(message = "Preferred horizon must be 3, 7, 14, or 30 days")
+    public boolean isPreferredHorizonSupported() {
+        return preferredHorizonDays == null || java.util.List.of(3, 7, 14, 30).contains(preferredHorizonDays);
+    }
 
     public String getExternalStoreId() {
         return externalStoreId;
