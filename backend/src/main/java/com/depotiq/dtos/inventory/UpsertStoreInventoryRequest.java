@@ -1,13 +1,16 @@
 package com.depotiq.dtos.inventory;
 
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.NotNull;
 
 public class UpsertStoreInventoryRequest {
     @NotNull
+    @Positive
     private Long storeId;
 
     @NotNull
+    @Positive
     private Long productId;
 
     @NotNull

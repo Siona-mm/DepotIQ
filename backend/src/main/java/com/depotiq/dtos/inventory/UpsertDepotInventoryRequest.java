@@ -1,10 +1,13 @@
 package com.depotiq.dtos.inventory;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.NotNull;
 
 public class UpsertDepotInventoryRequest {
     @NotNull
+    @Positive
     private Long productId;
 
     @NotNull
@@ -14,6 +17,11 @@ public class UpsertDepotInventoryRequest {
     @NotNull
     @Min(0)
     private Integer reservedUnits;
+
+    @AssertTrue(message = "Reserved units cannot exceed available units")
+    public boolean isReservationValid() {
+        return availableUnits == null || reservedUnits == null || reservedUnits <= availableUnits;
+    }
 
     public Long getProductId() {
         return productId;

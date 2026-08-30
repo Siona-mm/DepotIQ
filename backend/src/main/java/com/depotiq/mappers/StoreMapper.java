@@ -31,10 +31,10 @@ public class StoreMapper {
         Store store = new Store();
 
         store.setStoreCode(storeCode);
-        store.setName(request.getName());
+        store.setName(request.getName().trim());
         store.setExternalStoreId(normalizeOptional(request.getExternalStoreId()));
         store.setStoreType(request.getStoreType());
-        store.setRegion(request.getRegion());
+        store.setRegion(request.getRegion().trim());
         store.setHasWarehouse(request.getHasWarehouse());
         store.setStorageCapacity(request.getStorageCapacity());
         store.setDeliveryLeadTimeDays(request.getDeliveryLeadTimeDays());
@@ -44,9 +44,12 @@ public class StoreMapper {
     }
 
     public void updateEntity(Store store, UpdateStoreRequest request) {
-        store.setName(request.getName());
+        if (request.getExternalStoreId() != null) {
+            store.setExternalStoreId(normalizeOptional(request.getExternalStoreId()));
+        }
+        store.setName(request.getName().trim());
         store.setStoreType(request.getStoreType());
-        store.setRegion(request.getRegion());
+        store.setRegion(request.getRegion().trim());
         store.setHasWarehouse(request.getHasWarehouse());
         store.setStorageCapacity(request.getStorageCapacity());
         store.setDeliveryLeadTimeDays(request.getDeliveryLeadTimeDays());
