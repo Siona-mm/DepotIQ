@@ -6,6 +6,7 @@ import {
   PencilLine,
   Search,
   Warehouse,
+  Upload,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -276,6 +277,7 @@ export default function DepotInventoryView({
               </span>
             </div>
             <div className="inventory-filters">
+              {permissions.canImportData && <button className="primary-button" onClick={() => onNavigate("Upload Data")} type="button"><Upload size={16} />Add products / refill CSV</button>}
               <label>
                 <span>Category</span>
                 <select
@@ -325,12 +327,12 @@ export default function DepotInventoryView({
                   const itemStatus = stockState(item);
                   return (
                     <tr key={item.id}>
-                      {permissions.canManageInventory && <td>
+                      <td>
                         <div className="table-primary">
                           <strong>{item.productCode}</strong>
                           <span>{item.productName}</span>
                         </div>
-                      </td>}
+                      </td>
                       <td>{item.category}</td>
                       <td>{formatNumber(item.availableUnits)}</td>
                       <td>{formatNumber(item.reservedUnits)}</td>
@@ -346,7 +348,7 @@ export default function DepotInventoryView({
                         </span>
                       </td>
                       <td>{formatUpdated(item.lastUpdated)}</td>
-                      <td>
+                      {permissions.canManageInventory && <td>
                         <button
                           aria-label={`Edit inventory for ${item.productCode}`}
                           className="row-action inventory-edit"
@@ -357,7 +359,7 @@ export default function DepotInventoryView({
                           <PencilLine aria-hidden="true" size={14} />
                           Edit
                         </button>
-                      </td>
+                      </td>}
                     </tr>
                   );
                 })}
