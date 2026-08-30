@@ -1,6 +1,3 @@
 Date,Store ID,Product ID,Category,Region,Inventory Level,Units Sold,Units Ordered,Price,Discount,Weather Condition,Holiday/Promotion,Seasonality,Source System,External Record ID
-2026-08-20,S012,P0101,Groceries,North,125,34,60,4.99,0,Clear,0,Summer,Demo POS,DEMO-20260820-001
-2026-08-20,S012,P0102,Beverages,North,80,47,72,2.49,10,Clear,0,Summer,Demo POS,DEMO-20260820-002
-2026-08-21,S012,P0101,Groceries,North,91,38,60,4.99,0,Rain,0,Summer,Demo POS,DEMO-20260821-001
-2026-08-21,S013,P0103,Household,West,55,12,30,8.99,0,Cloudy,0,Summer,Demo POS,DEMO-20260821-002
-2026-08-22,S013,P0102,Beverages,West,43,29,48,2.49,15,Sunny,1,Summer,Demo POS,DEMO-20260822-001
+2026-08-29,S001,P0001,Groceries,North,125,34,60,7.99,0,Clear,0,Summer,Demo POS,DEMO-20260829-001
+2026-08-29,S001,P0002,Beverages,North,80,47,72,1.99,10,Clear,0,Summer,Demo POS,DEMO-20260829-002

@@ -4,7 +4,6 @@ import com.depotiq.config.SecurityConfig;
 import com.depotiq.dtos.profile.ProfileResponse;
 import com.depotiq.dtos.settings.SettingsResponse;
 import com.depotiq.services.AccountService;
-import com.depotiq.services.CatalogCsvImportService;
 import com.depotiq.services.InventoryService;
 import com.depotiq.services.StoreService;
 import com.depotiq.services.HistoricalSalesImportService;
@@ -62,7 +61,10 @@ class AuthorizationControllerTest {
     private HistoricalSalesImportService historicalSalesImportService;
 
     @MockBean
-    private CatalogCsvImportService catalogCsvImportService;
+    private com.depotiq.services.CatalogCsvImportService catalogCsvImportService;
+
+    @MockBean
+    private com.depotiq.services.DepotCsvImportService depotCsvImportService;
 
     @MockBean
     private JpaMetamodelMappingContext jpaMappingContext;
@@ -128,6 +130,17 @@ class AuthorizationControllerTest {
         mockMvc.perform(get("/api/settings/me").with(basic("viewer", "viewer123")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.defaultHorizon").value(7));
+    }
+
+    @Test
+    void depotUploadsRequireAdministratorAndUseMultipartFile() throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile("file", "stock.csv", "text/csv", "data".getBytes());
+        for (String path : java.util.List.of("depot-products", "depot-refills")) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/imports/" + path)
+                    .file(file).with(basic("manager", "manager123"))).andExpect(status().isForbidden());
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart("/api/imports/" + path)
+                    .file(file).with(basic("admin", "admin123"))).andExpect(status().isOk());
+        }
     }
 
     private static RequestPostProcessor basic(

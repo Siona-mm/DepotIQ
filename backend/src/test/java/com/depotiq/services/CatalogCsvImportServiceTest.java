@@ -43,7 +43,7 @@ class CatalogCsvImportServiceTest {
         CatalogCsvImportService service = service();
         when(storeRepository.findByExternalStoreIdIgnoreCase("POS-STORE-42"))
                 .thenReturn(Optional.empty());
-        when(businessCodeGenerator.nextStoreCode()).thenReturn("S0015");
+        when(businessCodeGenerator.nextStoreCode()).thenReturn("S015");
 
         CatalogImportResponse response = service.importStores(csv(
                 "stores.csv",
@@ -55,7 +55,7 @@ class CatalogCsvImportServiceTest {
         ArgumentCaptor<Store> storeCaptor = ArgumentCaptor.forClass(Store.class);
         verify(storeRepository).save(storeCaptor.capture());
         Store saved = storeCaptor.getValue();
-        assertThat(saved.getStoreCode()).isEqualTo("S0015");
+        assertThat(saved.getStoreCode()).isEqualTo("S015");
         assertThat(saved.getExternalStoreId()).isEqualTo("POS-STORE-42");
         assertThat(saved.getStoreType()).isEqualTo(StoreType.WAREHOUSE_STORE);
         assertThat(saved.getHasWarehouse()).isTrue();
@@ -77,8 +77,8 @@ class CatalogCsvImportServiceTest {
 
         CatalogImportResponse response = service.importProducts(csv(
                 "products.csv",
-                "External SKU,Name,Category,Brand,Unit Cost,Price,Perishable\n"
-                        + "SKU-100,Whole Milk 1L,Dairy,Fresh Valley,1.10,1.89,true\n"
+                "External SKU,Name,Category,Brand,Supplier Code,Unit Cost,Price,Weight Kg,Shelf Life Days,Perishable\n"
+                        + "SKU-100,Whole Milk 1L,Dairy,Fresh Valley,SUP001,1.10,1.89,1.0,14,true\n"
         ));
 
         ArgumentCaptor<Product> productCaptor = ArgumentCaptor.forClass(Product.class);
@@ -94,38 +94,55 @@ class CatalogCsvImportServiceTest {
     }
 
     @Test
-    void acceptsProductCsvWithoutOptionalColumns() {
-        CatalogCsvImportService service = service();
-        when(productRepository.findByExternalSkuIgnoreCase("SKU-200"))
-                .thenReturn(Optional.empty());
-        when(businessCodeGenerator.nextProductCode()).thenReturn("P0043");
-
-        CatalogImportResponse response = service.importProducts(csv(
-                "products.csv",
-                "External SKU,Name,Category,Perishable\n"
-                        + "SKU-200,Desk Lamp,Household,no\n"
-        ));
-
-        assertThat(response.createdRecords()).isEqualTo(1);
-        assertThat(response.skippedRows()).isZero();
-        verify(productRepository).save(any(Product.class));
+    void rejectsProductCsvWithoutCompleteDetails() {
+        assertThatThrownBy(() -> service().importProducts(csv("products.csv",
+                "External SKU,Name,Category,Perishable\nSKU-200,Desk Lamp,Household,no\n")))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Brand", "Price", "Weight Kg");
+        org.mockito.Mockito.verifyNoInteractions(productRepository, businessCodeGenerator);
     }
 
     @Test
-    void skipsInvalidRowsAndReportsTheirLineNumbers() {
-        CatalogCsvImportService service = service();
-
-        CatalogImportResponse response = service.importStores(csv(
-                "stores.csv",
+    void rejectsInvalidRowsAndReportsTheirLineNumbers() {
+        assertThatThrownBy(() -> service().importStores(csv("stores.csv",
                 "External Store ID,Name,Store Type,Region,Has Warehouse,Storage Capacity,"
                         + "Delivery Lead Time Days,Preferred Horizon Days\n"
-                        + "POS-STORE-99,Bad Store,Small,North,false,0,2,3\n"
-        ));
+                        + "POS-STORE-99,Bad Store,Small,North,false,0,2,3\n")))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Line 2: Storage Capacity must be at least 1.");
+        org.mockito.Mockito.verifyNoInteractions(storeRepository, businessCodeGenerator);
+    }
 
-        assertThat(response.processedRows()).isEqualTo(1);
-        assertThat(response.createdRecords()).isZero();
-        assertThat(response.skippedRows()).isEqualTo(1);
-        assertThat(response.errors()).containsExactly("Line 2: Storage Capacity must be at least 1.");
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+    void rejectsEveryBlankProductFieldBeforeChangingExistingData(int column) {
+        String[] values = {"SKU-100", "Milk", "Dairy", "Fresh Valley", "SUP001", "1.10", "1.89", "1", "14", "true"};
+        String good = String.join(",", values);
+        values[column] = "   ";
+        String header = String.join(",", CatalogCsvImportService.PRODUCT_COLUMNS);
+        assertThatThrownBy(() -> service().importProducts(csv("products.csv",
+                header + "\n" + good + "\n" + String.join(",", values))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Line 3", "required");
+        org.mockito.Mockito.verifyNoInteractions(productRepository, businessCodeGenerator, importAuditLogRepository);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7})
+    void rejectsEveryBlankStoreField(int column) {
+        String[] values = {"POS-42", "Market", "Medium", "North", "false", "1200", "2", "7"};
+        values[column] = " ";
+        assertThatThrownBy(() -> service().importStores(csv("stores.csv",
+                String.join(",", CatalogCsvImportService.STORE_COLUMNS) + "\n" + String.join(",", values))))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Line 2", "required");
+        org.mockito.Mockito.verifyNoInteractions(storeRepository, businessCodeGenerator);
+    }
+
+    @Test
+    void lateInvalidValueCannotMutateAnExistingManagedProduct() {
+        assertThatThrownBy(() -> service().importProducts(csv("products.csv",
+                String.join(",", CatalogCsvImportService.PRODUCT_COLUMNS)
+                        + "\nSKU-100,Changed,Dairy,Brand,SUP,1,2,1,14,not-a-boolean")))
+                .isInstanceOf(IllegalArgumentException.class).hasMessageContaining("Perishable");
+        org.mockito.Mockito.verifyNoInteractions(productRepository, businessCodeGenerator);
     }
 
     @Test
@@ -137,7 +154,7 @@ class CatalogCsvImportServiceTest {
                 "External SKU,Name,Category\nSKU-1,Milk,Dairy\n"
         )))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("Missing required columns: Perishable");
+                .hasMessageContaining("Missing required columns:", "Perishable");
     }
 
     private CatalogCsvImportService service() {

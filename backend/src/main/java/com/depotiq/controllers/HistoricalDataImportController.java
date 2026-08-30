@@ -5,6 +5,7 @@ import com.depotiq.dtos.importing.CatalogImportResponse;
 import com.depotiq.dtos.importing.ImportAuditLogResponse;
 import com.depotiq.services.HistoricalSalesImportService;
 import com.depotiq.services.CatalogCsvImportService;
+import com.depotiq.services.DepotCsvImportService;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +21,16 @@ public class HistoricalDataImportController {
 
     private final HistoricalSalesImportService historicalSalesImportService;
     private final CatalogCsvImportService catalogCsvImportService;
+    private final DepotCsvImportService depotCsvImportService;
 
     public HistoricalDataImportController(
             HistoricalSalesImportService historicalSalesImportService,
-            CatalogCsvImportService catalogCsvImportService
+            CatalogCsvImportService catalogCsvImportService,
+            DepotCsvImportService depotCsvImportService
     ) {
         this.historicalSalesImportService = historicalSalesImportService;
         this.catalogCsvImportService = catalogCsvImportService;
+        this.depotCsvImportService = depotCsvImportService;
     }
 
     @PostMapping(value = "/sales-records", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -42,6 +46,17 @@ public class HistoricalDataImportController {
     @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CatalogImportResponse importProducts(@RequestParam("file") MultipartFile file) {
         return catalogCsvImportService.importProducts(file);
+    }
+
+    @PostMapping(value = "/depot-products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CatalogImportResponse addDepotProducts(@RequestParam("file") MultipartFile file,
+            @RequestParam(value = "receiptId", required = false) String receiptId) {
+        return depotCsvImportService.addProducts(file, receiptId);
+    }
+
+    @PostMapping(value = "/depot-refills", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CatalogImportResponse refillDepot(@RequestParam("file") MultipartFile file) {
+        return depotCsvImportService.refill(file);
     }
 
     @GetMapping
